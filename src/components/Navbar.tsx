@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 interface NavbarProps {
-  currentView: "home" | "signin" | "signup";
+  currentView: string;
   isAuthenticated: boolean;
   onSignIn: () => void;
   onSignUp: () => void;
@@ -182,7 +182,7 @@ export function Navbar({
         style={{
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          boxShadow: isScrolled 
+          boxShadow: isScrolled
             ? '0 8px 32px 0 rgba(165, 200, 158, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)'
             : '0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)'
         }}
@@ -332,7 +332,7 @@ export function Navbar({
                     </span>
                   )}
                 </button>
-                
+
                 {isNotificationOpen && (
                   <div
                     className="absolute right-0 top-full mt-2 w-80 bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl z-50 overflow-hidden animate-fadeSlideDown"
@@ -345,26 +345,24 @@ export function Navbar({
                     <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20">
                       <h3 className="text-sm font-bold text-white">Notifications</h3>
                     </div>
-                    
+
                     {/* Notification List */}
                     {notifications.length > 0 ? (
                       <div className="max-h-96 overflow-y-auto">
                         {notifications.map((notification) => (
                           <button
                             key={notification.id}
-                            className={`w-full text-left px-4 py-3 transition-all border-b border-[#A5C89E]/10 last:border-b-0 ${
-                              notification.isRead
+                            className={`w-full text-left px-4 py-3 transition-all border-b border-[#A5C89E]/10 last:border-b-0 ${notification.isRead
                                 ? 'bg-transparent hover:bg-[#A5C89E]/5'
                                 : 'bg-[#A5C89E]/5 hover:bg-[#A5C89E]/10'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-start gap-2">
                               {!notification.isRead && (
                                 <div className="w-2 h-2 bg-[#A5C89E] rounded-full mt-1.5 flex-shrink-0" />
                               )}
-                              <p className={`text-sm leading-relaxed ${
-                                notification.isRead ? 'text-gray-400' : 'text-gray-300'
-                              }`}>
+                              <p className={`text-sm leading-relaxed ${notification.isRead ? 'text-gray-400' : 'text-gray-300'
+                                }`}>
                                 {notification.title}
                               </p>
                             </div>
