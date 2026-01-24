@@ -87,7 +87,7 @@ export default function App() {
         <div className="relative z-10">
           {/* Hide navbar when in admin panel */}
           {currentView !== 'adminpanel' && (
-            <Navbar 
+            <Navbar
               currentView={currentView}
               isAuthenticated={isAuthenticated}
               onSignIn={() => setCurrentView('signin')}
@@ -109,11 +109,11 @@ export default function App() {
               onAdminPanel={() => setCurrentView('adminpanel')}
             />
           )}
-          
+
           {currentView === 'home' && (
             <>
-              <Hero 
-                onExploreCourses={() => handleNavigateToAllCourses()} 
+              <Hero
+                onExploreCourses={() => handleNavigateToAllCourses()}
                 onViewDocs={() => setCurrentView('articles')}
               />
               <ExploreTopics onViewAllArticles={() => setCurrentView('articles')} />
@@ -123,7 +123,7 @@ export default function App() {
           )}
 
           {currentView === 'signin' && (
-            <SignIn 
+            <SignIn
               onSwitchToSignUp={() => setCurrentView('signup')}
               onBackToHome={() => setCurrentView('home')}
               onLogin={handleLogin}
@@ -131,7 +131,7 @@ export default function App() {
           )}
 
           {currentView === 'signup' && (
-            <SignUp 
+            <SignUp
               onSwitchToSignIn={() => setCurrentView('signin')}
               onBackToHome={() => setCurrentView('home')}
             />
@@ -139,8 +139,8 @@ export default function App() {
 
           {currentView === 'allcourses' && (
             <>
-              <AllCourses 
-                category={selectedCategory} 
+              <AllCourses
+                category={selectedCategory}
                 onCourseClick={handleNavigateToCourseDetail}
               />
               <Footer />
@@ -156,8 +156,8 @@ export default function App() {
 
           {currentView === 'articledetail' && (
             <>
-              <ArticleDetail 
-                articleId={selectedArticleId} 
+              <ArticleDetail
+                articleId={selectedArticleId}
                 onBack={() => setCurrentView('articles')}
               />
               <Footer />
@@ -166,8 +166,8 @@ export default function App() {
 
           {currentView === 'coursedetail' && (
             <>
-              <CourseDetail 
-                courseId={selectedCourseId} 
+              <CourseDetail
+                courseId={selectedCourseId}
                 onBack={() => setCurrentView('allcourses')}
                 onEnroll={(courseId) => {
                   setSelectedCourseId(courseId);
@@ -180,8 +180,8 @@ export default function App() {
 
           {currentView === 'payment' && (
             <>
-              <CoursePayment 
-                courseId={selectedCourseId} 
+              <CoursePayment
+                courseId={selectedCourseId}
                 onBack={() => setCurrentView('coursedetail')}
               />
               <Footer />
@@ -190,8 +190,8 @@ export default function App() {
 
           {currentView === 'myprofile' && (
             <>
-              <MyProfile 
-                onBack={() => setCurrentView('home')} 
+              <MyProfile
+                onBack={() => setCurrentView('home')}
                 onEditProfile={() => setCurrentView('editprofile')}
               />
               <Footer />
@@ -200,8 +200,8 @@ export default function App() {
 
           {currentView === 'editprofile' && (
             <>
-              <EditProfile 
-                onBack={() => setCurrentView('myprofile')} 
+              <EditProfile
+                onBack={() => setCurrentView('myprofile')}
                 onSave={() => setCurrentView('myprofile')}
               />
               <Footer />
@@ -210,7 +210,7 @@ export default function App() {
 
           {currentView === 'mycourses' && (
             <>
-              <MyCourses 
+              <MyCourses
                 onBack={() => setCurrentView('home')}
                 onCourseClick={(courseId) => {
                   setSelectedCourseId(courseId);
@@ -223,8 +223,8 @@ export default function App() {
 
           {currentView === 'coursecontent' && (
             <>
-              <CourseContent 
-                courseId={selectedCourseId} 
+              <CourseContent
+                courseId={selectedCourseId}
                 onBack={() => setCurrentView('mycourses')}
               />
               <Footer />
@@ -233,7 +233,7 @@ export default function App() {
 
           {currentView === 'bookmarks' && (
             <>
-              <Bookmarks 
+              <Bookmarks
                 onArticleClick={handleNavigateToArticleDetail}
               />
               <Footer />
@@ -242,7 +242,7 @@ export default function App() {
 
           {currentView === 'writearticle' && (
             <>
-              <WriteArticle 
+              <WriteArticle
                 onBack={() => setCurrentView('articles')}
               />
               <Footer />
@@ -251,7 +251,7 @@ export default function App() {
 
           {currentView === 'joininstructor' && (
             <>
-              <JoinInstructor 
+              <JoinInstructor
                 onBack={() => setCurrentView('home')}
               />
               <Footer />
@@ -260,7 +260,7 @@ export default function App() {
 
           {currentView === 'joinexpert' && (
             <>
-              <JoinExpert 
+              <JoinExpert
                 onBack={() => setCurrentView('home')}
               />
               <Footer />
@@ -269,7 +269,7 @@ export default function App() {
 
           {currentView === 'publishcourse' && (
             <>
-              <PublishCourse 
+              <PublishCourse
                 onBack={() => setCurrentView('home')}
                 onMyCourses={() => setCurrentView('instructormycourses')}
                 editMode={!!editCourseId}
@@ -281,7 +281,7 @@ export default function App() {
 
           {currentView === 'feedback' && (
             <>
-              <Feedback 
+              <Feedback
                 onBack={() => setCurrentView('home')}
               />
               <Footer />
@@ -290,7 +290,7 @@ export default function App() {
 
           {currentView === 'instructormycourses' && (
             <>
-              <InstructorMyCourses 
+              <InstructorMyCourses
                 onBack={() => setCurrentView('home')}
                 onCreateCourse={() => {
                   setEditCourseId('');
@@ -307,7 +307,7 @@ export default function App() {
 
           {currentView === 'settings' && (
             <>
-              <Settings 
+              <Settings
                 onBack={() => setCurrentView('home')}
                 onEditProfile={() => setCurrentView('editprofile')}
               />
@@ -315,7 +315,7 @@ export default function App() {
           )}
 
           {currentView === 'adminpanel' && (
-            <AdminPanel 
+            <AdminPanel
               onBack={() => setCurrentView('home')}
             />
           )}
