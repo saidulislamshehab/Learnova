@@ -26,11 +26,14 @@ import { InstructorMyCourses } from './components/InstructorMyCourses';
 import { Settings } from './components/Settings';
 import { AdminPanel } from './components/AdminPanel';
 
-type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail' | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle' | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings' | 'adminpanel';
+type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail'
+  | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle'
+  | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings'
+  | 'adminpanel';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('home');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
   const [selectedArticleId, setSelectedArticleId] = useState<number>(1);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('PY-001');

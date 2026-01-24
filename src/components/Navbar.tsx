@@ -176,9 +176,9 @@ export function Navbar({
   }, [isCoursesOpen, isTutorialsOpen, isProfileOpen, isNotificationOpen]);
 
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl">
+    <nav className="navbar-root">
       <div
-        className={`bg-gradient-to-r from-[#121212]/40 via-[#121212]/30 to-[#121212]/40 backdrop-blur-2xl border border-[#A5C89E]/30 rounded-full px-6 py-3 transition-all duration-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] ${isScrolled ? "shadow-lg shadow-[#A5C89E]/20 border-[#A5C89E]/40" : ""}`}
+        className={`navbar-container ${isScrolled ? "scrolled" : ""}`}
         style={{
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -192,16 +192,16 @@ export function Navbar({
           <div className="flex items-center space-x-3">
             <button
               onClick={onHome}
-              className="flex items-center space-x-3 group"
+              className="navbar-logo-btn"
             >
-              <div className="w-8 h-8 bg-[#A5C89E]/80 rounded-lg flex items-center justify-center group-hover:bg-[#A5C89E]/90 transition-colors">
+              <div className="navbar-logo-icon-wrapper">
                 <Terminal className="w-5 h-5 text-black" />
               </div>
               <div>
-                <span className="text-white font-bold text-lg tracking-wide">
+                <span className="navbar-logo-text">
                   LEARNOVA
                 </span>
-                <div className="text-[#A5C89E] text-[10px] font-mono tracking-wider text-left">
+                <div className="navbar-logo-version">
                   SYSTEM v1.0
                 </div>
               </div>
@@ -212,23 +212,23 @@ export function Navbar({
           <div className="hidden md:flex items-center space-x-8">
             <div className="relative group" ref={coursesRef}>
               <button
-                className="relative text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide flex items-center after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-[#A5C89E] after:transition-all after:duration-300 after:ease-in-out group-hover:after:w-full"
+                className="navbar-nav-link navbar-nav-link-underline"
                 onClick={() => setIsCoursesOpen(!isCoursesOpen)}
               >
                 COURSES
                 <ChevronDown
-                  className={`w-4 h-4 ml-1 transition-transform duration-200 ${isCoursesOpen ? "rotate-180" : ""}`}
+                  className={`navbar-chevron ${isCoursesOpen ? "rotate-180" : ""}`}
                 />
               </button>
               {isCoursesOpen && (
                 <div
-                  className="absolute left-0 top-full mt-2 w-64 bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl z-50 py-2"
+                  className="navbar-dropdown-wrapper"
                   style={{
                     backdropFilter: "blur(20px)",
                     WebkitBackdropFilter: "blur(20px)",
                   }}
                 >
-                  <h3 className="text-xs font-mono text-[#ACBAC4]/70 mb-2 tracking-wider px-4 pt-2">
+                  <h3 className="navbar-dropdown-header">
                     BROWSE COURSES
                   </h3>
                   <div className="space-y-0">
@@ -247,7 +247,7 @@ export function Navbar({
                             );
                             setIsCoursesOpen(false);
                           }}
-                          className="flex items-center w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                          className="navbar-dropdown-item"
                         >
                           <Icon className="w-4 h-4 mr-2 opacity-60" />
                           {category.name}
@@ -260,32 +260,32 @@ export function Navbar({
             </div>
             <a
               href="#articles"
-              className="relative text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-[#A5C89E] after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
+              className="navbar-nav-link navbar-nav-link-underline"
               onClick={onArticles}
             >
               ARTICLES
             </a>
             <div className="relative group" ref={tutorialsRef}>
               <button
-                className="relative text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide flex items-center after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-[#A5C89E] after:transition-all after:duration-300 after:ease-in-out group-hover:after:w-full"
+                className="navbar-nav-link navbar-nav-link-underline"
                 onClick={() =>
                   setIsTutorialsOpen(!isTutorialsOpen)
                 }
               >
                 TUTORIALS
                 <ChevronDown
-                  className={`w-4 h-4 ml-1 transition-transform duration-200 ${isTutorialsOpen ? "rotate-180" : ""}`}
+                  className={`navbar-chevron ${isTutorialsOpen ? "rotate-180" : ""}`}
                 />
               </button>
               {isTutorialsOpen && (
                 <div
-                  className="absolute left-0 top-full mt-2 w-64 bg-[#121212]/75 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl z-50 py-2"
+                  className="navbar-dropdown-wrapper"
                   style={{
                     backdropFilter: "blur(20px)",
                     WebkitBackdropFilter: "blur(20px)",
                   }}
                 >
-                  <h3 className="text-xs font-mono text-[#ACBAC4]/70 mb-2 tracking-wider px-4 pt-2">
+                  <h3 className="navbar-dropdown-header">
                     BROWSE TUTORIALS
                   </h3>
                   <div className="space-y-0">
@@ -293,7 +293,7 @@ export function Navbar({
                       <a
                         key={topic}
                         href="#tutorials"
-                        className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                        className="navbar-dropdown-item"
                         onClick={() =>
                           setIsTutorialsOpen(false)
                         }
@@ -309,12 +309,12 @@ export function Navbar({
 
           {/* Right Side */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="group relative w-8 h-8 hover:w-64 flex items-center justify-center text-gray-400 hover:text-[#A5C89E]/90 transition-all duration-300 overflow-hidden hover:bg-[#1a1a1a]/80 rounded-full hover:border hover:border-[#A5C89E]/30">
+            <button className="navbar-search-btn">
               <Search className="w-4 h-4 absolute left-2 group-hover:left-3 transition-all duration-300" />
               <input
                 type="text"
                 placeholder="Search courses..."
-                className="absolute inset-0 bg-transparent text-white text-sm pl-10 pr-4 outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 placeholder:text-gray-500"
+                className="navbar-search-input"
               />
             </button>
 
@@ -323,11 +323,11 @@ export function Navbar({
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                  className="relative w-10 h-10 bg-[#121212]/60 border border-[#A5C89E]/30 rounded-full flex items-center justify-center text-gray-400 hover:text-[#A5C89E] hover:bg-[#121212]/80 hover:border-[#A5C89E]/50 transition-all"
+                  className="navbar-icon-btn"
                 >
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#A5C89E] text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                    <span className="navbar-notification-badge">
                       {unreadCount}
                     </span>
                   )}
@@ -335,7 +335,7 @@ export function Navbar({
 
                 {isNotificationOpen && (
                   <div
-                    className="absolute right-0 top-full mt-2 w-80 bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl z-50 overflow-hidden animate-fadeSlideDown"
+                    className="navbar-notification-dropdown"
                     style={{
                       backdropFilter: "blur(20px)",
                       WebkitBackdropFilter: "blur(20px)",
@@ -352,9 +352,9 @@ export function Navbar({
                         {notifications.map((notification) => (
                           <button
                             key={notification.id}
-                            className={`w-full text-left px-4 py-3 transition-all border-b border-[#A5C89E]/10 last:border-b-0 ${notification.isRead
-                                ? 'bg-transparent hover:bg-[#A5C89E]/5'
-                                : 'bg-[#A5C89E]/5 hover:bg-[#A5C89E]/10'
+                            className={`navbar-notification-item ${notification.isRead
+                              ? 'navbar-notification-item-read'
+                              : 'navbar-notification-item-unread'
                               }`}
                           >
                             <div className="flex items-start gap-2">
@@ -386,19 +386,19 @@ export function Navbar({
                   onClick={() =>
                     setIsProfileOpen(!isProfileOpen)
                   }
-                  className="w-10 h-10 bg-[#A5C89E]/20 border border-[#A5C89E]/40 rounded-full flex items-center justify-center text-[#A5C89E]/90 hover:bg-[#A5C89E]/30 transition-all"
+                  className="navbar-profile-btn"
                 >
                   <User className="w-5 h-5" />
                 </button>
                 {isProfileOpen && (
                   <div
-                    className="absolute right-0 top-full mt-2 w-52 bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl z-50 py-2"
+                    className="navbar-profile-dropdown"
                     style={{
                       backdropFilter: "blur(20px)",
                       WebkitBackdropFilter: "blur(20px)",
                     }}
                   >
-                    <h3 className="text-xs font-mono text-[#ACBAC4]/70 mb-2 tracking-wider px-4 pt-2">
+                    <h3 className="navbar-dropdown-header">
                       PROFILE MENU
                     </h3>
                     <div className="space-y-0">
@@ -409,13 +409,13 @@ export function Navbar({
                           onMyProfile?.();
                           setIsProfileOpen(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                        className="navbar-dropdown-item"
                       >
                         My Profile
                       </a>
                       <a
                         href="#my-courses"
-                        className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                        className="navbar-dropdown-item"
                         onClick={(e) => {
                           e.preventDefault();
                           onMyCourses?.();
@@ -426,7 +426,7 @@ export function Navbar({
                       </a>
                       <a
                         href="#bookmarks"
-                        className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                        className="navbar-dropdown-item"
                         onClick={(e) => {
                           e.preventDefault();
                           onBookmarks?.();
@@ -439,7 +439,7 @@ export function Navbar({
                       <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
                         <a
                           href="#join-expert"
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                          className="navbar-dropdown-item"
                           onClick={(e) => {
                             e.preventDefault();
                             onJoinExpert?.();
@@ -464,7 +464,7 @@ export function Navbar({
                       <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
                         <a
                           href="#write-article"
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                          className="navbar-dropdown-item"
                           onClick={(e) => {
                             e.preventDefault();
                             onWriteArticle?.();
@@ -493,13 +493,13 @@ export function Navbar({
                             onSettings?.();
                             setIsProfileOpen(false);
                           }}
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium cursor-pointer"
+                          className="navbar-dropdown-item cursor-pointer"
                         >
                           Settings
                         </a>
                         <a
                           href="#admin-panel"
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                          className="navbar-dropdown-item"
                           onClick={(e) => {
                             e.preventDefault();
                             onAdminPanel?.();
@@ -510,7 +510,7 @@ export function Navbar({
                         </a>
                         <a
                           href="#feedback"
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                          className="navbar-dropdown-item"
                           onClick={(e) => {
                             e.preventDefault();
                             onFeedback?.();
@@ -524,7 +524,7 @@ export function Navbar({
                       <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
                         <button
                           onClick={onLogout}
-                          className="block w-full text-left px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all text-sm font-medium"
+                          className="navbar-dropdown-item-destructive"
                         >
                           Log Out
                         </button>
@@ -536,13 +536,13 @@ export function Navbar({
             ) : (
               <>
                 <button
-                  className="px-4 py-1.5 text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide"
+                  className="navbar-signin-btn"
                   onClick={onSignIn}
                 >
                   SIGN IN
                 </button>
                 <button
-                  className="px-5 py-1.5 bg-transparent border border-[#A5C89E]/60 text-[#A5C89E]/90 rounded-full hover:bg-[#A5C89E]/80 hover:text-black transition-all text-sm font-medium tracking-wide"
+                  className="navbar-signup-btn"
                   onClick={onSignUp}
                 >
                   SIGN UP
@@ -553,7 +553,7 @@ export function Navbar({
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-[#A5C89E]"
+            className="navbar-mobile-menu-btn"
             onClick={() =>
               setIsMobileMenuOpen(!isMobileMenuOpen)
             }
@@ -569,11 +569,11 @@ export function Navbar({
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden mt-4 bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/20 rounded-2xl p-6">
+        <div className="navbar-mobile-dropdown">
           <div className="space-y-4">
             <div className="relative">
               <button
-                className="text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide"
+                className="navbar-mobile-link-btn"
                 onClick={() =>
                   setIsMobileCoursesOpen(!isMobileCoursesOpen)
                 }
@@ -582,7 +582,7 @@ export function Navbar({
                 <ChevronDown className="w-4 h-4 inline-block ml-1" />
               </button>
               {isMobileCoursesOpen && (
-                <div className="mt-3 ml-4 space-y-2.5 pl-4 border-l border-[#A5C89E]/20 animate-fadeSlideDown">
+                <div className="navbar-mobile-sub-dropdown">
                   <h3 className="text-xs font-mono text-gray-500 mb-3 tracking-wider">
                     BROWSE COURSES
                   </h3>
@@ -602,7 +602,7 @@ export function Navbar({
                           setIsMobileCoursesOpen(false);
                           setIsMobileMenuOpen(false);
                         }}
-                        className="flex items-center w-full text-left text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium tracking-wide py-2 px-3 rounded-lg"
+                        className="navbar-mobile-sub-item"
                       >
                         <Icon className="w-4 h-4 mr-2 opacity-60" />
                         {category.name}
@@ -614,14 +614,14 @@ export function Navbar({
             </div>
             <a
               href="#articles"
-              className="block text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide"
+              className="navbar-mobile-link"
               onClick={onArticles}
             >
               ARTICLES
             </a>
             <div className="relative">
               <button
-                className="text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide"
+                className="navbar-mobile-link-btn"
                 onClick={() =>
                   setIsMobileTutorialsOpen(
                     !isMobileTutorialsOpen,
@@ -632,7 +632,7 @@ export function Navbar({
                 <ChevronDown className="w-4 h-4 inline-block ml-1" />
               </button>
               {isMobileTutorialsOpen && (
-                <div className="mt-3 ml-4 space-y-2.5 pl-4 border-l border-[#A5C89E]/20 animate-fadeSlideDown">
+                <div className="navbar-mobile-sub-dropdown">
                   <h3 className="text-xs font-mono text-gray-500 mb-3 tracking-wider">
                     BROWSE TUTORIALS
                   </h3>
@@ -640,7 +640,7 @@ export function Navbar({
                     <a
                       key={topic}
                       href="#tutorials"
-                      className="block text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium tracking-wide py-2 px-3 rounded-lg"
+                      className="navbar-mobile-sub-item"
                       onClick={() => {
                         setIsMobileTutorialsOpen(false);
                         setIsMobileMenuOpen(false);
@@ -657,13 +657,13 @@ export function Navbar({
                 <>
                   <a
                     href="#my-profile"
-                    className="block w-full px-4 py-2 text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide text-left"
+                    className="navbar-mobile-link"
                   >
                     MY PROFILE
                   </a>
                   <a
                     href="#my-courses"
-                    className="block w-full px-4 py-2 text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide text-left"
+                    className="navbar-mobile-link"
                     onClick={(e) => {
                       e.preventDefault();
                       onMyCourses?.();
@@ -674,12 +674,12 @@ export function Navbar({
                   </a>
                   <a
                     href="#edit-profile"
-                    className="block w-full px-4 py-2 text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide text-left"
+                    className="navbar-mobile-link"
                   >
                     EDIT PROFILE
                   </a>
                   <button
-                    className="w-full px-4 py-2 text-red-400 hover:text-red-300 transition-colors text-sm font-medium tracking-wide text-left"
+                    className="navbar-mobile-link text-red-400 hover:text-red-300"
                     onClick={onLogout}
                   >
                     LOG OUT
@@ -688,13 +688,13 @@ export function Navbar({
               ) : (
                 <>
                   <button
-                    className="w-full px-4 py-2 text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-medium tracking-wide text-left"
+                    className="navbar-mobile-link"
                     onClick={onSignIn}
                   >
                     SIGN IN
                   </button>
                   <button
-                    className="w-full px-5 py-2 bg-transparent border border-[#A5C89E]/60 text-[#A5C89E]/90 rounded-full hover:bg-[#A5C89E]/80 hover:text-black transition-all text-sm font-medium tracking-wide"
+                    className="navbar-signup-btn w-full"
                     onClick={onSignUp}
                   >
                     SIGN UP
