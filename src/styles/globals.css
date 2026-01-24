@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --accent-color: rgba(255, 159, 26, 0.85);
+  
+  /* Theme System - CSS Variables */
+  --accent-primary: #A5C89E;
+  --accent-primary-rgb: 165, 200, 158;
+  --theme-transition: all 0.3s ease;
+  
+  /* Design Tokens */
+  --background-primary: #0b0b0b;
+  --background-secondary: #121212;
+  --surface-card: rgba(18, 18, 18, 0.8);
+  --surface-navbar: rgba(18, 18, 18, 0.8);
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --border-muted: rgba(var(--accent-primary-rgb), 0.3);
+  --accent-hover: rgba(var(--accent-primary-rgb), 0.7);
+}
+
+/* Force scrollbar to always be visible to prevent layout shift */
+html {
+  overflow-y: scroll;
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes fadeSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 3s ease-in-out infinite 1s;
+}
+
+.animate-fadeSlideDown {
+  animation: fadeSlideDown 0.2s ease-out forwards;
+}
+
+/* Scrollbar hide */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animation delays */
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+.delay-700 {
+  animation-delay: 0.7s;
+}
+
+.delay-1000 {
+  animation-delay: 1s;
+}
+
+.delay-1200 {
+  animation-delay: 1.2s;
+}
+
+.delay-1500 {
+  animation-delay: 1.5s;
+}

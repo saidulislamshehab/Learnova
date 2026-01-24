@@ -1,0 +1,326 @@
+import { useState } from 'react';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { Navbar } from './components/Navbar';
+import { Hero } from './components/Hero';
+import { ExploreTopics } from './components/ExploreTopics';
+import { Courses } from './components/Courses';
+import { Footer } from './components/Footer';
+import { SignIn } from './components/SignIn';
+import { SignUp } from './components/SignUp';
+import { AllCourses } from './components/AllCourses';
+import { Articles } from './components/Articles';
+import { ArticleDetail } from './components/ArticleDetail';
+import { CourseDetail } from './components/CourseDetail';
+import { CoursePayment } from './components/CoursePayment';
+import { MyProfile } from './components/MyProfile';
+import { EditProfile } from './components/EditProfile';
+import { MyCourses } from './components/MyCourses';
+import { CourseContent } from './components/CourseContent';
+import { Bookmarks } from './components/Bookmarks';
+import { WriteArticle } from './components/WriteArticle';
+import { JoinInstructor } from './components/JoinInstructor';
+import { JoinExpert } from './components/JoinExpert';
+import { PublishCourse } from './components/PublishCourse';
+import { Feedback } from './components/Feedback';
+import { InstructorMyCourses } from './components/InstructorMyCourses';
+import { Settings } from './components/Settings';
+import { AdminPanel } from './components/AdminPanel';
+
+type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail' | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle' | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings' | 'adminpanel';
+
+export default function App() {
+  const [currentView, setCurrentView] = useState<View>('home');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
+  const [selectedArticleId, setSelectedArticleId] = useState<number>(1);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('PY-001');
+  const [editCourseId, setEditCourseId] = useState<string>('');
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    setCurrentView('home');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentView('home');
+  };
+
+  const handleNavigateToAllCourses = (category: string = 'All Categories') => {
+    setSelectedCategory(category);
+    setCurrentView('allcourses');
+  };
+
+  const handleNavigateToArticleDetail = (articleId: number) => {
+    setSelectedArticleId(articleId);
+    setCurrentView('articledetail');
+  };
+
+  const handleNavigateToCourseDetail = (courseId: string) => {
+    setSelectedCourseId(courseId);
+    setCurrentView('coursedetail');
+  };
+
+  return (
+    <ThemeProvider>
+      <div className="min-h-screen bg-[#0b0b0b] relative transition-colors duration-300">
+        {/* Grid Background */}
+        <div className="fixed inset-0 pointer-events-none z-0" style={{
+          backgroundImage: `
+            linear-gradient(rgba(128, 128, 128, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(128, 128, 128, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '80px 80px'
+        }}></div>
+
+        {/* Noise Texture */}
+        <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' /%3E%3C/svg%3E")`
+        }}></div>
+
+        {/* Glowing Dots */}
+        <div className="fixed top-1/4 left-1/4 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-40 animate-pulse pointer-events-none z-0"></div>
+        <div className="fixed top-1/3 right-1/3 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-30 animate-pulse pointer-events-none z-0"></div>
+        <div className="fixed top-2/3 left-1/2 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-50 animate-pulse pointer-events-none z-0"></div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          {/* Hide navbar when in admin panel */}
+          {currentView !== 'adminpanel' && (
+            <Navbar 
+              currentView={currentView}
+              isAuthenticated={isAuthenticated}
+              onSignIn={() => setCurrentView('signin')}
+              onSignUp={() => setCurrentView('signup')}
+              onHome={() => setCurrentView('home')}
+              onLogout={handleLogout}
+              onAllCourses={handleNavigateToAllCourses}
+              onArticles={() => setCurrentView('articles')}
+              onMyProfile={() => setCurrentView('myprofile')}
+              onMyCourses={() => setCurrentView('mycourses')}
+              onBookmarks={() => setCurrentView('bookmarks')}
+              onWriteArticle={() => setCurrentView('writearticle')}
+              onJoinInstructor={() => setCurrentView('joininstructor')}
+              onJoinExpert={() => setCurrentView('joinexpert')}
+              onPublishCourse={() => setCurrentView('publishcourse')}
+              onFeedback={() => setCurrentView('feedback')}
+              onInstructorMyCourses={() => setCurrentView('instructormycourses')}
+              onSettings={() => setCurrentView('settings')}
+              onAdminPanel={() => setCurrentView('adminpanel')}
+            />
+          )}
+          
+          {currentView === 'home' && (
+            <>
+              <Hero 
+                onExploreCourses={() => handleNavigateToAllCourses()} 
+                onViewDocs={() => setCurrentView('articles')}
+              />
+              <ExploreTopics onViewAllArticles={() => setCurrentView('articles')} />
+              <Courses onCourseClick={handleNavigateToCourseDetail} />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'signin' && (
+            <SignIn 
+              onSwitchToSignUp={() => setCurrentView('signup')}
+              onBackToHome={() => setCurrentView('home')}
+              onLogin={handleLogin}
+            />
+          )}
+
+          {currentView === 'signup' && (
+            <SignUp 
+              onSwitchToSignIn={() => setCurrentView('signin')}
+              onBackToHome={() => setCurrentView('home')}
+            />
+          )}
+
+          {currentView === 'allcourses' && (
+            <>
+              <AllCourses 
+                category={selectedCategory} 
+                onCourseClick={handleNavigateToCourseDetail}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'articles' && (
+            <>
+              <Articles onArticleClick={handleNavigateToArticleDetail} />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'articledetail' && (
+            <>
+              <ArticleDetail 
+                articleId={selectedArticleId} 
+                onBack={() => setCurrentView('articles')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'coursedetail' && (
+            <>
+              <CourseDetail 
+                courseId={selectedCourseId} 
+                onBack={() => setCurrentView('allcourses')}
+                onEnroll={(courseId) => {
+                  setSelectedCourseId(courseId);
+                  setCurrentView('payment');
+                }}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'payment' && (
+            <>
+              <CoursePayment 
+                courseId={selectedCourseId} 
+                onBack={() => setCurrentView('coursedetail')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'myprofile' && (
+            <>
+              <MyProfile 
+                onBack={() => setCurrentView('home')} 
+                onEditProfile={() => setCurrentView('editprofile')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'editprofile' && (
+            <>
+              <EditProfile 
+                onBack={() => setCurrentView('myprofile')} 
+                onSave={() => setCurrentView('myprofile')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'mycourses' && (
+            <>
+              <MyCourses 
+                onBack={() => setCurrentView('home')}
+                onCourseClick={(courseId) => {
+                  setSelectedCourseId(courseId);
+                  setCurrentView('coursecontent');
+                }}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'coursecontent' && (
+            <>
+              <CourseContent 
+                courseId={selectedCourseId} 
+                onBack={() => setCurrentView('mycourses')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'bookmarks' && (
+            <>
+              <Bookmarks 
+                onArticleClick={handleNavigateToArticleDetail}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'writearticle' && (
+            <>
+              <WriteArticle 
+                onBack={() => setCurrentView('articles')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'joininstructor' && (
+            <>
+              <JoinInstructor 
+                onBack={() => setCurrentView('home')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'joinexpert' && (
+            <>
+              <JoinExpert 
+                onBack={() => setCurrentView('home')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'publishcourse' && (
+            <>
+              <PublishCourse 
+                onBack={() => setCurrentView('home')}
+                onMyCourses={() => setCurrentView('instructormycourses')}
+                editMode={!!editCourseId}
+                editCourseId={editCourseId}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'feedback' && (
+            <>
+              <Feedback 
+                onBack={() => setCurrentView('home')}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'instructormycourses' && (
+            <>
+              <InstructorMyCourses 
+                onBack={() => setCurrentView('home')}
+                onCreateCourse={() => {
+                  setEditCourseId('');
+                  setCurrentView('publishcourse');
+                }}
+                onEditCourse={(courseId) => {
+                  setEditCourseId(courseId);
+                  setCurrentView('publishcourse');
+                }}
+              />
+              <Footer />
+            </>
+          )}
+
+          {currentView === 'settings' && (
+            <>
+              <Settings 
+                onBack={() => setCurrentView('home')}
+                onEditProfile={() => setCurrentView('editprofile')}
+              />
+            </>
+          )}
+
+          {currentView === 'adminpanel' && (
+            <AdminPanel 
+              onBack={() => setCurrentView('home')}
+            />
+          )}
+        </div>
+      </div>
+    </ThemeProvider>
+  );
+}
