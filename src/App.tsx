@@ -89,7 +89,7 @@ export default function App() {
       {/* Content */}
       <div className="relative z-10">
         {/* Hide navbar when in admin panel */}
-        {currentView !== 'adminpanel' && (
+        {currentView !== 'adminpanel' && currentView !== 'settings' && (
           <Navbar
             currentView={currentView}
             isAuthenticated={isAuthenticated}
