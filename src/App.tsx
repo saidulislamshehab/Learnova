@@ -25,7 +25,7 @@ import { Feedback } from './components/Pages/Feedback';
 import { InstructorMyCourses } from './components/Pages/InstructorMyCourses';
 import { Settings } from './components/Pages/Settings';
 import { AdminPanel } from './components/Pages/AdminPanel';
-
+//shehab
 type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail'
   | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle'
   | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings'
