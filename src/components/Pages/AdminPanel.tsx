@@ -926,9 +926,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-16 sm:top-20 left-0 bottom-0 w-64 sm:w-72 bg-white border-r border-gray-200 transition-transform duration-300 z-30 overflow-y-auto shadow-lg ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`fixed top-16 sm:top-20 left-0 bottom-0 w-64 sm:w-72 bg-white border-r border-gray-200 transition-transform duration-300 z-30 overflow-y-auto shadow-lg ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
       >
         <div className="p-4 sm:p-6">
           <h2 className="text-xs sm:text-sm text-gray-500 mb-4 tracking-wider uppercase font-semibold">Navigation</h2>
@@ -944,11 +943,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     setIsSidebarOpen(false);
                     setDetailView({ type: 'none' });
                   }}
-                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-blue-50 border border-blue-200 text-blue-700'
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 border border-transparent'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl text-sm font-medium transition-all ${isActive
+                    ? 'bg-blue-50 border border-blue-200 text-blue-700'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 border border-transparent'
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   <span className="flex-1 text-left text-xs sm:text-sm truncate">{item.label}</span>
@@ -1065,24 +1063,21 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                 </div>
               </div>
 
-              <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px]">
                     <thead>
-                      <tr className="border-b border-[#A5C89E]/20 bg-[#0b0b0b]/50">
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-400">
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700">
                           Name
                         </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-400 hidden md:table-cell">
+                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">
                           Email
                         </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-400">
+                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700">
                           Role
                         </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-400">
-                          Status
-                        </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-400">
+                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1091,40 +1086,29 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       {users.map((user) => (
                         <tr
                           key={user.id}
-                          className="border-b border-[#A5C89E]/10 hover:bg-[#A5C89E]/5 transition-colors"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white font-medium">{user.name}</td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-400 hidden md:table-cell">{user.email}</td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 font-medium">{user.name}</td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{user.email}</td>
                           <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
-                            <span className="px-2 sm:px-3 py-1 bg-[#A5C89E]/10 text-[#A5C89E] rounded-lg text-xs font-medium">
+                            <span className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
                               {user.role}
                             </span>
                           </td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
-                            <span
-                              className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-medium ${
-                                user.status === 'Active'
-                                  ? 'bg-green-500/10 text-green-400'
-                                  : 'bg-gray-500/10 text-gray-400'
-                              }`}
-                            >
-                              {user.status}
-                            </span>
-                          </td>
+
                           <td className="px-4 sm:px-6 py-3 sm:py-4">
                             <div className="flex gap-1 sm:gap-2">
                               <button
                                 onClick={() =>
                                   handleViewDetails({ type: 'user', id: user.id })
                                 }
-                                className="p-1.5 sm:p-2 text-gray-400 hover:text-[#A5C89E] transition-colors"
-                                title="View"
+                                className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium flex items-center gap-1"
                               >
-                                <Eye className="w-4 h-4" />
+                                View
                               </button>
                               <button
                                 onClick={() => handleDelete('user', user.id)}
-                                className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 transition-colors"
+                                className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors"
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1137,6 +1121,19 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   </table>
                 </div>
               </div>
+              <div className="flex items-center justify-between mt-4 px-2">
+                <p className="text-sm text-gray-500">
+                  Showing {users.length} of {stats[0].value} users
+                </p>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50" disabled>
+                    Previous
+                  </button>
+                  <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50">
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1144,30 +1141,30 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           {activeSection === 'instructor-applications' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-white mb-2">Instructor Applications</h2>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructor Applications</h2>
+                <p className="text-gray-600 text-sm">
                   Pending applications: {instructorApplications.length}
                 </p>
               </div>
 
-              <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#A5C89E]/20 bg-[#0b0b0b]/50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Name
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Email
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Expertise
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Applied Date
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1176,31 +1173,31 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       {instructorApplications.map((app) => (
                         <tr
                           key={app.id}
-                          className="border-b border-[#A5C89E]/10 hover:bg-[#A5C89E]/5 transition-colors"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-400">{app.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">{app.expertise}</td>
-                          <td className="px-6 py-4 text-sm text-gray-400">{app.appliedDate}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">
                               <button
                                 onClick={() =>
                                   handleViewDetails({ type: 'instructor-app', id: app.id })
                                 }
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-[#A5C89E]/30 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/10 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
                               >
                                 View
                               </button>
                               <button
                                 onClick={() => handleApprove('instructor application', app.id)}
-                                className="px-3 py-1.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject('instructor application', app.id)}
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-gray-600/50 text-gray-400 rounded-lg hover:bg-[#121212] transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
                               >
                                 Reject
                               </button>
@@ -1219,30 +1216,30 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           {activeSection === 'expert-applications' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-white mb-2">Expert Applications</h2>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Expert Applications</h2>
+                <p className="text-gray-600 text-sm">
                   Pending applications: {expertApplications.length}
                 </p>
               </div>
 
-              <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#A5C89E]/20 bg-[#0b0b0b]/50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Name
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Email
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Expertise
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Applied Date
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1251,31 +1248,31 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       {expertApplications.map((app) => (
                         <tr
                           key={app.id}
-                          className="border-b border-[#A5C89E]/10 hover:bg-[#A5C89E]/5 transition-colors"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-400">{app.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">{app.expertise}</td>
-                          <td className="px-6 py-4 text-sm text-gray-400">{app.appliedDate}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">
                               <button
                                 onClick={() =>
                                   handleViewDetails({ type: 'expert-app', id: app.id })
                                 }
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-[#A5C89E]/30 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/10 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
                               >
                                 View
                               </button>
                               <button
                                 onClick={() => handleApprove('expert application', app.id)}
-                                className="px-3 py-1.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject('expert application', app.id)}
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-gray-600/50 text-gray-400 rounded-lg hover:bg-[#121212] transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
                               >
                                 Reject
                               </button>
@@ -1294,30 +1291,30 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           {activeSection === 'articles-approval' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-white mb-2">Articles Approval</h2>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Articles Approval</h2>
+                <p className="text-gray-600 text-sm">
                   Pending articles: {pendingArticles.length}
                 </p>
               </div>
 
-              <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#A5C89E]/20 bg-[#0b0b0b]/50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Title
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Author
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Category
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Submitted
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1326,14 +1323,14 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       {pendingArticles.map((article) => (
                         <tr
                           key={article.id}
-                          className="border-b border-[#A5C89E]/10 hover:bg-[#A5C89E]/5 transition-colors"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-6 py-4 text-sm text-white font-medium">
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                             {article.title}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-400">{article.author}</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">{article.category}</td>
-                          <td className="px-6 py-4 text-sm text-gray-400">
+                          <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
                             {article.submittedDate}
                           </td>
                           <td className="px-6 py-4">
@@ -1342,19 +1339,19 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                 onClick={() =>
                                   handleViewDetails({ type: 'article', id: article.id })
                                 }
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-[#A5C89E]/30 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/10 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
                               >
                                 View
                               </button>
                               <button
                                 onClick={() => handleApprove('article', article.id)}
-                                className="px-3 py-1.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject('article', article.id)}
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-gray-600/50 text-gray-400 rounded-lg hover:bg-[#121212] transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
                               >
                                 Reject
                               </button>
@@ -1373,30 +1370,30 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           {activeSection === 'courses-approval' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-white mb-2">Courses Approval</h2>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Courses Approval</h2>
+                <p className="text-gray-600 text-sm">
                   Pending courses: {pendingCourses.length}
                 </p>
               </div>
 
-              <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#A5C89E]/20 bg-[#0b0b0b]/50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Title
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Instructor
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Category
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Submitted
                         </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -1405,14 +1402,14 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       {pendingCourses.map((course) => (
                         <tr
                           key={course.id}
-                          className="border-b border-[#A5C89E]/10 hover:bg-[#A5C89E]/5 transition-colors"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-6 py-4 text-sm text-white font-medium">
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                             {course.title}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-400">{course.instructor}</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">{course.category}</td>
-                          <td className="px-6 py-4 text-sm text-gray-400">
+                          <td className="px-6 py-4 text-sm text-gray-600">{course.instructor}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{course.category}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
                             {course.submittedDate}
                           </td>
                           <td className="px-6 py-4">
@@ -1421,19 +1418,19 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                 onClick={() =>
                                   handleViewDetails({ type: 'course', id: course.id })
                                 }
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-[#A5C89E]/30 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/10 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
                               >
                                 View
                               </button>
                               <button
                                 onClick={() => handleApprove('course', course.id)}
-                                className="px-3 py-1.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => handleReject('course', course.id)}
-                                className="px-3 py-1.5 bg-[#121212]/80 border border-gray-600/50 text-gray-400 rounded-lg hover:bg-[#121212] transition-all text-xs font-medium"
+                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
                               >
                                 Reject
                               </button>
@@ -1618,13 +1615,12 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </div>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-lg text-xs font-medium border ${
-                          report.status === 'Pending'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : report.status === 'Under Review'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-green-50 text-green-700 border-green-200'
-                        }`}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium border ${report.status === 'Pending'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : report.status === 'Under Review'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-green-50 text-green-700 border-green-200'
+                          }`}
                       >
                         {report.status}
                       </span>
@@ -1693,13 +1689,12 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </p>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-lg text-xs font-medium border ${
-                          feedback.status === 'New'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : feedback.status === 'In Progress'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-gray-50 text-gray-600 border-gray-200'
-                        }`}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium border ${feedback.status === 'New'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : feedback.status === 'In Progress'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-gray-50 text-gray-600 border-gray-200'
+                          }`}
                       >
                         {feedback.status}
                       </span>
