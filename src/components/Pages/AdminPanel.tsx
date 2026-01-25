@@ -1655,7 +1655,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       <button className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium">
                         Resolve
                       </button>
-                      <button className="px-4 py-2 bg-red-50 border border-red-300 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium">
+                      <button className="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all text-xs font-medium">
                         Take Action
                       </button>
                     </div>
