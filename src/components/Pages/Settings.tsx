@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
+
 import {
   User,
   Lock,
@@ -21,10 +21,9 @@ interface SettingsProps {
   onEditProfile?: () => void;
 }
 
-type SettingsSection = 'profile' | 'password' | '2fa' | 'notifications' | 'theme' | 'delete';
+type SettingsSection = 'profile' | 'password' | '2fa' | 'notifications' | 'delete';
 
 export function Settings({ onBack, onEditProfile }: SettingsProps) {
-  const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -51,7 +50,7 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
     { id: 'password' as SettingsSection, label: 'Change Password', icon: Lock },
     { id: '2fa' as SettingsSection, label: 'Two-Factor Authentication', icon: Shield },
     { id: 'notifications' as SettingsSection, label: 'Notifications', icon: Bell },
-    { id: 'theme' as SettingsSection, label: 'Theme Settings', icon: Palette },
+
     { id: 'delete' as SettingsSection, label: 'Delete Account', icon: Trash2 },
   ];
 
@@ -103,8 +102,8 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                     key={item.id}
                     onClick={() => handleSectionChange(item.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${isActive
-                        ? 'bg-[#A5C89E]/10 border border-[#A5C89E]/30 text-[#A5C89E]'
-                        : 'text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5'
+                      ? 'bg-[#A5C89E]/10 border border-[#A5C89E]/30 text-[#A5C89E]'
+                      : 'text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5'
                       }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -345,213 +344,7 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
               </div>
             )}
 
-            {/* Theme Settings Section */}
-            {activeSection === 'theme' && (
-              <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-6 sm:p-8">
-                <h3 className="text-2xl font-bold text-white mb-2">Theme Settings</h3>
-                <p className="text-gray-400 text-sm mb-6">
-                  Customize your visual experience
-                </p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {/* Theme: Lavender Gray */}
-                  <button
-                    onClick={() => setTheme('#ACBAC4')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#ACBAC4'
-                        ? 'border-[#ACBAC4] shadow-lg shadow-[#ACBAC4]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#ACBAC4]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#ACBAC4] shadow-lg shadow-[#ACBAC4]/30 transition-transform group-hover:scale-110">
-                        {theme === '#ACBAC4' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#ACBAC4]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Lavender</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#ACBAC4</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme: Warm Beige */}
-                  <button
-                    onClick={() => setTheme('#E1D9BC')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#E1D9BC'
-                        ? 'border-[#E1D9BC] shadow-lg shadow-[#E1D9BC]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#E1D9BC]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#E1D9BC] shadow-lg shadow-[#E1D9BC]/30 transition-transform group-hover:scale-110">
-                        {theme === '#E1D9BC' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#E1D9BC]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Warm Beige</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#E1D9BC</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme: Golden Yellow */}
-                  <button
-                    onClick={() => setTheme('#F7DB91')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#F7DB91'
-                        ? 'border-[#F7DB91] shadow-lg shadow-[#F7DB91]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#F7DB91]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#F7DB91] shadow-lg shadow-[#F7DB91]/30 transition-transform group-hover:scale-110">
-                        {theme === '#F7DB91' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#F7DB91]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Golden</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#F7DB91</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme: Lime Green */}
-                  <button
-                    onClick={() => setTheme('#D8E983')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#D8E983'
-                        ? 'border-[#D8E983] shadow-lg shadow-[#D8E983]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#D8E983]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#D8E983] shadow-lg shadow-[#D8E983]/30 transition-transform group-hover:scale-110">
-                        {theme === '#D8E983' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#D8E983]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Lime</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#D8E983</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme: Sage Green */}
-                  <button
-                    onClick={() => setTheme('#A5C89E')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#A5C89E'
-                        ? 'border-[#A5C89E] shadow-lg shadow-[#A5C89E]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#A5C89E]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#A5C89E] shadow-lg shadow-[#A5C89E]/30 transition-transform group-hover:scale-110">
-                        {theme === '#A5C89E' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#A5C89E]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Sage</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#A5C89E</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme: Dusty Rose */}
-                  <button
-                    onClick={() => setTheme('#9F8383')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#9F8383'
-                        ? 'border-[#9F8383] shadow-lg shadow-[#9F8383]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#9F8383]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#9F8383] shadow-lg shadow-[#9F8383]/30 transition-transform group-hover:scale-110">
-                        {theme === '#9F8383' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#9F8383]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Dusty Rose</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#9F8383</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme: Coral Orange */}
-                  <button
-                    onClick={() => setTheme('#FD8A6B')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#FD8A6B'
-                        ? 'border-[#FD8A6B] shadow-lg shadow-[#FD8A6B]/20'
-                        : 'border-[#A5C89E]/20 hover:border-[#FD8A6B]/40'
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-full bg-[#FD8A6B] shadow-lg shadow-[#FD8A6B]/30 transition-transform group-hover:scale-110">
-                        {theme === '#FD8A6B' && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#FD8A6B]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-white mb-1">Coral</p>
-                        <p className="text-[10px] text-gray-500 font-mono">#FD8A6B</p>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                <div className="mt-6 p-4 bg-[#A5C89E]/5 border border-[#A5C89E]/20 rounded-lg">
-                  <p className="text-sm text-gray-400 flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-[#A5C89E]" />
-                    <span>Theme changes apply globally across the entire website</span>
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Delete Account Section */}
             {activeSection === 'delete' && (

@@ -20,6 +20,11 @@ import {
   Filter,
   ChevronLeft,
   AlertTriangle,
+  Plus,
+  Edit,
+  Save,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -29,14 +34,16 @@ interface AdminPanelProps {
 type ActiveSection =
   | 'overview'
   | 'users'
+  | 'experts'
+  | 'instructors'
   | 'instructor-applications'
   | 'expert-applications'
   | 'articles-approval'
   | 'courses-approval'
-  | 'instructors'
-  | 'experts'
+  | 'tutorials'
   | 'reports'
   | 'feedback';
+
 
 type DetailView =
   | { type: 'none' }
@@ -53,6 +60,28 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [detailView, setDetailView] = useState<DetailView>({ type: 'none' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  // Tutorial Management State
+  const [tutorials, setTutorials] = useState([
+    { id: '1', title: 'C Programming Basics', category: 'C', status: 'Active', articleCount: 15, description: 'Complete guide to C', articles: [] as any[] },
+    { id: '2', title: 'Advanced Python', category: 'Python', status: 'Draft', articleCount: 8, description: 'Master Python features', articles: [] as any[] },
+  ]);
+  const [editingTutorial, setEditingTutorial] = useState<any>(null);
+  const [articleSearchQuery, setArticleSearchQuery] = useState('');
+
+  const allDatabaseArticles = [
+    { id: '101', title: 'Intro to C', category: 'C', author: 'Dr. Coder' },
+    { id: '102', title: 'Variables in C', category: 'C', author: 'Dr. Coder' },
+    { id: '103', title: 'Pointers Explained', category: 'C', author: 'Dr. Coder' },
+    { id: '104', title: 'Python Lists', category: 'Python', author: 'Py Guru' },
+    { id: '105', title: 'Python Loops', category: 'Python', author: 'Py Guru' },
+    { id: '106', title: 'Java Classes', category: 'Java', author: 'Java Master' },
+    { id: '107', title: 'React Hooks', category: 'Web Dev', author: 'Frontend Pro' },
+    { id: '108', title: 'Neural Networks', category: 'AI/ML', author: 'AI Expert' },
+    { id: '109', title: 'Graph Algorithms', category: 'DSA', author: 'Algo Master' },
+    { id: '110', title: 'Docker Basics', category: 'DevOps', author: 'Cloud Ninja' },
+  ];
 
   // Standard background component
   const BackgroundEffects = () => (
@@ -87,12 +116,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const menuItems = [
     { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'instructors', label: 'Instructors', icon: GraduationCap },
+    { id: 'experts', label: 'Experts', icon: Award },
     { id: 'instructor-applications', label: 'Instructor Applications', icon: UserPlus },
     { id: 'expert-applications', label: 'Expert Applications', icon: UserCheck },
     { id: 'articles-approval', label: 'Articles Approval', icon: FileText },
     { id: 'courses-approval', label: 'Courses Approval', icon: BookOpen },
-    { id: 'instructors', label: 'Instructors', icon: GraduationCap },
-    { id: 'experts', label: 'Experts', icon: Award },
+    { id: 'tutorials', label: 'Tutorials', icon: BookOpen },
     { id: 'reports', label: 'Article Reports', icon: AlertTriangle },
     { id: 'feedback', label: 'Feedback', icon: MessageSquare },
   ] as const;
@@ -119,6 +149,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       email: 'alex.johnson@email.com',
       role: 'Student',
       status: 'Active',
+      joinDate: '2025-12-10',
+      lastLogin: '2026-01-25',
     },
     {
       id: '2',
@@ -126,6 +158,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       email: 'sarah.williams@email.com',
       role: 'Instructor',
       status: 'Active',
+      joinDate: '2025-11-20',
+      lastLogin: '2026-01-24',
     },
     {
       id: '3',
@@ -133,6 +167,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       email: 'mike.chen@email.com',
       role: 'Expert',
       status: 'Active',
+      joinDate: '2025-10-15',
+      lastLogin: '2026-01-22',
     },
     {
       id: '4',
@@ -140,6 +176,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       email: 'emma.davis@email.com',
       role: 'Student',
       status: 'Inactive',
+      joinDate: '2026-01-05',
+      lastLogin: '2026-01-20',
     },
     {
       id: '5',
@@ -147,6 +185,53 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       email: 'james.brown@email.com',
       role: 'Instructor',
       status: 'Active',
+      joinDate: '2025-09-30',
+      lastLogin: '2026-01-21',
+    },
+    {
+      id: '6',
+      name: 'Linda Wilson',
+      email: 'linda.wilson@email.com',
+      role: 'Student',
+      status: 'Active',
+      joinDate: '2026-01-12',
+      lastLogin: '2026-01-26',
+    },
+    {
+      id: '7',
+      name: 'Robert Miller',
+      email: 'robert.miller@email.com',
+      role: 'Expert',
+      status: 'Active',
+      joinDate: '2025-12-01',
+      lastLogin: '2026-01-25',
+    },
+    {
+      id: '8',
+      name: 'William Taylor',
+      email: 'william.taylor@email.com',
+      role: 'Student',
+      status: 'Suspended',
+      joinDate: '2025-12-15',
+      lastLogin: '2026-01-10',
+    },
+    {
+      id: '9',
+      name: 'David Anderson',
+      email: 'david.anderson@email.com',
+      role: 'Instructor',
+      status: 'Active',
+      joinDate: '2025-11-05',
+      lastLogin: '2026-01-23',
+    },
+    {
+      id: '10',
+      name: 'Jennifer Thomas',
+      email: 'jennifer.thomas@email.com',
+      role: 'Student',
+      status: 'Active',
+      joinDate: '2026-01-18',
+      lastLogin: '2026-01-26',
     },
   ];
 
@@ -1099,9 +1184,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                           <td className="px-4 sm:px-6 py-3 sm:py-4">
                             <div className="flex gap-1 sm:gap-2">
                               <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'user', id: user.id })
-                                }
+                                onClick={() => setSelectedUser(user)}
                                 className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium flex items-center gap-1"
                               >
                                 View
@@ -1134,536 +1217,653 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            </div >
+          )
+          }
 
           {/* Instructor Applications */}
-          {activeSection === 'instructor-applications' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructor Applications</h2>
-                <p className="text-gray-600 text-sm">
-                  Pending applications: {instructorApplications.length}
-                </p>
-              </div>
+          {
+            activeSection === 'instructor-applications' && (
+              <div>
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructor Applications</h2>
+                    <p className="text-gray-600 text-sm">
+                      Pending applications: {instructorApplications.length}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search applications..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Name
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Email
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Expertise
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Applied Date
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {instructorApplications.map((app) => (
-                        <tr
-                          key={app.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'instructor-app', id: app.id })
-                                }
-                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleApprove('instructor application', app.id)}
-                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject('instructor application', app.id)}
-                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </td>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Name
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Email
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Expertise
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Applied Date
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {instructorApplications.map((app) => (
+                          <tr
+                            key={app.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleViewDetails({ type: 'instructor-app', id: app.id })
+                                  }
+                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleApprove('instructor application', app.id)}
+                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject('instructor application', app.id)}
+                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Expert Applications */}
-          {activeSection === 'expert-applications' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Expert Applications</h2>
-                <p className="text-gray-600 text-sm">
-                  Pending applications: {expertApplications.length}
-                </p>
-              </div>
+          {
+            activeSection === 'expert-applications' && (
+              <div>
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Expert Applications</h2>
+                    <p className="text-gray-600 text-sm">
+                      Pending applications: {expertApplications.length}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search applications..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Name
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Email
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Expertise
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Applied Date
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expertApplications.map((app) => (
-                        <tr
-                          key={app.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'expert-app', id: app.id })
-                                }
-                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleApprove('expert application', app.id)}
-                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject('expert application', app.id)}
-                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </td>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Name
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Email
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Expertise
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Applied Date
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {expertApplications.map((app) => (
+                          <tr
+                            key={app.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleViewDetails({ type: 'expert-app', id: app.id })
+                                  }
+                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleApprove('expert application', app.id)}
+                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject('expert application', app.id)}
+                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Articles Approval */}
-          {activeSection === 'articles-approval' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Articles Approval</h2>
-                <p className="text-gray-600 text-sm">
-                  Pending articles: {pendingArticles.length}
-                </p>
-              </div>
+          {
+            activeSection === 'articles-approval' && (
+              <div>
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Articles Approval</h2>
+                    <p className="text-gray-600 text-sm">
+                      Pending articles: {pendingArticles.length}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search articles..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Title
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Author
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Category
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Submitted
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingArticles.map((article) => (
-                        <tr
-                          key={article.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            {article.title}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {article.submittedDate}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'article', id: article.id })
-                                }
-                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleApprove('article', article.id)}
-                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject('article', article.id)}
-                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </td>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Title
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Author
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Category
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Submitted
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {pendingArticles.map((article) => (
+                          <tr
+                            key={article.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {article.title}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {article.submittedDate}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleViewDetails({ type: 'article', id: article.id })
+                                  }
+                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleApprove('article', article.id)}
+                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject('article', article.id)}
+                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Courses Approval */}
-          {activeSection === 'courses-approval' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Courses Approval</h2>
-                <p className="text-gray-600 text-sm">
-                  Pending courses: {pendingCourses.length}
-                </p>
-              </div>
+          {
+            activeSection === 'courses-approval' && (
+              <div>
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Courses Approval</h2>
+                    <p className="text-gray-600 text-sm">
+                      Pending courses: {pendingCourses.length}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search courses..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Title
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Instructor
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Category
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Submitted
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingCourses.map((course) => (
-                        <tr
-                          key={course.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            {course.title}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{course.instructor}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{course.category}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {course.submittedDate}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'course', id: course.id })
-                                }
-                                className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleApprove('course', course.id)}
-                                className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject('course', course.id)}
-                                className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </td>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Title
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Instructor
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Category
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Submitted
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {pendingCourses.map((course) => (
+                          <tr
+                            key={course.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {course.title}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{course.instructor}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{course.category}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {course.submittedDate}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleViewDetails({ type: 'course', id: course.id })
+                                  }
+                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleApprove('course', course.id)}
+                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject('course', course.id)}
+                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Instructors */}
-          {activeSection === 'instructors' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructors</h2>
-                <p className="text-gray-600 text-sm">
-                  Total instructors: {instructors.length}
-                </p>
-              </div>
+          {
+            activeSection === 'instructors' && (
+              <div>
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructors</h2>
+                    <p className="text-gray-600 text-sm">
+                      Total instructors: {instructors.length}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search instructors..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Name
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Email
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Courses
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Students
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Rating
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {instructors.map((instructor) => (
-                        <tr
-                          key={instructor.id}
-                          className="border-b border-gray-100 hover:bg-blue-50/50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            {instructor.name}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{instructor.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{instructor.courses}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">
-                            {instructor.students.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-amber-600 font-medium">
-                            {instructor.rating} ★
-                          </td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() =>
-                                handleViewDetails({ type: 'instructor-profile', id: instructor.id })
-                              }
-                              className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium"
-                            >
-                              View Profile
-                            </button>
-                          </td>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Name
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Email
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Courses
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Students
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Rating
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {instructors.map((instructor) => (
+                          <tr
+                            key={instructor.id}
+                            className="border-b border-gray-100 hover:bg-blue-50/50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {instructor.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{instructor.email}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{instructor.courses}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {instructor.students.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-amber-600 font-medium">
+                              {instructor.rating} ★
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() =>
+                                  handleViewDetails({ type: 'instructor-profile', id: instructor.id })
+                                }
+                                className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium"
+                              >
+                                View Profile
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Experts */}
-          {activeSection === 'experts' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Experts</h2>
-                <p className="text-gray-600 text-sm">Total experts: {experts.length}</p>
-              </div>
+          {
+            activeSection === 'experts' && (
+              <div>
+                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Experts</h2>
+                    <p className="text-gray-600 text-sm">Total experts: {experts.length}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search experts..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Name
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Email
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Articles
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Followers
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Rating
-                        </th>
-                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {experts.map((expert) => (
-                        <tr
-                          key={expert.id}
-                          className="border-b border-gray-100 hover:bg-blue-50/50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            {expert.name}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{expert.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{expert.articles}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">
-                            {expert.followers.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-amber-600 font-medium">{expert.rating} ★</td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() =>
-                                handleViewDetails({ type: 'expert-profile', id: expert.id })
-                              }
-                              className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium"
-                            >
-                              View Profile
-                            </button>
-                          </td>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Name
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Email
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Articles
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Followers
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Rating
+                          </th>
+                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {experts.map((expert) => (
+                          <tr
+                            key={expert.id}
+                            className="border-b border-gray-100 hover:bg-blue-50/50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {expert.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{expert.email}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{expert.articles}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {expert.followers.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-amber-600 font-medium">{expert.rating} ★</td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() =>
+                                  handleViewDetails({ type: 'expert-profile', id: expert.id })
+                                }
+                                className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium"
+                              >
+                                View Profile
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Article Reports */}
-          {activeSection === 'reports' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Article Reports</h2>
-                <p className="text-gray-600 text-sm">
-                  Total reports: {articleReports.length}
-                </p>
-              </div>
+          {
+            activeSection === 'reports' && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Article Reports</h2>
+                  <p className="text-gray-600 text-sm">
+                    Total reports: {articleReports.length}
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {articleReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all"
-                  >
-                    {/* Report Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                          <AlertTriangle className="w-5 h-5 text-red-600" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {articleReports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all"
+                    >
+                      {/* Report Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-1">
+                              {report.reportType}
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              Reported by {report.reportedBy} • {report.reportedAt}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-1">
-                            {report.reportType}
-                          </h3>
-                          <p className="text-xs text-gray-500">
-                            Reported by {report.reportedBy} • {report.reportedAt}
-                          </p>
-                        </div>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-lg text-xs font-medium border ${report.status === 'Pending'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : report.status === 'Under Review'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-green-50 text-green-700 border-green-200'
-                          }`}
-                      >
-                        {report.status}
-                      </span>
-                    </div>
-
-                    {/* Article Info */}
-                    <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold text-gray-500">Article ID:</span>
-                        <span className="text-xs font-mono font-bold text-blue-700">
-                          {report.articleId}
+                        <span
+                          className={`px-3 py-1 rounded-lg text-xs font-medium border ${report.status === 'Pending'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : report.status === 'Under Review'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-green-50 text-green-700 border-green-200'
+                            }`}
+                        >
+                          {report.status}
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {report.articleTitle}
-                      </p>
-                    </div>
 
-                    {/* Report Description */}
-                    <div className="mb-4">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">Description:</p>
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {report.description}
-                      </p>
-                    </div>
+                      {/* Article Info */}
+                      <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold text-gray-500">Article ID:</span>
+                          <span className="text-xs font-mono font-bold text-blue-700">
+                            {report.articleId}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {report.articleTitle}
+                        </p>
+                      </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-2 flex-wrap">
-                      <button className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium">
-                        Review Article
-                      </button>
-                      <button className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium">
-                        Resolve
-                      </button>
-                      <button className="px-4 py-2 bg-red-50 border border-red-300 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium">
-                        Take Action
-                      </button>
+                      {/* Report Description */}
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold text-gray-500 mb-2">Description:</p>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {report.description}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 flex-wrap">
+                        <button className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium">
+                          Review Article
+                        </button>
+                        <button className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium">
+                          Resolve
+                        </button>
+                        <button className="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all text-xs font-medium">
+                          Take Action
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Feedback */}
           {activeSection === 'feedback' && (
@@ -1713,8 +1913,384 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               </div>
             </div>
           )}
+
+          {/* Tutorials Management */}
+          {activeSection === 'tutorials' && (
+            <div>
+              {!editingTutorial ? (
+                // Tutorials List View
+                <>
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">Tutorials</h2>
+                      <p className="text-gray-600 text-sm">
+                        Manage course collections and learning paths
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setEditingTutorial({
+                        id: Date.now().toString(),
+                        title: '',
+                        category: '',
+                        description: '',
+                        status: 'Draft',
+                        articles: []
+                      })}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create New Tutorial
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {tutorials.map((tutorial) => (
+                      <div
+                        key={tutorial.id}
+                        onClick={() => setEditingTutorial({ ...tutorial, articles: [] })} // Reset articles mock for demo
+                        className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <BookOpen className="w-24 h-24 text-blue-600 transform rotate-12 translate-x-8 -translate-y-8" />
+                        </div>
+
+                        <div className="flex justify-between items-start mb-6 relative z-10">
+                          {/* Enhanced Status Badge */}
+                          <span
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${tutorial.status === 'Active'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-gray-50 text-gray-600 border-gray-200'
+                              }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${tutorial.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                            {tutorial.status}
+                          </span>
+                        </div>
+
+                        <div className="relative z-10">
+                          <span className="inline-block px-2 py-0.5 mb-3 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                            {tutorial.category}
+                          </span>
+                          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">
+                            {tutorial.title}
+                          </h3>
+                          <p className="text-sm text-gray-500 mb-6 line-clamp-2">
+                            {tutorial.description}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 relative z-10">
+                          <span className="text-xs font-mono text-gray-500 flex items-center">
+                            <FileText className="w-3 h-3 mr-1" />
+                            {tutorial.articleCount} Articles
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTutorial({ ...tutorial, articles: [] });
+                              }}
+                              className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Delete logic here
+                              }}
+                              className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                // Create / Edit View
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => setEditingTutorial(null)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                      </button>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          {tutorials.find(t => t.id === editingTutorial.id) ? 'Edit Tutorial' : 'Create Tutorial'}
+                        </h2>
+                        <p className="text-sm text-gray-500">Configure details and manage articles</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setEditingTutorial(null)}
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Save logic would go here
+                          setEditingTutorial(null);
+                        }}
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+                      >
+                        <Save className="w-4 h-4" />
+                        Save Draft
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Publish logic would go here
+                          setEditingTutorial(null);
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Publish Tutorial
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* Left Col: Basic Info & Source Articles */}
+                    <div className="lg:col-span-1 space-y-6">
+                      {/* Basic Info Card */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Basic Information</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Title</label>
+                            <input
+                              type="text"
+                              value={editingTutorial.title}
+                              onChange={e => setEditingTutorial({ ...editingTutorial, title: e.target.value })}
+                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                              placeholder="e.g. Master React Basics"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Category</label>
+                            <input
+                              type="text"
+                              value={editingTutorial.category}
+                              onChange={e => setEditingTutorial({ ...editingTutorial, category: e.target.value })}
+                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                              placeholder="e.g. C, Python, Web Dev"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+                            <textarea
+                              value={editingTutorial.description}
+                              onChange={e => setEditingTutorial({ ...editingTutorial, description: e.target.value })}
+                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-24 resize-none"
+                              placeholder="Brief description of this tutorial..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Source Articles Selector */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col h-[500px]">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Add Articles</h3>
+
+                        <div className="relative mb-4">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            placeholder="Search database..."
+                            value={articleSearchQuery}
+                            onChange={(e) => setArticleSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-all"
+                          />
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                          {allDatabaseArticles
+                            .filter(a =>
+                              !editingTutorial.articles.find((selected: any) => selected.id === a.id) &&
+                              (a.title.toLowerCase().includes(articleSearchQuery.toLowerCase()) ||
+                                a.category.toLowerCase().includes(articleSearchQuery.toLowerCase()))
+                            )
+                            .map(article => (
+                              <div key={article.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors group">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-800 line-clamp-1">{article.title}</p>
+                                  <p className="text-xs text-gray-500">{article.category} • {article.author}</p>
+                                </div>
+                                <button
+                                  onClick={() => setEditingTutorial({
+                                    ...editingTutorial,
+                                    articles: [...editingTutorial.articles, article]
+                                  })}
+                                  className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))
+                          }
+                          {allDatabaseArticles.filter(a => !editingTutorial.articles.find((selected: any) => selected.id === a.id)).length === 0 && (
+                            <p className="text-center text-gray-400 text-sm mt-8">No available articles found.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Col: Drag & Drop List */}
+                    <div className="lg:col-span-2">
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm min-h-[600px] flex flex-col">
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            Selected Articles <span className="text-gray-400 font-normal ml-2">({editingTutorial.articles.length})</span>
+                          </h3>
+                          <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            Preview Order
+                          </button>
+                        </div>
+
+                        {editingTutorial.articles.length > 0 ? (
+                          <div className="space-y-3">
+                            {editingTutorial.articles.map((article: any, index: number) => (
+                              <div key={article.id} className="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl group hover:border-blue-300 transition-all">
+                                {/* Serial Number */}
+                                <div className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 text-gray-500 rounded-lg font-mono font-bold text-lg shadow-sm">
+                                  {String(index + 1).padStart(2, '0')}
+                                </div>
+
+                                {/* Article Info */}
+                                <div className="flex-1">
+                                  <h4 className="text-base font-bold text-gray-900">{article.title}</h4>
+                                  <p className="text-sm text-gray-500">{article.category} • by {article.author}</p>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                  <div className="flex flex-col gap-1">
+                                    <button
+                                      disabled={index === 0}
+                                      onClick={() => {
+                                        const newArticles = [...editingTutorial.articles];
+                                        [newArticles[index - 1], newArticles[index]] = [newArticles[index], newArticles[index - 1]];
+                                        setEditingTutorial({ ...editingTutorial, articles: newArticles });
+                                      }}
+                                      className="p-1 hover:bg-gray-200 text-gray-500 rounded disabled:opacity-30"
+                                    >
+                                      <ArrowUp className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      disabled={index === editingTutorial.articles.length - 1}
+                                      onClick={() => {
+                                        const newArticles = [...editingTutorial.articles];
+                                        [newArticles[index + 1], newArticles[index]] = [newArticles[index], newArticles[index + 1]];
+                                        setEditingTutorial({ ...editingTutorial, articles: newArticles });
+                                      }}
+                                      className="p-1 hover:bg-gray-200 text-gray-500 rounded disabled:opacity-30"
+                                    >
+                                      <ArrowDown className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                  <div className="h-8 w-px bg-gray-200 mx-2"></div>
+                                  <button
+                                    onClick={() => {
+                                      const newArticles = editingTutorial.articles.filter((_: any, i: number) => i !== index);
+                                      setEditingTutorial({ ...editingTutorial, articles: newArticles });
+                                    }}
+                                    className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50 p-12">
+                            <BookOpen className="w-16 h-16 text-gray-300 mb-4" />
+                            <h4 className="text-lg font-bold text-gray-500 mb-1">No articles added yet</h4>
+                            <p className="text-gray-400 text-center max-w-sm">
+                              Select articles from the left panel to build your tutorial structure.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
+
+      {/* User Details Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative h-24 bg-blue-600">
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 pb-6 mt-[-3rem]">
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 bg-white rounded-full p-1 shadow-lg mb-4">
+                  <div className="w-full h-full bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-3xl font-bold">
+                    {selectedUser.name.charAt(0)}
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 text-center">{selectedUser.name}</h3>
+                <p className="text-gray-500 text-sm mb-4">{selectedUser.email}</p>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${selectedUser.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                  }`}>
+                  {selectedUser.status}
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm text-gray-500">Role</span>
+                  <span className="text-sm font-medium text-gray-900">{selectedUser.role}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm text-gray-500">User ID</span>
+                  <span className="text-sm font-mono text-gray-700">{selectedUser.id}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm text-gray-500">Joined Date</span>
+                  <span className="text-sm font-medium text-gray-900">{selectedUser.joinDate}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm text-gray-500">Last Login</span>
+                  <span className="text-sm font-medium text-gray-900">{selectedUser.lastLogin}</span>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm transition-colors">
+                  Edit Profile
+                </button>
+                <button className="flex-1 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm transition-colors">
+                  Reset Password
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
