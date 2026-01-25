@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Mail, Lock, User, Terminal } from "lucide-react";
+import { Mail, Lock, User } from "lucide-react";
+import NavLogo from '../Sources/NavLogo.png';
 
 interface SignUpProps {
   onSwitchToSignIn: () => void;
@@ -29,8 +30,8 @@ export function SignUp({
       <div className="w-full max-w-md">
         {/* Terminal Header */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#A5C89E]/80 rounded-2xl mb-4">
-            <Terminal className="w-8 h-8 text-black" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 overflow-hidden">
+            <img src={NavLogo} alt="Learnova Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
             Create Account
@@ -49,11 +50,10 @@ export function SignUp({
                 FULL NAME
               </label>
               <div
-                className={`relative flex items-center border rounded-xl transition-all ${
-                  focusedField === "name"
-                    ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
-                    : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
-                }`}
+                className={`relative flex items-center border rounded-xl transition-all ${focusedField === "name"
+                  ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
+                  : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
+                  }`}
               >
                 <User className="absolute left-4 w-5 h-5 text-[#A5C89E]/60" />
                 <input
@@ -75,11 +75,10 @@ export function SignUp({
                 EMAIL ADDRESS
               </label>
               <div
-                className={`relative flex items-center border rounded-xl transition-all ${
-                  focusedField === "email"
-                    ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
-                    : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
-                }`}
+                className={`relative flex items-center border rounded-xl transition-all ${focusedField === "email"
+                  ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
+                  : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
+                  }`}
               >
                 <Mail className="absolute left-4 w-5 h-5 text-[#A5C89E]/60" />
                 <input
@@ -101,11 +100,10 @@ export function SignUp({
                 PASSWORD
               </label>
               <div
-                className={`relative flex items-center border rounded-xl transition-all ${
-                  focusedField === "password"
-                    ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
-                    : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
-                }`}
+                className={`relative flex items-center border rounded-xl transition-all ${focusedField === "password"
+                  ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
+                  : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
+                  }`}
               >
                 <Lock className="absolute left-4 w-5 h-5 text-[#A5C89E]/60" />
                 <input
@@ -127,11 +125,10 @@ export function SignUp({
                 CONFIRM PASSWORD
               </label>
               <div
-                className={`relative flex items-center border rounded-xl transition-all ${
-                  focusedField === "confirmPassword"
-                    ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
-                    : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
-                }`}
+                className={`relative flex items-center border rounded-xl transition-all ${focusedField === "confirmPassword"
+                  ? "border-[#A5C89E]/60 bg-[#A5C89E]/5"
+                  : "border-[#A5C89E]/20 bg-[#1a1a1a]/50"
+                  }`}
               >
                 <Lock className="absolute left-4 w-5 h-5 text-[#A5C89E]/60" />
                 <input

@@ -3,8 +3,8 @@ import {
   Twitter,
   Linkedin,
   Mail,
-  Terminal,
 } from "lucide-react";
+import NavLogo from '../Sources/NavLogo.png';
 
 export function Footer() {
   return (
@@ -14,8 +14,8 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-[#A5C89E]/80 rounded-lg flex items-center justify-center">
-                <Terminal className="w-6 h-6 text-black" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                <img src={NavLogo} alt="Learnova Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="text-white font-bold text-xl tracking-wide">

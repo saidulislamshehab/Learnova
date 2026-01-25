@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Mail, Lock, Terminal } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
+import NavLogo from '../Sources/NavLogo.png';
 
 interface SignInProps {
   onSwitchToSignUp: () => void;
@@ -30,8 +31,8 @@ export function SignIn({
       <div className="w-full max-w-md">
         {/* Logo Section */}
         <div className="flex items-center justify-center space-x-3 mb-8">
-          <div className="w-10 h-10 bg-[#A5C89E]/80 rounded-lg flex items-center justify-center">
-            <Terminal className="w-6 h-6 text-black" />
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+            <img src={NavLogo} alt="Learnova Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <span className="text-white font-bold text-xl tracking-wide">

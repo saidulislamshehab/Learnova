@@ -36,18 +36,20 @@
   
   /* .group class handling for logo hover effect */
   .navbar-logo-btn:hover .navbar-logo-icon-wrapper {
-    background-color: rgba(165, 200, 158, 0.9);
+    background-color: transparent;
+    opacity: 0.8;
   }
 
   .navbar-logo-icon-wrapper {
-    width: 2rem;
-    height: 2rem;
-    background-color: rgba(165, 200, 158, 0.8);
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: transparent;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 150ms;
+    transition: opacity 150ms;
+    overflow: hidden;
   }
 
   .navbar-logo-text {

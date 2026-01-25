@@ -14,6 +14,7 @@ import {
   BookOpen,
   Bell,
 } from "lucide-react";
+import NavLogo from '../Sources/NavLogo.png';
 
 interface NavbarProps {
   currentView: string;
@@ -198,7 +199,7 @@ export function Navbar({
               className="navbar-logo-btn"
             >
               <div className="navbar-logo-icon-wrapper">
-                <Terminal className="w-5 h-5 text-black" />
+                <img src={NavLogo} alt="Learnova Logo" className="w-full h-full object-cover rounded-lg" />
               </div>
               <div>
                 <span className="navbar-logo-text">
