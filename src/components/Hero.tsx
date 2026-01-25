@@ -102,25 +102,23 @@ export function Hero({
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <button
-                  className="group relative inline-block p-[2px] font-semibold leading-6 text-white shadow-2xl cursor-pointer rounded-xl shadow-black/50 transition-transform duration-300 ease-in-out hover:scale-105 active:scale-95"
+                  className="group relative inline-block p-[2px] font-semibold leading-6 shadow-2xl cursor-pointer rounded-xl shadow-black/50 transition-transform duration-300 ease-in-out hover:scale-105 active:scale-95"
                   onClick={onExploreCourses}
                 >
-                  <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-white via-gray-200 to-white p-[2px] opacity-0 transition-opacity duration-500 group-hover:opacity-100"></span>
 
-                  <span className="relative z-10 block px-[24px] py-[15px] rounded-xl bg-[#121212] text-[15px]">
-                    <div className="relative z-10 flex items-center space-x-2">
-                      <span className="transition-all duration-500 group-hover:translate-x-1 font-medium tracking-wide">
-                        EXPLORE COURSES
-                      </span>
-                     
-                    </div>
+
+                  <span className="relative z-10 block px-[24px] py-[15px] rounded-xl bg-[#121212] overflow-hidden">
+                    <span className="absolute inset-0 bg-[#A5C89E]/90 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
+                    <span className="relative z-10 text-[#A5C89E]/90 group-hover:text-white transition-colors duration-300 font-medium tracking-wide text-[15px]">
+                      EXPLORE COURSES
+                    </span>
                   </span>
                 </button>
                 <button
                   className="group relative inline-block p-[2px] font-semibold leading-6 shadow-2xl cursor-pointer rounded-xl shadow-black/50 transition-transform duration-300 ease-in-out hover:scale-105 active:scale-95"
                   onClick={onViewDocs}
                 >
-                  <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-white via-gray-200 to-white p-[2px] opacity-0 transition-opacity duration-500 group-hover:opacity-100"></span>
+
 
                   <span className="relative z-10 block px-[32px] py-[15px] rounded-xl bg-[#121212] overflow-hidden">
                     <span className="absolute inset-0 bg-[#A5C89E]/90 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
