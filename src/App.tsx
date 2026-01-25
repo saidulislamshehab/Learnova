@@ -25,11 +25,12 @@ import { Feedback } from './components/Pages/Feedback';
 import { InstructorMyCourses } from './components/Pages/InstructorMyCourses';
 import { Settings } from './components/Pages/Settings';
 import { AdminPanel } from './components/Pages/AdminPanel';
+import { Tutorials } from './components/Pages/Tutorials';
 //shehab
 type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail'
   | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle'
   | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings'
-  | 'adminpanel';
+  | 'adminpanel' | 'tutorials';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -110,6 +111,7 @@ export default function App() {
               onInstructorMyCourses={() => setCurrentView('instructormycourses')}
               onSettings={() => setCurrentView('settings')}
               onAdminPanel={() => setCurrentView('adminpanel')}
+              onTutorials={() => setCurrentView('tutorials')}
             />
           )}
 
@@ -321,6 +323,13 @@ export default function App() {
             <AdminPanel
               onBack={() => setCurrentView('home')}
             />
+          )}
+
+          {currentView === 'tutorials' && (
+            <>
+              <Tutorials />
+              <Footer />
+            </>
           )}
         </div>
       </div>

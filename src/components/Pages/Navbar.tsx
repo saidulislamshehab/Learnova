@@ -35,6 +35,7 @@ interface NavbarProps {
   onInstructorMyCourses?: () => void;
   onSettings?: () => void;
   onAdminPanel?: () => void;
+  onTutorials?: () => void;
 }
 
 export function Navbar({
@@ -57,6 +58,7 @@ export function Navbar({
   onInstructorMyCourses,
   onSettings,
   onAdminPanel,
+  onTutorials,
 }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] =
@@ -112,6 +114,7 @@ export function Navbar({
     "Algorithms",
     "Web Development",
     "AI / ML",
+    "All Tutorials",
   ];
 
   useEffect(() => {
@@ -290,16 +293,18 @@ export function Navbar({
                   </h3>
                   <div className="space-y-0">
                     {tutorialTopics.map((topic) => (
-                      <a
+                      <button
                         key={topic}
-                        href="#tutorials"
                         className="navbar-dropdown-item"
-                        onClick={() =>
-                          setIsTutorialsOpen(false)
-                        }
+                        onClick={() => {
+                          if (topic === "All Tutorials") {
+                            onTutorials?.();
+                          }
+                          setIsTutorialsOpen(false);
+                        }}
                       >
                         {topic}
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -637,17 +642,19 @@ export function Navbar({
                     BROWSE TUTORIALS
                   </h3>
                   {tutorialTopics.map((topic) => (
-                    <a
+                    <button
                       key={topic}
-                      href="#tutorials"
                       className="navbar-mobile-sub-item"
                       onClick={() => {
+                        if (topic === "All Tutorials") {
+                          onTutorials?.();
+                        }
                         setIsMobileTutorialsOpen(false);
                         setIsMobileMenuOpen(false);
                       }}
                     >
                       {topic}
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
