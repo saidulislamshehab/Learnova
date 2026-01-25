@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
   User,
   Lock,
@@ -89,9 +89,8 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Sidebar */}
           <aside
-            className={`fixed lg:sticky top-20 left-0 h-[calc(100vh-5rem)] lg:h-auto w-64 bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-4 transition-transform duration-300 z-40 ${
-              isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-            }`}
+            className={`fixed lg:sticky top-20 left-0 h-[calc(100vh-5rem)] lg:h-auto w-64 bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-4 transition-transform duration-300 z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+              }`}
           >
             <h2 className="text-xl font-bold text-white mb-6 px-2">Settings</h2>
             <nav className="space-y-1">
@@ -103,11 +102,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   <button
                     key={item.id}
                     onClick={() => handleSectionChange(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                      isActive
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${isActive
                         ? 'bg-[#A5C89E]/10 border border-[#A5C89E]/30 text-[#A5C89E]'
                         : 'text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="flex-1 text-left">{item.label}</span>
@@ -270,14 +268,12 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                     </div>
                     <button
                       onClick={() => setIs2FAEnabled(!is2FAEnabled)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        is2FAEnabled ? 'bg-[#A5C89E]' : 'bg-gray-600'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${is2FAEnabled ? 'bg-[#A5C89E]' : 'bg-gray-600'
+                        }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          is2FAEnabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${is2FAEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                   </div>
@@ -316,14 +312,12 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                     </div>
                     <button
                       onClick={() => setEmailNotifications(!emailNotifications)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        emailNotifications ? 'bg-[#A5C89E]' : 'bg-gray-600'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${emailNotifications ? 'bg-[#A5C89E]' : 'bg-gray-600'
+                        }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          emailNotifications ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailNotifications ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                   </div>
@@ -338,14 +332,12 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                     </div>
                     <button
                       onClick={() => setPlatformNotifications(!platformNotifications)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        platformNotifications ? 'bg-[#A5C89E]' : 'bg-gray-600'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${platformNotifications ? 'bg-[#A5C89E]' : 'bg-gray-600'
+                        }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          platformNotifications ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${platformNotifications ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                   </div>
@@ -365,11 +357,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Lavender Gray */}
                   <button
                     onClick={() => setTheme('#ACBAC4')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#ACBAC4'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#ACBAC4'
                         ? 'border-[#ACBAC4] shadow-lg shadow-[#ACBAC4]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#ACBAC4]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#ACBAC4] shadow-lg shadow-[#ACBAC4]/30 transition-transform group-hover:scale-110">
@@ -393,11 +384,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Warm Beige */}
                   <button
                     onClick={() => setTheme('#E1D9BC')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#E1D9BC'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#E1D9BC'
                         ? 'border-[#E1D9BC] shadow-lg shadow-[#E1D9BC]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#E1D9BC]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#E1D9BC] shadow-lg shadow-[#E1D9BC]/30 transition-transform group-hover:scale-110">
@@ -421,11 +411,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Golden Yellow */}
                   <button
                     onClick={() => setTheme('#F7DB91')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#F7DB91'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#F7DB91'
                         ? 'border-[#F7DB91] shadow-lg shadow-[#F7DB91]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#F7DB91]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#F7DB91] shadow-lg shadow-[#F7DB91]/30 transition-transform group-hover:scale-110">
@@ -449,11 +438,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Lime Green */}
                   <button
                     onClick={() => setTheme('#D8E983')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#D8E983'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#D8E983'
                         ? 'border-[#D8E983] shadow-lg shadow-[#D8E983]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#D8E983]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#D8E983] shadow-lg shadow-[#D8E983]/30 transition-transform group-hover:scale-110">
@@ -477,11 +465,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Sage Green */}
                   <button
                     onClick={() => setTheme('#A5C89E')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#A5C89E'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#A5C89E'
                         ? 'border-[#A5C89E] shadow-lg shadow-[#A5C89E]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#A5C89E]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#A5C89E] shadow-lg shadow-[#A5C89E]/30 transition-transform group-hover:scale-110">
@@ -505,11 +492,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Dusty Rose */}
                   <button
                     onClick={() => setTheme('#9F8383')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#9F8383'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#9F8383'
                         ? 'border-[#9F8383] shadow-lg shadow-[#9F8383]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#9F8383]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#9F8383] shadow-lg shadow-[#9F8383]/30 transition-transform group-hover:scale-110">
@@ -533,11 +519,10 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                   {/* Theme: Coral Orange */}
                   <button
                     onClick={() => setTheme('#FD8A6B')}
-                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${
-                      theme === '#FD8A6B'
+                    className={`group relative p-4 bg-[#0b0b0b]/80 border rounded-xl hover:scale-105 transition-all duration-300 ${theme === '#FD8A6B'
                         ? 'border-[#FD8A6B] shadow-lg shadow-[#FD8A6B]/20'
                         : 'border-[#A5C89E]/20 hover:border-[#FD8A6B]/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative w-16 h-16 rounded-full bg-[#FD8A6B] shadow-lg shadow-[#FD8A6B]/30 transition-transform group-hover:scale-110">
