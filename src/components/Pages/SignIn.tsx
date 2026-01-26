@@ -1,24 +1,32 @@
 import { useState } from "react";
 import { Mail, Lock } from "lucide-react";
-import NavLogo from '../Sources/NavLogo.png';
+import NavLogo from '../Sources/Logo.png';
 
+// Interface for SignIn props with navigation callbacks
 interface SignInProps {
   onSwitchToSignUp: () => void;
   onBackToHome: () => void;
   onLogin: () => void;
 }
 
+/**
+ * SignIn Component
+ * Renders the user login form with email and password fields.
+ * Includes options to switch to sign up or go back home.
+ */
 export function SignIn({
   onSwitchToSignUp,
   onBackToHome,
   onLogin,
 }: SignInProps) {
+  // State for form inputs and focus tracking
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [focusedField, setFocusedField] = useState<
     string | null
   >(null);
 
+  // Handler for form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle sign in logic here

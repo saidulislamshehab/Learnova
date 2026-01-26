@@ -14,8 +14,9 @@ import {
   BookOpen,
   Bell,
 } from "lucide-react";
-import NavLogo from '../Sources/NavLogo.png';
+import NavLogo from '../Sources/Logo.png';
 
+// Interface defining the props for the Navbar component
 interface NavbarProps {
   currentView: string;
   isAuthenticated: boolean;
@@ -39,6 +40,11 @@ interface NavbarProps {
   onTutorials?: () => void;
 }
 
+/**
+ * Navbar Component
+ * Displays the top navigation bar with logo, links, search, notifications, and user profile.
+ * Handles both desktop and mobile views.
+ */
 export function Navbar({
   currentView,
   isAuthenticated,
@@ -61,10 +67,14 @@ export function Navbar({
   onAdminPanel,
   onTutorials,
 }: NavbarProps) {
+  // State to track if the page is scrolled to adjust navbar styling
   const [isScrolled, setIsScrolled] = useState(false);
+  // State for controlling mobile menu visibility
   const [isMobileMenuOpen, setIsMobileMenuOpen] =
     useState(false);
+  // State for displaying current time
   const [currentTime, setCurrentTime] = useState("00:00");
+  // States for managing dropdown visibilities
   const [isCoursesOpen, setIsCoursesOpen] = useState(false);
   const [isTutorialsOpen, setIsTutorialsOpen] = useState(false);
   const [isMobileCoursesOpen, setIsMobileCoursesOpen] =
@@ -73,6 +83,7 @@ export function Navbar({
     useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  // Refs for click outside detection
   const coursesRef = useRef<HTMLDivElement>(null);
   const tutorialsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -118,6 +129,7 @@ export function Navbar({
     "All Tutorials",
   ];
 
+  // Effect to handle scroll events and update time
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -134,7 +146,7 @@ export function Navbar({
     updateTime();
     const timer = setInterval(updateTime, 1000);
 
-    // Click outside handler for dropdown
+    // Click outside handler for dropdowns to close them when clicking elsewhere
     const handleClickOutside = (event: MouseEvent) => {
       if (
         coursesRef.current &&

@@ -4,8 +4,17 @@ import {
   Linkedin,
   Mail,
 } from "lucide-react";
-import NavLogo from '../Sources/NavLogo.png';
+import NavLogo from '../Sources/Logo.png';
 
+/**
+ * Footer Component
+ * Displays the bottom section of the application, including:
+ * - Branding and system information
+ * - Social media links
+ * - Quick access navigation links
+ * - Resource links
+ * - Newsletter subscription form
+ */
 export function Footer() {
   return (
     <footer className="relative border-t border-[#A5C89E]/20 py-16 px-4 sm:px-6 lg:px-8 mt-24">
