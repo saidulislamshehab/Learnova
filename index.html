@@ -2,9 +2,37 @@
   <!DOCTYPE html>
   <html lang="en">
     <head>
+      <link rel="icon" type="image/png" href="/src/components/Sources/NavLogo.png" /> 
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Learnova</title>
+    <script>
+      /* Script to round the favicon (browser tab icon) since CSS cannot do it directly */
+      (function() {
+        const link = document.querySelector("link[rel*='icon']");
+        if (link) {
+          const img = new Image();
+          img.src = link.href;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            const r = Math.min(canvas.width, canvas.height) * 0.2; // 20% corner radius
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.arcTo(canvas.width, 0, canvas.width, canvas.height, r);
+            ctx.arcTo(canvas.width, canvas.height, 0, canvas.height, r);
+            ctx.arcTo(0, canvas.height, 0, 0, r);
+            ctx.arcTo(0, 0, canvas.width, 0, r);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(img, 0, 0);
+            link.href = canvas.toDataURL();
+          };
+        }
+      })();
+    </script>
     </head>
 
     <body>
