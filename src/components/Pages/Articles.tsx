@@ -6,6 +6,7 @@ interface ArticlesProps {
   onArticleClick: (articleId: number) => void;
 }
 
+// Mock data for articles listing
 const allArticles = [
   {
     id: 1,
@@ -145,13 +146,21 @@ const categories = [
   'System Design',
 ];
 
+/**
+ * Articles Component
+ * Displays a paginated list of articles with search and category filtering capabilities.
+ */
 export function Articles({ onArticleClick }: ArticlesProps) {
+  // State for search query
   const [searchQuery, setSearchQuery] = useState('');
+  // State for selected category filter
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const articlesPerPage = 15;
 
+  // Filter articles based on search query and selected category
   const filteredArticles = allArticles.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -220,9 +229,8 @@ export function Articles({ onArticleClick }: ArticlesProps) {
             >
               <span className="text-sm font-medium">{selectedCategory}</span>
               <ChevronDown
-                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-                  isCategoryOpen ? 'rotate-180' : ''
-                }`}
+                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 

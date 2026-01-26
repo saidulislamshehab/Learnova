@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -58,6 +58,22 @@ type DetailView =
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Prevent scrolling when mobile sidebar is open
+  // Prevent scrolling when mobile sidebar is open
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [isSidebarOpen]);
   const [detailView, setDetailView] = useState<DetailView>({ type: 'none' });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -2012,25 +2028,25 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               ) : (
                 // Create / Edit View
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
                       <button
                         onClick={() => setEditingTutorial(null)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                       >
                         <ChevronLeft className="w-5 h-5 text-gray-600" />
                       </button>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">
+                      <div className="min-w-0">
+                        <h2 className="text-2xl font-bold text-gray-900 truncate">
                           {tutorials.find(t => t.id === editingTutorial.id) ? 'Edit Tutorial' : 'Create Tutorial'}
                         </h2>
-                        <p className="text-sm text-gray-500">Configure details and manage articles</p>
+                        <p className="text-sm text-gray-500 truncate">Configure details and manage articles</p>
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                       <button
                         onClick={() => setEditingTutorial(null)}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm"
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm w-full sm:w-auto justify-center"
                       >
                         Cancel
                       </button>
@@ -2039,7 +2055,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                           // Save logic would go here
                           setEditingTutorial(null);
                         }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm flex items-center justify-center gap-2 shadow-sm transition-all w-full sm:w-auto"
                       >
                         <Save className="w-4 h-4" />
                         Save Draft
@@ -2049,7 +2065,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                           // Publish logic would go here
                           setEditingTutorial(null);
                         }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2 shadow-sm transition-all w-full sm:w-auto"
                       >
                         <BookOpen className="w-4 h-4" />
                         Publish Tutorial

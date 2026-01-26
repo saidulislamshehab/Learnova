@@ -14,7 +14,9 @@ import {
   BookOpen,
   Bell,
 } from "lucide-react";
+import NavLogo from '../Sources/Logo.png';
 
+// Interface defining the props for the Navbar component
 interface NavbarProps {
   currentView: string;
   isAuthenticated: boolean;
@@ -38,6 +40,11 @@ interface NavbarProps {
   onTutorials?: () => void;
 }
 
+/**
+ * Navbar Component
+ * Displays the top navigation bar with logo, links, search, notifications, and user profile.
+ * Handles both desktop and mobile views.
+ */
 export function Navbar({
   currentView,
   isAuthenticated,
@@ -60,10 +67,14 @@ export function Navbar({
   onAdminPanel,
   onTutorials,
 }: NavbarProps) {
+  // State to track if the page is scrolled to adjust navbar styling
   const [isScrolled, setIsScrolled] = useState(false);
+  // State for controlling mobile menu visibility
   const [isMobileMenuOpen, setIsMobileMenuOpen] =
     useState(false);
+  // State for displaying current time
   const [currentTime, setCurrentTime] = useState("00:00");
+  // States for managing dropdown visibilities
   const [isCoursesOpen, setIsCoursesOpen] = useState(false);
   const [isTutorialsOpen, setIsTutorialsOpen] = useState(false);
   const [isMobileCoursesOpen, setIsMobileCoursesOpen] =
@@ -72,6 +83,7 @@ export function Navbar({
     useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  // Refs for click outside detection
   const coursesRef = useRef<HTMLDivElement>(null);
   const tutorialsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -117,6 +129,7 @@ export function Navbar({
     "All Tutorials",
   ];
 
+  // Effect to handle scroll events and update time
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -133,7 +146,7 @@ export function Navbar({
     updateTime();
     const timer = setInterval(updateTime, 1000);
 
-    // Click outside handler for dropdown
+    // Click outside handler for dropdowns to close them when clicking elsewhere
     const handleClickOutside = (event: MouseEvent) => {
       if (
         coursesRef.current &&
@@ -198,7 +211,7 @@ export function Navbar({
               className="navbar-logo-btn"
             >
               <div className="navbar-logo-icon-wrapper">
-                <Terminal className="w-5 h-5 text-black" />
+                <img src={NavLogo} alt="Learnova Logo" className="w-full h-full object-cover rounded-lg" />
               </div>
               <div>
                 <span className="navbar-logo-text">
@@ -328,9 +341,9 @@ export function Navbar({
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                  className="navbar-icon-btn"
+                  className="navbar-icon-btn focus:outline-none"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5" fill="currentColor" stroke="none" />
                   {unreadCount > 0 && (
                     <span className="navbar-notification-badge">
                       {unreadCount}
@@ -556,19 +569,84 @@ export function Navbar({
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="navbar-mobile-menu-btn"
-            onClick={() =>
-              setIsMobileMenuOpen(!isMobileMenuOpen)
-            }
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
+          {/* Mobile Notification & Menu Buttons */}
+          <div className="flex items-center gap-3 md:hidden">
+            {/* Mobile Notification Button */}
+            {isAuthenticated && (
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="navbar-icon-btn focus:outline-none"
+                >
+                  <Bell className="w-5 h-5" fill="currentColor" stroke="none" />
+                  {unreadCount > 0 && (
+                    <span className="navbar-notification-badge">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {isNotificationOpen && (
+                  <div
+                    className="navbar-notification-dropdown"
+                    style={{
+                      backdropFilter: "blur(20px)",
+                      WebkitBackdropFilter: "blur(20px)",
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20">
+                      <h3 className="text-sm font-bold text-white">Notifications</h3>
+                    </div>
+
+                    {/* Notification List */}
+                    {notifications.length > 0 ? (
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.map((notification) => (
+                          <button
+                            key={notification.id}
+                            className={`navbar-notification-item ${notification.isRead
+                              ? 'navbar-notification-item-read'
+                              : 'navbar-notification-item-unread'
+                              }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              {!notification.isRead && (
+                                <div className="w-2 h-2 bg-[#A5C89E] rounded-full mt-1.5 flex-shrink-0" />
+                              )}
+                              <p className={`text-sm leading-relaxed ${notification.isRead ? 'text-gray-400' : 'text-gray-300'
+                                }`}>
+                                {notification.title}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-12 text-center">
+                        <Bell className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+                        <p className="text-sm text-gray-500">No new notifications</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-          </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="navbar-mobile-menu-btn"
+              onClick={() =>
+                setIsMobileMenuOpen(!isMobileMenuOpen)
+              }
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -576,6 +654,17 @@ export function Navbar({
       {isMobileMenuOpen && (
         <div className="navbar-mobile-dropdown">
           <div className="space-y-4">
+            {/* Mobile Search */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search resources..."
+                className="w-full bg-[#1a1a1a]/50 border border-[#A5C89E]/20 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#A5C89E]/40"
+              />
+            </div>
+
+            {/* Mobile Navigation Links */}
             <div className="relative">
               <button
                 className="navbar-mobile-link-btn"
@@ -584,7 +673,7 @@ export function Navbar({
                 }
               >
                 COURSES
-                <ChevronDown className="w-4 h-4 inline-block ml-1" />
+                <ChevronDown className={`w-4 h-4 inline-block ml-1 transition-transform ${isMobileCoursesOpen ? "rotate-180" : ""}`} />
               </button>
               {isMobileCoursesOpen && (
                 <div className="navbar-mobile-sub-dropdown">
@@ -617,13 +706,18 @@ export function Navbar({
                 </div>
               )}
             </div>
+
             <a
               href="#articles"
               className="navbar-mobile-link"
-              onClick={onArticles}
+              onClick={() => {
+                onArticles();
+                setIsMobileMenuOpen(false);
+              }}
             >
               ARTICLES
             </a>
+
             <div className="relative">
               <button
                 className="navbar-mobile-link-btn"
@@ -634,7 +728,7 @@ export function Navbar({
                 }
               >
                 TUTORIALS
-                <ChevronDown className="w-4 h-4 inline-block ml-1" />
+                <ChevronDown className={`w-4 h-4 inline-block ml-1 transition-transform ${isMobileTutorialsOpen ? "rotate-180" : ""}`} />
               </button>
               {isMobileTutorialsOpen && (
                 <div className="navbar-mobile-sub-dropdown">
@@ -659,12 +753,19 @@ export function Navbar({
                 </div>
               )}
             </div>
+
             <div className="pt-4 border-t border-[#A5C89E]/20 space-y-3">
               {isAuthenticated ? (
                 <>
+                  {/* Profile Links */}
                   <a
                     href="#my-profile"
                     className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onMyProfile?.();
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     MY PROFILE
                   </a>
@@ -680,14 +781,108 @@ export function Navbar({
                     MY COURSES
                   </a>
                   <a
-                    href="#edit-profile"
+                    href="#bookmarks"
                     className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onBookmarks?.();
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
-                    EDIT PROFILE
+                    BOOKMARKS
                   </a>
+
+                  <div className="h-px bg-[#A5C89E]/10 my-2"></div>
+
+                  {/* Contributor Section */}
+                  <a
+                    href="#join-expert"
+                    className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onJoinExpert?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    JOIN AS EXPERT
+                  </a>
+                  <a
+                    href="#join-instructor"
+                    className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onJoinInstructor?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    JOIN AS INSTRUCTOR
+                  </a>
+                  <a
+                    href="#write-article"
+                    className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onWriteArticle?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    WRITE ARTICLE
+                  </a>
+                  <a
+                    href="#publish-course"
+                    className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onPublishCourse?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    PUBLISH COURSE
+                  </a>
+
+                  <div className="h-px bg-[#A5C89E]/10 my-2"></div>
+
+                  {/* System Section */}
                   <button
-                    className="navbar-mobile-link text-red-400 hover:text-red-300"
-                    onClick={onLogout}
+                    className="navbar-mobile-link w-full text-left"
+                    onClick={() => {
+                      onSettings?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    SETTINGS
+                  </button>
+                  <a
+                    href="#admin-panel"
+                    className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onAdminPanel?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    ADMIN PANEL
+                  </a>
+                  <a
+                    href="#feedback"
+                    className="navbar-mobile-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onFeedback?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    FEEDBACK
+                  </a>
+
+                  <div className="h-px bg-[#A5C89E]/10 my-2"></div>
+
+                  <button
+                    className="navbar-mobile-link text-red-400 hover:text-red-300 w-full text-left"
+                    onClick={() => {
+                      onLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     LOG OUT
                   </button>
@@ -695,14 +890,20 @@ export function Navbar({
               ) : (
                 <>
                   <button
-                    className="navbar-mobile-link"
-                    onClick={onSignIn}
+                    className="navbar-mobile-link w-full text-left"
+                    onClick={() => {
+                      onSignIn();
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     SIGN IN
                   </button>
                   <button
-                    className="navbar-signup-btn w-full"
-                    onClick={onSignUp}
+                    className="navbar-signup-btn w-full mt-2"
+                    onClick={() => {
+                      onSignUp();
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     SIGN UP
                   </button>

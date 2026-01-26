@@ -7,17 +7,27 @@ import {
 import { TypewriterText } from "./TypewriterText";
 import { TerminalTypewriter } from "./TerminalTypewriter";
 
+// Interface for Hero component props defining navigation callbacks
 interface HeroProps {
   onExploreCourses: () => void;
   onViewDocs: () => void;
 }
 
+/**
+ * Hero Component
+ * Displays the landing page's main hero section featuring:
+ * - Animated typewriter text
+ * - Interactive system initialization visuals
+ * - Call-to-action buttons for course exploration and documentation
+ * - A decorative terminal window showcasing code execution
+ */
 export function Hero({
   onExploreCourses,
   onViewDocs,
 }: HeroProps) {
   return (
     <>
+      {/* Inline styles for specific button hover effects and animations */}
       <style>{`
         .view-docs-btn {
           display: flex;
@@ -85,6 +95,7 @@ export function Hero({
                     "SUCCEED",
                     "GROW",
                     "SKILLS",
+                    "SHEHAB",
                   ]}
                   typingSpeed={150}
                   deletingSpeed={100}

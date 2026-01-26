@@ -1,5 +1,6 @@
 import { Clock, Users, ArrowUpRight } from 'lucide-react';
 
+// Static list of featured courses with details like title, instructor, price, and stats
 const courses = [
   {
     id: 'PY-001',
@@ -12,7 +13,7 @@ const courses = [
     status: 'ACTIVE',
     price: '$49.99',
   },
-  
+
   {
     id: 'FS-002',
     title: 'FULL STACK DEVELOPMENT',
@@ -70,10 +71,16 @@ const courses = [
   },
 ];
 
+// Interface for Courses component props
 interface CoursesProps {
   onCourseClick?: (courseId: string) => void;
 }
 
+/**
+ * Courses Component
+ * Renders a grid of featured course cards.
+ * Each card displays course status, details, rating, and an enrollment action.
+ */
 export function Courses({ onCourseClick }: CoursesProps) {
   return (
     <section id="courses" className="relative py-24 px-4 sm:px-6 lg:px-8">

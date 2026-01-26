@@ -27,39 +27,53 @@ import { Settings } from './components/Pages/Settings';
 import { AdminPanel } from './components/Pages/AdminPanel';
 import { Tutorials } from './components/Pages/Tutorials';
 
+// Define the available views for the application routing
 type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail'
   | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle'
   | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings'
   | 'adminpanel' | 'tutorials';
 
+/**
+ * Main application component.
+ * Manages the global state, navigation, and rendering of different pages based on the current view.
+ */
 export default function App() {
+  // State to track the current active view/page
   const [currentView, setCurrentView] = useState<View>('home');
+  // State to track user authentication status
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  // State for selected category in courses
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
+  // State for keys/IDs to navigate to specific details
   const [selectedArticleId, setSelectedArticleId] = useState<number>(1);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('PY-001');
   const [editCourseId, setEditCourseId] = useState<string>('');
 
+  // Handler for successful login
   const handleLogin = () => {
     setIsAuthenticated(true);
     setCurrentView('home');
   };
 
+  // Handler for logging out
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentView('home');
   };
 
+  // Navigation handler to show all courses, optionally filtered by category
   const handleNavigateToAllCourses = (category: string = 'All Categories') => {
     setSelectedCategory(category);
     setCurrentView('allcourses');
   };
 
+  // Navigation handler to show article details
   const handleNavigateToArticleDetail = (articleId: number) => {
     setSelectedArticleId(articleId);
     setCurrentView('articledetail');
   };
 
+  // Navigation handler to show course details
   const handleNavigateToCourseDetail = (courseId: string) => {
     setSelectedCourseId(courseId);
     setCurrentView('coursedetail');
@@ -89,7 +103,7 @@ export default function App() {
       {/* Content */}
       <div className="relative z-10">
         {/* Hide navbar when in admin panel */}
-        {currentView !== 'adminpanel' && (
+        {currentView !== 'adminpanel' && currentView !== 'settings' && (
           <Navbar
             currentView={currentView}
             isAuthenticated={isAuthenticated}
