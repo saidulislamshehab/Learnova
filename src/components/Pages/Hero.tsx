@@ -170,7 +170,7 @@ export function Hero({
             </div>
 
             {/* Right - Terminal Display */}
-            <div className="relative hidden lg:block">
+            <div className="relative mt-16 lg:mt-0">
               <div className="relative bg-[#121212]/80 backdrop-blur-sm border border-[#A5C89E]/30 rounded-2xl p-8 shadow-2xl">
                 {/* Terminal Header */}
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#A5C89E]/20">
@@ -230,14 +230,14 @@ export function Hero({
                 </div>
 
                 {/* Floating Icons */}
-                <div className="absolute -right-6 top-1/4 w-16 h-16 bg-[#121212] border border-[#A5C89E]/30 rounded-xl flex items-center justify-center">
-                  <Terminal className="w-8 h-8 text-[#A5C89E]/90" />
+                <div className="absolute -right-2 sm:-right-6 top-1/4 w-12 h-12 sm:w-16 sm:h-16 bg-[#121212] border border-[#A5C89E]/30 rounded-xl flex items-center justify-center">
+                  <Terminal className="w-6 h-6 sm:w-8 sm:h-8 text-[#A5C89E]/90" />
                 </div>
-                <div className="absolute -right-6 top-1/2 w-16 h-16 bg-[#121212] border border-[#A5C89E]/30 rounded-xl flex items-center justify-center">
-                  <Code2 className="w-8 h-8 text-[#A5C89E]/90" />
+                <div className="absolute -right-2 sm:-right-6 top-1/2 w-12 h-12 sm:w-16 sm:h-16 bg-[#121212] border border-[#A5C89E]/30 rounded-xl flex items-center justify-center">
+                  <Code2 className="w-6 h-6 sm:w-8 sm:h-8 text-[#A5C89E]/90" />
                 </div>
-                <div className="absolute -right-6 top-3/4 w-16 h-16 bg-[#121212] border border-[#A5C89E]/30 rounded-xl flex items-center justify-center">
-                  <Database className="w-8 h-8 text-[#A5C89E]/90" />
+                <div className="absolute -right-2 sm:-right-6 top-3/4 w-12 h-12 sm:w-16 sm:h-16 bg-[#121212] border border-[#A5C89E]/30 rounded-xl flex items-center justify-center">
+                  <Database className="w-6 h-6 sm:w-8 sm:h-8 text-[#A5C89E]/90" />
                 </div>
               </div>
 
