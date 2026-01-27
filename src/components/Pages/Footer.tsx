@@ -4,7 +4,7 @@ import {
   Linkedin,
   Mail,
 } from "lucide-react";
-import NavLogo from '../Sources/Logo.png';
+import NavLogo from '../Sources/logo.png';
 
 /**
  * Footer Component

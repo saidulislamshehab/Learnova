@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import NavLogo from '../Sources/Logo.png';
+import NavLogo from '../Sources/logo.png';
 
 // Interface for SignIn props with navigation callbacks
 interface SignInProps {

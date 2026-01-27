@@ -14,7 +14,7 @@ import {
   BookOpen,
   Bell,
 } from "lucide-react";
-import NavLogo from '../Sources/Logo.png';
+import NavLogo from '../Sources/logo.png';
 
 // Interface defining the props for the Navbar component
 interface NavbarProps {
