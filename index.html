@@ -1,23 +1,22 @@
-
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <link rel="icon" type="image/png" href="/src/components/Sources/NavLogo.png" /> 
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Learnova</title>
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="icon" type="image/png" href="/src/components/Sources/Logo.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learnova</title>
     <script>
       /* Script to round the favicon (browser tab icon) since CSS cannot do it directly */
-      (function() {
+      (function () {
         const link = document.querySelector("link[rel*='icon']");
         if (link) {
           const img = new Image();
           img.src = link.href;
           img.onload = () => {
-            const canvas = document.createElement('canvas');
+            const canvas = document.createElement("canvas");
             canvas.width = img.width;
             canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext("2d");
             const r = Math.min(canvas.width, canvas.height) * 0.2; // 20% corner radius
             ctx.beginPath();
             ctx.moveTo(r, 0);
@@ -33,11 +32,10 @@
         }
       })();
     </script>
-    </head>
+  </head>
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
