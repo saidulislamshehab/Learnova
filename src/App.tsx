@@ -24,6 +24,7 @@ import { PublishCourse } from './components/Pages/PublishCourse';
 import { Feedback } from './components/Pages/Feedback';
 import { InstructorMyCourses } from './components/Pages/InstructorMyCourses';
 import { Settings } from './components/Pages/Settings';
+import { Analytics } from "@vercel/analytics/react"
 import { AdminPanel } from './components/Pages/AdminPanel';
 import { Tutorials } from './components/Pages/Tutorials';
 
@@ -366,6 +367,7 @@ export default function App() {
           </>
         )}
       </div>
+      <Analytics />
     </div>
   );
 }
