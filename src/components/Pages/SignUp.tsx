@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import NavLogo from '../Sources/Logo.png';
 
 // Interface for SignUp props
 interface SignUpProps {
   onSwitchToSignIn: () => void;
   onBackToHome: () => void;
+  onShowNotification?: (message: string, type: 'success' | 'error') => void;
 }
 
 /**
@@ -16,21 +17,77 @@ interface SignUpProps {
 export function SignUp({
   onSwitchToSignIn,
   onBackToHome,
+  onShowNotification,
 }: SignUpProps) {
   // State for form inputs
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<
     string | null
   >(null);
 
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   // Handler for form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle sign up logic here
-    console.log("Sign up with:", name, email, password);
+    setError(null);
+
+    // Basic validation
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Use window.location.hostname to allow access from network (e.g. 192.168.x.x)
+      const response = await fetch(`http://${window.location.hostname}:8000/api/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors or other errors
+        if (data.errors) {
+            // Flatten errors or just show the first one
+            const errorMessages = Object.values(data.errors).flat().join(", ");
+            throw new Error(errorMessages);
+        }
+        throw new Error(data.message || "Registration failed");
+      }
+
+      console.log("Sign up successful:", data);
+      
+      if (onShowNotification) {
+          onShowNotification("Account successfully created! Please sign in.", "success");
+      }
+      
+      // Automatically switch to sign in or log in
+      onSwitchToSignIn();
+
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      setError(err.message || "Failed to register");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -52,6 +109,14 @@ export function SignUp({
         {/* Sign Up Card */}
         <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/20 rounded-3xl p-8 shadow-2xl shadow-black/50">
           <form onSubmit={handleSubmit} className="space-y-6">
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 mb-4">
+                <p className="text-red-400 text-sm font-mono text-center">{error}</p>
+              </div>
+            )}
+
             {/* Name Field */}
             <div className="relative">
               <label className="block text-xs font-mono text-gray-500 mb-2 tracking-wider">
@@ -115,15 +180,22 @@ export function SignUp({
               >
                 <Lock className="absolute left-4 w-5 h-5 text-[#A5C89E]/60" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Create a strong password"
-                  className="w-full bg-transparent text-white pl-12 pr-4 py-3 outline-none placeholder:text-gray-600 text-sm"
+                  className="w-full bg-transparent text-white pl-12 pr-12 py-3 outline-none placeholder:text-gray-600 text-sm"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 text-gray-500 hover:text-[#A5C89E]/60 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
@@ -140,7 +212,7 @@ export function SignUp({
               >
                 <Lock className="absolute left-4 w-5 h-5 text-[#A5C89E]/60" />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) =>
                     setConfirmPassword(e.target.value)
@@ -150,18 +222,26 @@ export function SignUp({
                   }
                   onBlur={() => setFocusedField(null)}
                   placeholder="Re-enter your password"
-                  className="w-full bg-transparent text-white pl-12 pr-4 py-3 outline-none placeholder:text-gray-600 text-sm"
+                  className="w-full bg-transparent text-white pl-12 pr-12 py-3 outline-none placeholder:text-gray-600 text-sm"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 text-gray-500 hover:text-[#A5C89E]/60 transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-[#A5C89E]/80 hover:bg-[#A5C89E]/90 text-black font-medium py-3 rounded-xl transition-all shadow-lg shadow-[#A5C89E]/20 hover:shadow-[#A5C89E]/30 text-sm tracking-wide"
+              disabled={isLoading}
+              className={`w-full bg-[#A5C89E]/80 hover:bg-[#A5C89E]/90 text-black font-medium py-3 rounded-xl transition-all shadow-lg shadow-[#A5C89E]/20 hover:shadow-[#A5C89E]/30 text-sm tracking-wide ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              CREATE ACCOUNT
+              {isLoading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
             </button>
           </form>
 

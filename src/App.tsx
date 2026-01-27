@@ -48,6 +48,14 @@ export default function App() {
   const [selectedArticleId, setSelectedArticleId] = useState<number>(1);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('PY-001');
   const [editCourseId, setEditCourseId] = useState<string>('');
+  // State for notification
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Helper to show notification
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   // Handler for successful login
   const handleLogin = () => {
@@ -59,6 +67,7 @@ export default function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentView('home');
+    showNotification('Logged out successfully');
   };
 
   // Navigation handler to show all courses, optionally filtered by category
@@ -99,6 +108,16 @@ export default function App() {
       <div className="fixed top-1/4 left-1/4 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-40 animate-pulse pointer-events-none z-0"></div>
       <div className="fixed top-1/3 right-1/3 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-30 animate-pulse pointer-events-none z-0"></div>
       <div className="fixed top-2/3 left-1/2 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-50 animate-pulse pointer-events-none z-0"></div>
+
+      {/* Notification Popup */}
+      {notification && (
+        <div className="fixed bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-[100] animate-fade-in-up w-auto max-w-[90vw]">
+          <div className="bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#A5C89E]/20 text-white px-6 py-3 rounded-full shadow-2xl flex items-center justify-center space-x-3 whitespace-nowrap">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${notification.type === 'success' ? 'bg-[#A5C89E]' : 'bg-red-500'}`}></div>
+            <span className="text-sm font-mono tracking-wide truncate">{notification.message}</span>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="relative z-10">
@@ -145,6 +164,7 @@ export default function App() {
             onSwitchToSignUp={() => setCurrentView('signup')}
             onBackToHome={() => setCurrentView('home')}
             onLogin={handleLogin}
+            onShowNotification={showNotification}
           />
         )}
 
@@ -152,6 +172,7 @@ export default function App() {
           <SignUp
             onSwitchToSignIn={() => setCurrentView('signin')}
             onBackToHome={() => setCurrentView('home')}
+            onShowNotification={showNotification}
           />
         )}
 

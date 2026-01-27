@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import NavLogo from '../Sources/Logo.png';
 
 // Interface for SignIn props with navigation callbacks
@@ -7,6 +7,7 @@ interface SignInProps {
   onSwitchToSignUp: () => void;
   onBackToHome: () => void;
   onLogin: () => void;
+  onShowNotification?: (message: string, type: 'success' | 'error') => void;
 }
 
 /**
@@ -18,20 +19,61 @@ export function SignIn({
   onSwitchToSignUp,
   onBackToHome,
   onLogin,
+  onShowNotification,
 }: SignInProps) {
   // State for form inputs and focus tracking
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<
     string | null
   >(null);
 
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   // Handler for form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle sign in logic here
-    console.log("Sign in with:", email, password);
-    onLogin();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Use window.location.hostname to allow access from network (e.g. 192.168.x.x)
+      const response = await fetch(`http://${window.location.hostname}:8000/api/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors) {
+            const errorMessages = Object.values(data.errors).flat().join(", ");
+            throw new Error(errorMessages);
+        }
+        throw new Error(data.message || "Login failed");
+      }
+
+      console.log("Login successful:", data);
+      if (onShowNotification) {
+          onShowNotification("Login successful! Welcome back.", "success");
+      }
+      onLogin(); // Trigger the parent login handler
+
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err.message || "Failed to login");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,7 +103,15 @@ export function SignIn({
             Access your learning dashboard
           </p>
 
+
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4">
+                <p className="text-red-400 text-sm font-mono text-center">{error}</p>
+              </div>
+            )}
+
             {/* Email Field */}
             <div>
               <label className="block text-gray-400 text-xs font-mono tracking-wider mb-2">
@@ -94,15 +144,22 @@ export function SignIn({
                   className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${focusedField === "password" ? "text-[#A5C89E]/90" : "text-gray-500"}`}
                 />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Enter your password"
-                  className={`w-full bg-[#0b0b0b]/60 border ${focusedField === "password" ? "border-[#A5C89E]/60" : "border-gray-700/50"} rounded-xl px-12 py-3.5 text-white placeholder:text-gray-600 outline-none transition-all focus:shadow-lg focus:shadow-[#A5C89E]/10`}
+                  className={`w-full bg-[#0b0b0b]/60 border ${focusedField === "password" ? "border-[#A5C89E]/60" : "border-gray-700/50"} rounded-xl pl-12 pr-12 py-3.5 text-white placeholder:text-gray-600 outline-none transition-all focus:shadow-lg focus:shadow-[#A5C89E]/10`}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#A5C89E]/90 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
@@ -119,9 +176,10 @@ export function SignIn({
             {/* Sign In Button */}
             <button
               type="submit"
-              className="w-full bg-[#A5C89E]/80 hover:bg-[#A5C89E]/90 text-black font-bold py-3.5 rounded-xl transition-all hover:shadow-lg hover:shadow-[#A5C89E]/20 tracking-wide"
+              disabled={isLoading}
+              className={`w-full bg-[#A5C89E]/80 hover:bg-[#A5C89E]/90 text-black font-bold py-3.5 rounded-xl transition-all hover:shadow-lg hover:shadow-[#A5C89E]/20 tracking-wide ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              SIGN IN
+              {isLoading ? "SIGNING IN..." : "SIGN IN"}
             </button>
           </form>
 
