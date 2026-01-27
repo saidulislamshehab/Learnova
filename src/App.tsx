@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 
 import { Navbar } from './components/Pages/Navbar';
 import { Hero } from './components/Pages/Hero';
@@ -366,6 +367,7 @@ export default function App() {
           </>
         )}
       </div>
+      <Analytics />
     </div>
   );
 }
