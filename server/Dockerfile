@@ -1,4 +1,4 @@
-# Stage 1: Build frontend assets
+# Stage 1 - Build Frontend (Vite)
 FROM node:18 AS frontend
 WORKDIR /app
 COPY package*.json ./
@@ -6,49 +6,31 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve application
-FROM php:8.2-cli
+# Stage 2 - Backend (Laravel + PHP + Composer)
+FROM php:8.2-fpm AS backend
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    zip \
-    unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    git curl unzip libpq-dev libonig-dev libzip-dev zip \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy composer files first for caching
-COPY composer.json composer.lock ./
-
-# Install dependencies without running scripts (because files aren't copied yet)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
-
-# Copy project files
+# Copy app files
 COPY . .
 
-# Copy built frontend assets from the frontend stage
-# Vite with Laravel plugin outputs to public/build by default
-COPY --from=frontend /app/public/build public/build
+# Copy built frontend from Stage 1
+COPY --from=frontend /app/public/dist ./public/dist
 
-# Now run the scripts (package discovery, etc.)
-RUN composer dump-autoload --optimize
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Generate app key if missing
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
-RUN php artisan key:generate
+# Laravel setup
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear
 
-# Expose Port for Render
-EXPOSE 10000
-
-# Start Laravel
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+CMD ["php-fpm"]
