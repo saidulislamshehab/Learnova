@@ -1,86 +1,20 @@
-# Stage 1: Build frontend assets
-FROM node:18 AS frontend
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+FROM richarvey/nginx-php-fpm:latest
 
-# Stage 2: Install PHP dependencies
-FROM composer:2 AS composer-deps
-WORKDIR /app
-COPY composer.json composer.lock ./
-COPY database ./database
-COPY app ./app
-COPY bootstrap ./bootstrap
-COPY config ./config
-COPY routes ./routes
-COPY resources ./resources
-COPY public ./public
-COPY artisan ./artisan
-
-# Install dependencies with platform requirements
-RUN composer install \
-    --no-dev \
-    --optimize-autoloader \
-    --no-interaction \
-    --prefer-dist \
-    --no-scripts \
-    --ignore-platform-reqs
-
-# Stage 3: Serve application
-FROM php:8.4-cli
-
-# Install system dependencies & extensions
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    zip \
-    unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-WORKDIR /var/www
-
-# Copy project files
 COPY . .
 
-# Copy vendor from composer stage
-COPY --from=composer-deps /app/vendor ./vendor
+# Image Configuration
+ENV SKIP_COMPOSER 1
+ENV WEBROOT /var/www/html/public
+ENV PHP_ERRORS_STDERR 1
+ENV RUN_SCRIPTS 1
+ENV REAL_IP_HEADER 1
 
-# Copy built frontend assets
-COPY --from=frontend /app/public/build ./public/build
+# Laravel Configuration
+ENV APP_ENV production
+ENV APP_DEBUG false
+ENV LOG_CHANNEL stderr
 
-# Set up Laravel directories with proper permissions
-RUN mkdir -p storage/framework/{sessions,views,cache} \
-    && mkdir -p storage/logs \
-    && mkdir -p bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+# Allow composer to run as root
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# Generate app key if missing (prevents boot errors)
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
-RUN php artisan key:generate --force
-
-# Generate autoloader first (no scripts) to check for mapping errors
-RUN composer dump-autoload --optimize --no-scripts --verbose
-
-# Run package discovery explicitly to capture any boot errors
-RUN php artisan package:discover --ansi -v
-
-# Clean up config
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear
-
-# Expose Render port
-EXPOSE 10000
-
-# Start Laravel using the built-in server
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+CMD ["/start.sh"]
