@@ -1,15 +1,17 @@
+# Use PHP 8.2 (stable & fully compatible with Laravel 12)
 FROM php:8.2-cli
 
-# Install system dependencies
+# Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    zip \
+    unzip \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    zip \
-    unzip \
+    libicu-dev \
     && docker-php-ext-install \
     pdo_mysql \
     mbstring \
@@ -18,27 +20,30 @@ RUN apt-get update && apt-get install -y \
     bcmath \
     gd \
     zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    intl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
+# Install Composer (official)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www
 
-# Copy composer files first (cache optimization)
+# Copy composer files first (for Docker layer caching)
 COPY composer.json composer.lock ./
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+# Install PHP dependencies
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-progress
 
-# Copy project files
+# Copy the rest of the Laravel project
 COPY . .
 
-# Generate optimized autoload files (this triggers the scripts now that files are present)
-RUN composer dump-autoload --optimize
-
-# Expose Render port
+# Expose the port Render uses
 EXPOSE 10000
 
 # Start Laravel
