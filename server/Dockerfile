@@ -18,7 +18,9 @@ ENV LOG_CHANNEL stderr
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
 
-RUN chmod +x /var/www/html/start.sh
 
-#aa
-CMD ["/var/www/html/start.sh"]
+# Move start.sh to where the base image expects user scripts
+RUN mkdir -p /var/www/html/scripts && mv /var/www/html/start.sh /var/www/html/scripts/start.sh && chmod +x /var/www/html/scripts/start.sh
+
+# Let the base image do its thing
+CMD ["/start.sh"]
