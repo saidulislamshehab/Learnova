@@ -29,7 +29,7 @@ RUN composer install \
     --ignore-platform-reqs
 
 # Stage 3: Serve application
-FROM php:8.2-cli
+FROM php:8.4-cli
 
 # Install system dependencies & extensions
 RUN apt-get update && apt-get install -y \
@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -68,8 +68,11 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 RUN php artisan key:generate --force
 
-# Run post-autoload scripts now that everything is in place
-RUN composer dump-autoload --optimize
+# Generate autoloader first (no scripts) to check for mapping errors
+RUN composer dump-autoload --optimize --no-scripts --verbose
+
+# Run package discovery explicitly to capture any boot errors
+RUN php artisan package:discover --ansi -v
 
 # Clean up config
 RUN php artisan config:clear && \
