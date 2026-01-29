@@ -11,3 +11,11 @@ Route::get('/users', function () {
     return User::all();
 });
 
+
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Server is running successfully!',
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
