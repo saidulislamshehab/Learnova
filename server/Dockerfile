@@ -27,20 +27,14 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy composer files first for caching
-COPY composer.json composer.lock ./
-
-# Install dependencies (no scripts to avoid errors before code copy)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
-
-# Copy project files
+# Copy project files first
 COPY . .
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Copy built frontend assets
 COPY --from=frontend /app/public/build public/build
-
-# Finalize setup
-RUN composer dump-autoload --optimize
 
 # Generate app key if missing (prevents boot errors)
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
