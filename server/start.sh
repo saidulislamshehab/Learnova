@@ -10,4 +10,7 @@ php artisan config:cache
 # php artisan route:cache
 
 echo "Running migrations..."
-php artisan migrate --force
+# php artisan migrate --force
+
+echo "Starting Supervisord..."
+/usr/bin/supervisord -n -c /etc/supervisord.conf
