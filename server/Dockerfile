@@ -30,10 +30,13 @@ WORKDIR /var/www
 COPY composer.json composer.lock ./
 
 # Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # Copy project files
 COPY . .
+
+# Generate optimized autoload files (this triggers the scripts now that files are present)
+RUN composer dump-autoload --optimize
 
 # Expose Render port
 EXPOSE 10000
