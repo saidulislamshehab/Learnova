@@ -20,4 +20,5 @@ ENV COMPOSER_ALLOW_SUPERUSER 1
 
 RUN chmod +x /var/www/html/start.sh
 
+#aa
 CMD ["/var/www/html/start.sh"]
