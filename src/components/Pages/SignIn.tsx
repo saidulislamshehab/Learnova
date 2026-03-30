@@ -62,6 +62,16 @@ export function SignIn({
         throw new Error(data.message || "Login failed");
       }
 
+      const token: string | undefined = data?.authorization?.token;
+      if (!token) {
+        throw new Error("Login response did not include an auth token");
+      }
+
+      localStorage.setItem("auth_token", token);
+      if (data?.user) {
+        localStorage.setItem("auth_user", JSON.stringify(data.user));
+      }
+
       console.log("Login successful:", data);
       if (onShowNotification) {
           onShowNotification("Login successful! Welcome back.", "success");
