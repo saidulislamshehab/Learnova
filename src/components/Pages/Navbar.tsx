@@ -67,6 +67,10 @@ export function Navbar({
   onAdminPanel,
   onTutorials,
 }: NavbarProps) {
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string>('Learner');
+  const [profileEmail, setProfileEmail] = useState<string>('');
+  const [userRole, setUserRole] = useState<'student' | 'expert' | 'instructor' | 'admin'>('student');
   // State to track if the page is scrolled to adjust navbar styling
   const [isScrolled, setIsScrolled] = useState(false);
   // State for controlling mobile menu visibility
@@ -128,6 +132,89 @@ export function Navbar({
     "AI / ML",
     "All Tutorials",
   ];
+
+  const canSeeWriteArticle = userRole === 'admin' || userRole === 'expert';
+  const canSeePublishCourse = userRole === 'admin' || userRole === 'instructor';
+  const canSeeAdminPanel = userRole === 'admin';
+  const displayRole = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfilePicture(null);
+      setProfileName('Learner');
+      setProfileEmail('');
+      setUserRole('student');
+      return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+    const cachedUser = localStorage.getItem('auth_user');
+
+    if (cachedUser) {
+      try {
+        const parsed = JSON.parse(cachedUser) as { picture?: string | null; role?: string | null; name?: string | null; email?: string | null };
+        setProfilePicture(parsed.picture ?? null);
+        setProfileName(parsed.name || 'Learner');
+        setProfileEmail(parsed.email || '');
+        const normalizedRole = (parsed.role || 'student').toLowerCase();
+        if (normalizedRole === 'admin' || normalizedRole === 'expert' || normalizedRole === 'instructor') {
+          setUserRole(normalizedRole);
+        } else {
+          setUserRole('student');
+        }
+      } catch {
+        setProfilePicture(null);
+        setProfileName('Learner');
+        setProfileEmail('');
+        setUserRole('student');
+      }
+    }
+
+    if (!token) {
+      return;
+    }
+
+    const syncProfilePicture = async () => {
+      try {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const user = (await response.json()) as { picture?: string | null; role?: string | null; name?: string | null; email?: string | null };
+        setProfilePicture(user.picture ?? null);
+        setProfileName(user.name || 'Learner');
+        setProfileEmail(user.email || '');
+        const normalizedRole = (user.role || 'student').toLowerCase();
+        if (normalizedRole === 'admin' || normalizedRole === 'expert' || normalizedRole === 'instructor') {
+          setUserRole(normalizedRole);
+        } else {
+          setUserRole('student');
+        }
+
+        if (cachedUser) {
+          try {
+            const parsed = JSON.parse(cachedUser) as Record<string, unknown>;
+            localStorage.setItem('auth_user', JSON.stringify({ ...parsed, picture: user.picture ?? null }));
+          } catch {
+            localStorage.setItem('auth_user', JSON.stringify(user));
+          }
+        } else {
+          localStorage.setItem('auth_user', JSON.stringify(user));
+        }
+      } catch {
+        // Keep existing avatar fallback if request fails.
+      }
+    };
+
+    syncProfilePicture();
+  }, [isAuthenticated, currentView]);
 
   // Effect to handle scroll events and update time
   useEffect(() => {
@@ -404,9 +491,13 @@ export function Navbar({
                   onClick={() =>
                     setIsProfileOpen(!isProfileOpen)
                   }
-                  className="navbar-profile-btn"
+                  className="navbar-profile-btn overflow-hidden rounded-full"
                 >
-                  <User className="w-5 h-5" />
+                  {profilePicture ? (
+                    <img src={profilePicture} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    <User className="w-5 h-5" />
+                  )}
                 </button>
                 {isProfileOpen && (
                   <div
@@ -416,9 +507,30 @@ export function Navbar({
                       WebkitBackdropFilter: "blur(20px)",
                     }}
                   >
-                    <h3 className="navbar-dropdown-header">
-                      PROFILE MENU
-                    </h3>
+                    <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border border-[#A5C89E]/40 bg-[#0b0b0b] shrink-0">
+                          {profilePicture ? (
+                            <img src={profilePicture} alt={profileName} className="w-full h-full object-cover rounded-full" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[#A5C89E]">
+                              <User className="w-5 h-5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{profileName}</p>
+                          {profileEmail ? (
+                            <p className="text-xs text-gray-400 truncate">{profileEmail}</p>
+                          ) : (
+                            <p className="text-xs text-gray-500">No email</p>
+                          )}
+                          <span className="inline-flex mt-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider bg-[#A5C89E]/10 border border-[#A5C89E]/30 text-[#A5C89E]">
+                            {displayRole}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                     <div className="space-y-0">
                       <a
                         href="#my-profile"
@@ -480,28 +592,32 @@ export function Navbar({
                       </div>
 
                       <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
-                        <a
-                          href="#write-article"
-                          className="navbar-dropdown-item"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onWriteArticle?.();
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Write Article
-                        </a>
-                        <a
-                          href="#publish-course"
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onPublishCourse?.();
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Publish Course
-                        </a>
+                        {canSeeWriteArticle && (
+                          <a
+                            href="#write-article"
+                            className="navbar-dropdown-item"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              onWriteArticle?.();
+                              setIsProfileOpen(false);
+                            }}
+                          >
+                            Write Article
+                          </a>
+                        )}
+                        {canSeePublishCourse && (
+                          <a
+                            href="#publish-course"
+                            className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              onPublishCourse?.();
+                              setIsProfileOpen(false);
+                            }}
+                          >
+                            Publish Course
+                          </a>
+                        )}
                       </div>
 
                       <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
@@ -515,17 +631,19 @@ export function Navbar({
                         >
                           Settings
                         </a>
-                        <a
-                          href="#admin-panel"
-                          className="navbar-dropdown-item"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onAdminPanel?.();
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Admin Panel
-                        </a>
+                        {canSeeAdminPanel && (
+                          <a
+                            href="#admin-panel"
+                            className="navbar-dropdown-item"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              onAdminPanel?.();
+                              setIsProfileOpen(false);
+                            }}
+                          >
+                            Admin Panel
+                          </a>
+                        )}
                         <a
                           href="#feedback"
                           className="navbar-dropdown-item"
@@ -817,28 +935,32 @@ export function Navbar({
                   >
                     JOIN AS INSTRUCTOR
                   </a>
-                  <a
-                    href="#write-article"
-                    className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onWriteArticle?.();
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    WRITE ARTICLE
-                  </a>
-                  <a
-                    href="#publish-course"
-                    className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onPublishCourse?.();
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    PUBLISH COURSE
-                  </a>
+                  {canSeeWriteArticle && (
+                    <a
+                      href="#write-article"
+                      className="navbar-mobile-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onWriteArticle?.();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      WRITE ARTICLE
+                    </a>
+                  )}
+                  {canSeePublishCourse && (
+                    <a
+                      href="#publish-course"
+                      className="navbar-mobile-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onPublishCourse?.();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      PUBLISH COURSE
+                    </a>
+                  )}
 
                   <div className="h-px bg-[#A5C89E]/10 my-2"></div>
 
@@ -852,17 +974,19 @@ export function Navbar({
                   >
                     SETTINGS
                   </button>
-                  <a
-                    href="#admin-panel"
-                    className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onAdminPanel?.();
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    ADMIN PANEL
-                  </a>
+                  {canSeeAdminPanel && (
+                    <a
+                      href="#admin-panel"
+                      className="navbar-mobile-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onAdminPanel?.();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      ADMIN PANEL
+                    </a>
+                  )}
                   <a
                     href="#feedback"
                     className="navbar-mobile-link"
