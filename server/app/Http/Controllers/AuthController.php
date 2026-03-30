@@ -16,18 +16,24 @@ class AuthController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:8', // removed confirmed for simplicity unless frontend sends password_confirmation
+                'password' => 'required|string|min:8',
             ]);
 
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => $validated['password'],
+                'password' => Hash::make($validated['password']),
             ]);
+
+            $token = Auth::login($user);
 
             return response()->json([
                 'message' => 'User registered successfully',
                 'user' => $user,
+                'authorization' => [
+                    'token' => $token,
+                    'type' => 'bearer',
+                ]
             ], 201);
 
         } catch (ValidationException $e) {
@@ -45,20 +51,44 @@ class AuthController extends Controller
                 'password' => 'required',
             ]);
 
-            if (Auth::attempt($credentials)) {
-                $user = Auth::user();
-                return response()->json([
-                    'message' => 'Login successful',
-                    'user' => $user,
-                ], 200);
+            if (! $token = Auth::attempt($credentials)) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
             }
 
-            return response()->json([
-                'message' => 'Invalid credentials',
-            ], 401);
+            return $this->respondWithToken($token);
 
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
+    }
+    
+    public function me()
+    {
+        return response()->json(Auth::user());
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+
+        return response()->json(['message' => 'Successfully logged out']);
+    }
+
+    public function refresh()
+    {
+        return $this->respondWithToken(Auth::refresh());
+    }
+
+    protected function respondWithToken($token)
+    {
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => Auth::user(),
+            'authorization' => [
+                'token' => $token,
+                'type' => 'bearer',
+                'expires_in' => Auth::factory()->getTTL() * 60
+            ]
+        ]);
     }
 }

@@ -42,7 +42,7 @@ export default function App() {
   // State to track the current active view/page
   const [currentView, setCurrentView] = useState<View>('home');
   // State to track user authentication status
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   // State for selected category in courses
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
   // State for keys/IDs to navigate to specific details
