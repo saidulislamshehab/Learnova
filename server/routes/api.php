@@ -1,9 +1,10 @@
 <?php
 
 
-use App\Models\User;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ExpertApplicationController;
+use App\Http\Controllers\InstructorApplicationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -18,14 +19,18 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/expert-applications', [ExpertApplicationController::class, 'store']);
     Route::get('/expert-applications/my-status', [ExpertApplicationController::class, 'myStatus']);
+    Route::post('/instructor-applications', [InstructorApplicationController::class, 'store']);
+    Route::get('/instructor-applications/my-status', [InstructorApplicationController::class, 'myStatus']);
     
     Route::middleware('role:admin')->group(function () {
-        Route::get('/users', function () {
-            return User::all();
-        });
+        Route::get('/admin/users', [AdminUserController::class, 'index']);
+        Route::post('/admin/users', [AdminUserController::class, 'store']);
+        Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']);
 
         Route::get('/admin/expert-applications', [ExpertApplicationController::class, 'index']);
         Route::put('/admin/expert-applications/{id}', [ExpertApplicationController::class, 'updateStatus']);
+        Route::get('/admin/instructor-applications', [InstructorApplicationController::class, 'index']);
+        Route::put('/admin/instructor-applications/{id}', [InstructorApplicationController::class, 'updateStatus']);
     });
 });
 

@@ -79,8 +79,22 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [detailView, setDetailView] = useState<DetailView>({ type: 'none' });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [instructorApplications, setInstructorApplications] = useState<any[]>([]);
+  const [isLoadingInstructorApplications, setIsLoadingInstructorApplications] = useState(false);
   const [expertApplications, setExpertApplications] = useState<any[]>([]);
   const [isLoadingExpertApplications, setIsLoadingExpertApplications] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'student',
+  });
 
   // Tutorial Management State
   const [tutorials, setTutorials] = useState([
@@ -255,32 +269,38 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     },
   ];
 
-  const instructorApplications = [
-    {
-      id: '1',
-      name: 'David Martinez',
-      email: 'david.m@email.com',
-      expertise: 'Web Development',
-      appliedDate: '2026-01-15',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      name: 'Lisa Anderson',
-      email: 'lisa.a@email.com',
-      expertise: 'Data Science',
-      appliedDate: '2026-01-18',
-      status: 'Pending',
-    },
-    {
-      id: '3',
-      name: 'Robert Taylor',
-      email: 'robert.t@email.com',
-      expertise: 'Mobile Development',
-      appliedDate: '2026-01-20',
-      status: 'Pending',
-    },
-  ];
+  const fetchInstructorApplications = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setInstructorApplications([]);
+      return;
+    }
+
+    try {
+      setIsLoadingInstructorApplications(true);
+      const response = await axios.get(`${API_BASE}/admin/instructor-applications`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const list = (response.data?.applications ?? []).map((item: any) => ({
+        id: String(item.id),
+        name: item.user?.name ?? 'Unknown',
+        email: item.user?.email ?? 'N/A',
+        expertise: item.expertise || item.user?.bio || 'Not provided',
+        appliedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.status ? String(item.status).charAt(0).toUpperCase() + String(item.status).slice(1) : 'Pending',
+      }));
+
+      setInstructorApplications(list);
+    } catch {
+      setInstructorApplications([]);
+    } finally {
+      setIsLoadingInstructorApplications(false);
+    }
+  };
 
   const fetchExpertApplications = async () => {
     const token = localStorage.getItem('auth_token');
@@ -315,10 +335,117 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
+  const fetchUsers = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setAdminUsers([]);
+      setUsersError('Please sign in as an admin to view users.');
+      return;
+    }
+
+    try {
+      setIsLoadingUsers(true);
+      setUsersError(null);
+      const response = await axios.get(`${API_BASE}/admin/users`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawUsers = response.data?.users ?? response.data?.data?.users ?? response.data?.data ?? [];
+      const list = (Array.isArray(rawUsers) ? rawUsers : []).map((item: any) => ({
+        id: String(item.id),
+        name: item.name ?? 'Unknown',
+        email: item.email ?? 'N/A',
+        role: item.role ? String(item.role).charAt(0).toUpperCase() + String(item.role).slice(1) : 'Student',
+        status: 'Active',
+        joinDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        lastLogin: item.updated_at ? new Date(item.updated_at).toLocaleDateString() : 'N/A',
+      }));
+
+      setAdminUsers(list);
+    } catch (error: any) {
+      setAdminUsers([]);
+      if (error?.response?.status === 403) {
+        setUsersError('You do not have permission to view users. Sign in with an admin account.');
+      } else if (error?.response?.status === 401) {
+        setUsersError('Your session expired. Please sign in again.');
+      } else {
+        setUsersError(error?.response?.data?.message || 'Failed to load users.');
+      }
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    if (!newUserForm.name.trim() || !newUserForm.email.trim() || !newUserForm.password.trim()) {
+      alert('Name, email, and password are required.');
+      return;
+    }
+
+    try {
+      setIsCreatingUser(true);
+      await axios.post(
+        `${API_BASE}/admin/users`,
+        {
+          name: newUserForm.name.trim(),
+          email: newUserForm.email.trim(),
+          password: newUserForm.password,
+          role: newUserForm.role,
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsAddUserModalOpen(false);
+      setNewUserForm({
+        name: '',
+        email: '',
+        password: '',
+        role: 'student',
+      });
+      await fetchUsers();
+      alert('User added successfully.');
+    } catch (error: any) {
+      const apiMessage = error?.response?.data?.message;
+      const firstValidationError = error?.response?.data?.errors
+        ? Object.values(error.response.data.errors)[0]
+        : null;
+      const validationMessage = Array.isArray(firstValidationError) ? firstValidationError[0] : null;
+      alert(apiMessage || validationMessage || 'Failed to add user.');
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
   useEffect(() => {
+    if (activeSection === 'instructor-applications') {
+      void fetchInstructorApplications();
+    }
+
     if (activeSection === 'expert-applications') {
       void fetchExpertApplications();
     }
+
+    if (activeSection === 'users') {
+      void fetchUsers();
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    setSearchQuery('');
   }, [activeSection]);
 
   const pendingArticles = [
@@ -524,6 +651,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   ];
 
   const handleApprove = (type: string, id: string) => {
+    if (type === 'instructor application') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/instructor-applications/${id}`,
+          { status: 'approved' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Approved ${type} #${id}`);
+          void fetchInstructorApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve application');
+        });
+      return;
+    }
+
     if (type === 'expert application') {
       const token = localStorage.getItem('auth_token');
       if (!token) {
@@ -556,6 +711,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   };
 
   const handleReject = (type: string, id: string) => {
+    if (type === 'instructor application') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/instructor-applications/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Rejected ${type} #${id}`);
+          void fetchInstructorApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject application');
+        });
+      return;
+    }
+
     if (type === 'expert application') {
       const token = localStorage.getItem('auth_token');
       if (!token) {
@@ -587,10 +770,41 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     alert(`Rejected ${type} #${id}`);
   };
 
-  const handleDelete = (type: string, id: string) => {
-    if (confirm(`Are you sure you want to delete this ${type}?`)) {
-      alert(`Deleted ${type} #${id}`);
+  const handleDelete = async (type: string, id: string) => {
+    if (!confirm(`Are you sure you want to delete this ${type}?`)) {
+      return;
     }
+
+    if (type === 'user') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      try {
+        setDeletingUserId(id);
+        await axios.delete(`${API_BASE}/admin/users/${id}`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setAdminUsers((prev) => prev.filter((user) => user.id !== id));
+        if (selectedUser?.id === id) {
+          setSelectedUser(null);
+        }
+        alert('User deleted successfully.');
+      } catch (error: any) {
+        alert(error?.response?.data?.message || 'Failed to delete user.');
+      } finally {
+        setDeletingUserId(null);
+      }
+      return;
+    }
+
+    alert(`Deleted ${type} #${id}`);
   };
 
   const handleViewDetails = (view: DetailView) => {
@@ -839,20 +1053,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => handleApprove('instructor application', application.id)}
-                  className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Approve Application
-                </button>
-                <button
-                  onClick={() => handleReject('instructor application', application.id)}
-                  className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reject Application
-                </button>
+                {application.status === 'Pending' ? (
+                  <>
+                    <button
+                      onClick={() => handleApprove('instructor application', application.id)}
+                      className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Approve Application
+                    </button>
+                    <button
+                      onClick={() => handleReject('instructor application', application.id)}
+                      className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject Application
+                    </button>
+                  </>
+                ) : (
+                  <span
+                    className={`px-6 py-3 rounded-xl font-medium border ${
+                      application.status === 'Approved'
+                        ? 'bg-green-500/10 border-green-500/40 text-green-400'
+                        : 'bg-red-500/10 border-red-500/40 text-red-400'
+                    }`}
+                  >
+                    {application.status}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -1244,11 +1472,27 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           {/* Users Management */}
           {activeSection === 'users' && (
             <div>
+              {(() => {
+                const filteredUsers = adminUsers.filter((user) => {
+                  const q = searchQuery.trim().toLowerCase();
+                  if (!q) {
+                    return true;
+                  }
+
+                  return (
+                    user.name.toLowerCase().includes(q)
+                    || user.email.toLowerCase().includes(q)
+                    || user.role.toLowerCase().includes(q)
+                  );
+                });
+
+                return (
+                  <>
               <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h2>
                   <p className="text-gray-600 text-sm">
-                    Total users: {users.length.toLocaleString()}
+                    Total users: {adminUsers.length.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -1264,6 +1508,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   </div>
                   <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
                     <Filter className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setIsAddUserModalOpen(true)}
+                    className="px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-xl text-white hover:bg-blue-700 transition-all text-sm font-medium inline-flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add User
                   </button>
                 </div>
               </div>
@@ -1288,45 +1539,66 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((user) => (
-                        <tr
-                          key={user.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 font-medium">{user.name}</td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{user.email}</td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
-                            <span className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
-                              {user.role}
-                            </span>
-                          </td>
-
-                          <td className="px-4 sm:px-6 py-3 sm:py-4">
-                            <div className="flex gap-1 sm:gap-2">
-                              <button
-                                onClick={() => setSelectedUser(user)}
-                                className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium flex items-center gap-1"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleDelete('user', user.id)}
-                                className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                      {isLoadingUsers ? (
+                        <tr>
+                          <td className="px-6 py-6 text-sm text-gray-500" colSpan={4}>
+                            Loading users...
                           </td>
                         </tr>
-                      ))}
+                      ) : usersError ? (
+                        <tr>
+                          <td className="px-6 py-6 text-sm text-red-500" colSpan={4}>
+                            {usersError}
+                          </td>
+                        </tr>
+                      ) : filteredUsers.length === 0 ? (
+                        <tr>
+                          <td className="px-6 py-6 text-sm text-gray-500" colSpan={4}>
+                            No users found.
+                          </td>
+                        </tr>
+                      ) : filteredUsers.map((user) => (
+                          <tr
+                            key={user.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 font-medium">{user.name}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{user.email}</td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                              <span className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
+                                {user.role}
+                              </span>
+                            </td>
+
+                            <td className="px-4 sm:px-6 py-3 sm:py-4">
+                              <div className="flex gap-1 sm:gap-2">
+                                <button
+                                  onClick={() => setSelectedUser(user)}
+                                  className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium flex items-center gap-1"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    void handleDelete('user', user.id);
+                                  }}
+                                  className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                                  title="Delete"
+                                  disabled={deletingUserId === user.id}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
               </div>
               <div className="flex items-center justify-between mt-4 px-2">
                 <p className="text-sm text-gray-500">
-                  Showing {users.length} of {stats[0].value} users
+                  Showing {filteredUsers.length} of {adminUsers.length} users
                 </p>
                 <div className="flex gap-2">
                   <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50" disabled>
@@ -1337,6 +1609,9 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   </button>
                 </div>
               </div>
+                  </>
+                );
+              })()}
             </div >
           )
           }
@@ -1392,7 +1667,19 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {instructorApplications.map((app) => (
+                        {isLoadingInstructorApplications ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              Loading instructor applications...
+                            </td>
+                          </tr>
+                        ) : instructorApplications.length === 0 ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              No instructor applications found.
+                            </td>
+                          </tr>
+                        ) : instructorApplications.map((app) => (
                           <tr
                             key={app.id}
                             className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -1411,18 +1698,32 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                 >
                                   View
                                 </button>
-                                <button
-                                  onClick={() => handleApprove('instructor application', app.id)}
-                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject('instructor application', app.id)}
-                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                >
-                                  Reject
-                                </button>
+                                {app.status === 'Pending' ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleApprove('instructor application', app.id)}
+                                      className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleReject('instructor application', app.id)}
+                                      className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                                      app.status === 'Approved'
+                                        ? 'bg-green-50 border-green-200 text-green-700'
+                                        : 'bg-red-50 border-red-200 text-red-700'
+                                    }`}
+                                  >
+                                    {app.status}
+                                  </span>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -2378,6 +2679,102 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           )}
         </div>
       </main>
+
+      {/* Add User Modal */}
+      {isAddUserModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">Add New User</h3>
+              <button
+                onClick={() => {
+                  setIsAddUserModalOpen(false);
+                }}
+                className="p-2 hover:bg-gray-100 text-gray-500 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={newUserForm.name}
+                  onChange={(e) => {
+                    setNewUserForm((prev) => ({ ...prev, name: e.target.value }));
+                  }}
+                  placeholder="Enter full name"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={newUserForm.email}
+                  onChange={(e) => {
+                    setNewUserForm((prev) => ({ ...prev, email: e.target.value }));
+                  }}
+                  placeholder="user@example.com"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={newUserForm.password}
+                  onChange={(e) => {
+                    setNewUserForm((prev) => ({ ...prev, password: e.target.value }));
+                  }}
+                  placeholder="Minimum 8 characters"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={newUserForm.role}
+                  onChange={(e) => {
+                    setNewUserForm((prev) => ({ ...prev, role: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="student">Student</option>
+                  <option value="expert">Expert</option>
+                  <option value="instructor">Instructor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setIsAddUserModalOpen(false);
+                }}
+                className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  void handleCreateUser();
+                }}
+                className="px-4 py-2.5 bg-blue-600 border border-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
+                disabled={isCreatingUser}
+              >
+                {isCreatingUser ? 'Adding...' : 'Add User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Details Modal */}
       {selectedUser && (

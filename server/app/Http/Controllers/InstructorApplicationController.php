@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ExpertApply;
+use App\Models\InstructorApply;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ExpertApplicationController extends Controller
+class InstructorApplicationController extends Controller
 {
     private function normalizeStatus(?string $status): string
     {
         return strtolower((string) ($status ?? 'pending'));
     }
 
-    private function toResponsePayload(ExpertApply $application): array
+    private function toResponsePayload(InstructorApply $application): array
     {
         return [
-            'id' => (int) $application->Ex_Ap_ID,
+            'id' => (int) $application->In_Ap_ID,
             'user_id' => (int) $application->UserID,
             'status' => $this->normalizeStatus($application->Status),
             'expertise' => $application->Expertise,
@@ -30,9 +30,9 @@ class ExpertApplicationController extends Controller
 
     public function myStatus(Request $request): JsonResponse
     {
-        $application = ExpertApply::query()
+        $application = InstructorApply::query()
             ->where('UserID', $request->user()->id)
-            ->latest('Ex_Ap_ID')
+            ->latest('In_Ap_ID')
             ->first();
 
         $normalized = $application ? $this->toResponsePayload($application) : null;
@@ -61,10 +61,10 @@ class ExpertApplicationController extends Controller
             ], 422);
         }
 
-        $existingActive = ExpertApply::query()
+        $existingActive = InstructorApply::query()
             ->where('UserID', $user->id)
             ->whereIn('Status', ['pending', 'approved', 'Pending', 'Approved'])
-            ->latest('Ex_Ap_ID')
+            ->latest('In_Ap_ID')
             ->first();
 
         if ($existingActive) {
@@ -74,7 +74,7 @@ class ExpertApplicationController extends Controller
             ], 409);
         }
 
-        $application = ExpertApply::create([
+        $application = InstructorApply::create([
             'UserID' => $user->id,
             'Status' => 'pending',
             'Expertise' => null,
@@ -82,21 +82,21 @@ class ExpertApplicationController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Expert application submitted successfully',
+            'message' => 'Instructor application submitted successfully',
             'application' => $this->toResponsePayload($application),
         ], 201);
     }
 
     public function index(): JsonResponse
     {
-        $applications = ExpertApply::query()
+        $applications = InstructorApply::query()
             ->with(['user:id,name,username,email,role,picture,bio'])
-            ->latest('Ex_Ap_ID')
+            ->latest('In_Ap_ID')
             ->get();
 
         return response()->json([
-            'message' => 'Expert applications fetched successfully',
-            'applications' => $applications->map(fn (ExpertApply $app) => $this->toResponsePayload($app))->values(),
+            'message' => 'Instructor applications fetched successfully',
+            'applications' => $applications->map(fn (InstructorApply $app) => $this->toResponsePayload($app))->values(),
         ]);
     }
 
@@ -106,22 +106,22 @@ class ExpertApplicationController extends Controller
             'status' => 'required|in:approved,rejected',
         ]);
 
-        $application = ExpertApply::query()->with('user')->findOrFail($id);
+        $application = InstructorApply::query()->with('user')->findOrFail($id);
 
         DB::transaction(function () use ($application, $validated): void {
             $application->update(['Status' => $validated['status']]);
 
             if ($validated['status'] === 'approved') {
                 $application->user->update([
-                    'role' => 'expert',
+                    'role' => 'instructor',
                 ]);
 
-                $existsInExperts = DB::table('experts')
+                $existsInInstructors = DB::table('instructors')
                     ->where('UserID', $application->user->id)
                     ->exists();
 
-                if (!$existsInExperts) {
-                    DB::table('experts')->insert([
+                if (!$existsInInstructors) {
+                    DB::table('instructors')->insert([
                         'UserID' => $application->user->id,
                         'created_at' => now(),
                         'updated_at' => now(),

@@ -137,6 +137,8 @@ export function Navbar({
   const canSeeWriteArticle = userRole === 'admin' || userRole === 'expert';
   const canSeePublishCourse = userRole === 'admin' || userRole === 'instructor';
   const canSeeAdminPanel = userRole === 'admin';
+  const canSeeJoinOptions = userRole === 'student';
+  const canSeeCreatorActions = canSeeWriteArticle || canSeePublishCourse;
   const displayRole = userRole.charAt(0).toUpperCase() + userRole.slice(1);
 
   useEffect(() => {
@@ -566,59 +568,63 @@ export function Navbar({
                         Bookmarks
                       </a>
 
-                      <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
-                        <a
-                          href="#join-expert"
-                          className="navbar-dropdown-item"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onJoinExpert?.();
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Join as Expert
-                        </a>
-                        <a
-                          href="#join-instructor"
-                          className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onJoinInstructor?.();
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          Join as Instructor
-                        </a>
-                      </div>
-
-                      <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
-                        {canSeeWriteArticle && (
+                      {canSeeJoinOptions && (
+                        <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
                           <a
-                            href="#write-article"
+                            href="#join-expert"
                             className="navbar-dropdown-item"
                             onClick={(e) => {
                               e.preventDefault();
-                              onWriteArticle?.();
+                              onJoinExpert?.();
                               setIsProfileOpen(false);
                             }}
                           >
-                            Write Article
+                            Join as Expert
                           </a>
-                        )}
-                        {canSeePublishCourse && (
                           <a
-                            href="#publish-course"
+                            href="#join-instructor"
                             className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
                             onClick={(e) => {
                               e.preventDefault();
-                              onPublishCourse?.();
+                              onJoinInstructor?.();
                               setIsProfileOpen(false);
                             }}
                           >
-                            Publish Course
+                            Join as Instructor
                           </a>
-                        )}
-                      </div>
+                        </div>
+                      )}
+
+                      {canSeeCreatorActions && (
+                        <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
+                          {canSeeWriteArticle && (
+                            <a
+                              href="#write-article"
+                              className="navbar-dropdown-item"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onWriteArticle?.();
+                                setIsProfileOpen(false);
+                              }}
+                            >
+                              Write Article
+                            </a>
+                          )}
+                          {canSeePublishCourse && (
+                            <a
+                              href="#publish-course"
+                              className="block w-full text-left px-4 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/5 transition-all text-sm font-medium"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onPublishCourse?.();
+                                setIsProfileOpen(false);
+                              }}
+                            >
+                              Publish Course
+                            </a>
+                          )}
+                        </div>
+                      )}
 
                       <div className="pt-1 mt-1 border-t border-[#A5C89E]/20">
                         <a
@@ -906,24 +912,28 @@ export function Navbar({
                   <div className="h-px bg-[#A5C89E]/10 my-2"></div>
 
                   {/* Contributor Section */}
-                  <Link
-                    to="/joinexpert"
-                    className="navbar-mobile-link"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    JOIN AS EXPERT
-                  </Link>
-                  <Link
-                    to="/joininstructor"
-                    className="navbar-mobile-link"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    JOIN AS INSTRUCTOR
-                  </Link>
+                  {canSeeJoinOptions && (
+                    <>
+                      <Link
+                        to="/joinexpert"
+                        className="navbar-mobile-link"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        JOIN AS EXPERT
+                      </Link>
+                      <Link
+                        to="/joininstructor"
+                        className="navbar-mobile-link"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        JOIN AS INSTRUCTOR
+                      </Link>
+                    </>
+                  )}
                   {canSeeWriteArticle && (
                     <Link
                       to="/writearticle"
@@ -1020,4 +1030,4 @@ export function Navbar({
       )}
     </nav>
   );
-}
+}
