@@ -4,8 +4,8 @@ import {
   Code2,
   Database,
 } from "lucide-react";
-import { TypewriterText } from "./TypewriterText";
-import { TerminalTypewriter } from "./TerminalTypewriter";
+import { TypewriterText } from "../Common/TypewriterText";
+import { TerminalTypewriter } from "../Common/TerminalTypewriter";
 
 // Interface for Hero component props defining navigation callbacks
 interface HeroProps {

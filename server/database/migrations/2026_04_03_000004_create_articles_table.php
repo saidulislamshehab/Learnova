@@ -7,17 +7,23 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('articles')) {
+            return;
+        }
         Schema::create('articles', function (Blueprint $table) {
-            $table->id('Article_ID');
-            $table->unsignedBigInteger('Ex_ID');  // FK to experts
+            $table->id('Article_ID'); // PK article
+            $table->unsignedBigInteger('UserID');  // user ID (author)
             $table->string('Title');
-            $table->longText('Content');
-            $table->string('Tags')->nullable();    // JSON-encoded tags/categories
-            $table->integer('Reaction')->default(0); // like/reaction count
-            $table->string('Status', 20)->default('draft'); // draft | pending | published
+            $table->text('Content')->nullable();
+            $table->text('Excerpt')->nullable();
+            $table->string('Category')->nullable();
+            $table->string('Read_Time', 30)->nullable();
+            $table->string('Thumbnail')->nullable(); // image URL
+            $table->integer('Reaction')->default(0);
+            $table->unsignedInteger('Views')->default(0);
             $table->timestamps();
 
-            $table->foreign('Ex_ID')->references('Ex_ID')->on('experts');
+            $table->foreign('UserID')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

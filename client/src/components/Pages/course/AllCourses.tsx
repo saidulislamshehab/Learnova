@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Clock, Users, ArrowUpRight, ChevronDown } from 'lucide-react';
-import { Pagination } from './Pagination';
+import { Pagination } from '../Common/Pagination';
 
 const allCourses = [
   {

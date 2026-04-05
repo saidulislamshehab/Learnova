@@ -7,19 +7,21 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // Enrollments — tracks which students have paid for which courses
+        if (Schema::hasTable('enrollments')) {
+            return;
+        }
         Schema::create('enrollments', function (Blueprint $table) {
-            $table->id();
+            $table->id('EnrollmentID');
             $table->unsignedBigInteger('UserID');
             $table->unsignedBigInteger('CourseID');
-            $table->string('Payment_Method', 20)->nullable(); // card | wallet
-            $table->decimal('Amount_Paid', 8, 2)->default(0.00);
-            $table->timestamp('Enrolled_At')->useCurrent();
+            $table->decimal('Amount_Paid', 8, 2);
+            $table->unsignedTinyInteger('Progress_Percent')->default(0);
+            $table->unsignedInteger('Completed_Lessons')->default(0);
+            $table->timestamp('Last_Accessed_At')->nullable();
             $table->timestamps();
 
-            $table->foreign('UserID')->references('id')->on('users');
-            $table->foreign('CourseID')->references('CourseID')->on('courses');
-            $table->unique(['UserID', 'CourseID']); // prevent duplicate enrollments
+            $table->foreign('UserID')->references('id')->on('users')->onDelete('cascade');
+            $table->index('CourseID');
         });
     }
 
