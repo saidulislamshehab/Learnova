@@ -163,9 +163,17 @@ class AuthController extends Controller
 
     protected function respondWithToken($token)
     {
+        $user = Auth::user();
+        
+        // If the user doesn't have a username yet, saving them will trigger 
+        // the automatic generation logic I added to the User model
+        if (!$user->username) {
+            $user->save();
+        }
+
         return response()->json([
             'message' => 'Login successful',
-            'user' => Auth::user(),
+            'user' => $user->fresh(),
             'authorization' => [
                 'token' => $token,
                 'type' => 'bearer',

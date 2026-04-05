@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 import { Navbar } from './components/Pages/Navbar';
 import { Hero } from './components/Pages/Hero';
@@ -28,19 +29,10 @@ import { Analytics } from "@vercel/analytics/react"
 import { AdminPanel } from './components/Pages/AdminPanel';
 import { Tutorials } from './components/Pages/Tutorials';
 
-// Define the available views for the application routing
-type View = 'home' | 'signin' | 'signup' | 'allcourses' | 'articles' | 'articledetail' | 'coursedetail'
-  | 'payment' | 'myprofile' | 'editprofile' | 'mycourses' | 'coursecontent' | 'bookmarks' | 'writearticle'
-  | 'joininstructor' | 'joinexpert' | 'publishcourse' | 'feedback' | 'instructormycourses' | 'settings'
-  | 'adminpanel' | 'tutorials';
-
-/**
- * Main application component.
- * Manages the global state, navigation, and rendering of different pages based on the current view.
- */
 export default function App() {
-  // State to track the current active view/page
-  const [currentView, setCurrentView] = useState<View>('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   // State to track user authentication status
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => Boolean(localStorage.getItem('auth_token')));
   // State for selected category in courses
@@ -52,6 +44,11 @@ export default function App() {
   // State for notification
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Sync authentication state
+  useEffect(() => {
+    setIsAuthenticated(Boolean(localStorage.getItem('auth_token')));
+  }, [location.pathname]);
+
   // Helper to show notification
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -61,7 +58,7 @@ export default function App() {
   // Handler for successful login
   const handleLogin = () => {
     setIsAuthenticated(true);
-    setCurrentView('home');
+    navigate('/');
   };
 
   // Handler for logging out
@@ -69,26 +66,8 @@ export default function App() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     setIsAuthenticated(false);
-    setCurrentView('home');
+    navigate('/');
     showNotification('Logged out successfully');
-  };
-
-  // Navigation handler to show all courses, optionally filtered by category
-  const handleNavigateToAllCourses = (category: string = 'All Categories') => {
-    setSelectedCategory(category);
-    setCurrentView('allcourses');
-  };
-
-  // Navigation handler to show article details
-  const handleNavigateToArticleDetail = (articleId: number) => {
-    setSelectedArticleId(articleId);
-    setCurrentView('articledetail');
-  };
-
-  // Navigation handler to show course details
-  const handleNavigateToCourseDetail = (courseId: string) => {
-    setSelectedCourseId(courseId);
-    setCurrentView('coursedetail');
   };
 
   return (
@@ -125,249 +104,264 @@ export default function App() {
       {/* Content */}
       <div className="relative z-10">
         {/* Hide navbar when in admin panel */}
-        {currentView !== 'adminpanel' && currentView !== 'settings' && (
+        {!['/adminpanel', '/settings'].includes(location.pathname) && (
           <Navbar
-            currentView={currentView}
+            currentView={location.pathname.substring(1) || 'home'}
             isAuthenticated={isAuthenticated}
-            onSignIn={() => setCurrentView('signin')}
-            onSignUp={() => setCurrentView('signup')}
-            onHome={() => setCurrentView('home')}
+            onSignIn={() => navigate('/signin')}
+            onSignUp={() => navigate('/signup')}
+            onHome={() => navigate('/')}
             onLogout={handleLogout}
-            onAllCourses={handleNavigateToAllCourses}
-            onArticles={() => setCurrentView('articles')}
-            onMyProfile={() => setCurrentView('myprofile')}
-            onMyCourses={() => setCurrentView('mycourses')}
-            onBookmarks={() => setCurrentView('bookmarks')}
-            onWriteArticle={() => setCurrentView('writearticle')}
-            onJoinInstructor={() => setCurrentView('joininstructor')}
-            onJoinExpert={() => setCurrentView('joinexpert')}
-            onPublishCourse={() => setCurrentView('publishcourse')}
-            onFeedback={() => setCurrentView('feedback')}
-            onInstructorMyCourses={() => setCurrentView('instructormycourses')}
-            onSettings={() => setCurrentView('settings')}
-            onAdminPanel={() => setCurrentView('adminpanel')}
-            onTutorials={() => setCurrentView('tutorials')}
+            onAllCourses={(category = 'All Categories') => {
+                setSelectedCategory(category);
+                navigate('/allcourses');
+            }}
+            onArticles={() => navigate('/articles')}
+            onMyProfile={() => navigate('/myprofile')}
+            onMyCourses={() => navigate('/mycourses')}
+            onBookmarks={() => navigate('/bookmarks')}
+            onWriteArticle={() => navigate('/writearticle')}
+            onJoinInstructor={() => navigate('/joininstructor')}
+            onJoinExpert={() => navigate('/joinexpert')}
+            onPublishCourse={() => navigate('/publishcourse')}
+            onFeedback={() => navigate('/feedback')}
+            onInstructorMyCourses={() => navigate('/instructormycourses')}
+            onSettings={() => navigate('/settings')}
+            onAdminPanel={() => navigate('/adminpanel')}
+            onTutorials={() => navigate('/tutorials')}
           />
         )}
 
-        {currentView === 'home' && (
-          <>
-            <Hero
-              onExploreCourses={() => handleNavigateToAllCourses()}
-              onViewDocs={() => setCurrentView('articles')}
-            />
-            <ExploreTopics onViewAllArticles={() => setCurrentView('articles')} />
-            <Courses onCourseClick={handleNavigateToCourseDetail} />
-            <Footer />
-          </>
-        )}
+        <Routes>
+            <Route path="/" element={
+                 <>
+                 <Hero
+                   onExploreCourses={() => navigate('/allcourses')}
+                   onViewDocs={() => navigate('/articles')}
+                 />
+                 <ExploreTopics onViewAllArticles={() => navigate('/articles')} />
+                 <Courses onCourseClick={(id) => { setSelectedCourseId(id); navigate('/coursedetail'); }} />
+                 <Footer />
+               </>
+            } />
 
-        {currentView === 'signin' && (
-          <SignIn
-            onSwitchToSignUp={() => setCurrentView('signup')}
-            onBackToHome={() => setCurrentView('home')}
-            onLogin={handleLogin}
-            onShowNotification={showNotification}
-          />
-        )}
+            <Route path="/signin" element={
+                <SignIn
+                    onSwitchToSignUp={() => navigate('/signup')}
+                    onBackToHome={() => navigate('/')}
+                    onLogin={handleLogin}
+                    onShowNotification={showNotification}
+                />
+            } />
 
-        {currentView === 'signup' && (
-          <SignUp
-            onSwitchToSignIn={() => setCurrentView('signin')}
-            onBackToHome={() => setCurrentView('home')}
-            onShowNotification={showNotification}
-          />
-        )}
+            <Route path="/signup" element={
+                <SignUp
+                    onSwitchToSignIn={() => navigate('/signin')}
+                    onBackToHome={() => navigate('/')}
+                    onShowNotification={showNotification}
+                />
+            } />
 
-        {currentView === 'allcourses' && (
-          <>
-            <AllCourses
-              category={selectedCategory}
-              onCourseClick={handleNavigateToCourseDetail}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/allcourses" element={
+                <>
+                    <AllCourses
+                        category={selectedCategory}
+                        onCourseClick={(id) => { setSelectedCourseId(id); navigate('/coursedetail'); }}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'articles' && (
-          <>
-            <Articles onArticleClick={handleNavigateToArticleDetail} />
-            <Footer />
-          </>
-        )}
+            <Route path="/articles" element={
+                <>
+                    <Articles onArticleClick={(id) => { setSelectedArticleId(id); navigate('/articledetail'); }} />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'articledetail' && (
-          <>
-            <ArticleDetail
-              articleId={selectedArticleId}
-              onBack={() => setCurrentView('articles')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/articledetail" element={
+                <>
+                    <ArticleDetail
+                        articleId={selectedArticleId}
+                        onBack={() => navigate('/articles')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'coursedetail' && (
-          <>
-            <CourseDetail
-              courseId={selectedCourseId}
-              onBack={() => setCurrentView('allcourses')}
-              onEnroll={(courseId) => {
-                setSelectedCourseId(courseId);
-                setCurrentView('payment');
-              }}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/coursedetail" element={
+                <>
+                    <CourseDetail
+                        courseId={selectedCourseId}
+                        onBack={() => navigate('/allcourses')}
+                        onEnroll={(id) => {
+                            setSelectedCourseId(id);
+                            navigate('/payment');
+                        }}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'payment' && (
-          <>
-            <CoursePayment
-              courseId={selectedCourseId}
-              onBack={() => setCurrentView('coursedetail')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/payment" element={
+                <>
+                    <CoursePayment
+                        courseId={selectedCourseId}
+                        onBack={() => navigate('/coursedetail')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'myprofile' && (
-          <>
-            <MyProfile
-              onBack={() => setCurrentView('home')}
-              onEditProfile={() => setCurrentView('editprofile')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/myprofile" element={
+                <>
+                    <MyProfile
+                        onBack={() => navigate('/')}
+                        onEditProfile={() => navigate('/editprofile')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'editprofile' && (
-          <>
-            <EditProfile
-              onBack={() => setCurrentView('myprofile')}
-              onSave={() => setCurrentView('myprofile')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/dashboard" element={
+                <>
+                    <MyProfile
+                        onBack={() => navigate('/')}
+                        onEditProfile={() => navigate('/editprofile')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'mycourses' && (
-          <>
-            <MyCourses
-              onBack={() => setCurrentView('home')}
-              onCourseClick={(courseId) => {
-                setSelectedCourseId(courseId);
-                setCurrentView('coursecontent');
-              }}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/editprofile" element={
+                <>
+                    <EditProfile
+                        onBack={() => navigate('/myprofile')}
+                        onSave={() => navigate('/myprofile')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'coursecontent' && (
-          <>
-            <CourseContent
-              courseId={selectedCourseId}
-              onBack={() => setCurrentView('mycourses')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/mycourses" element={
+                <>
+                    <MyCourses
+                        onBack={() => navigate('/')}
+                        onCourseClick={(id) => {
+                            setSelectedCourseId(id);
+                            navigate('/coursecontent');
+                        }}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'bookmarks' && (
-          <>
-            <Bookmarks
-              onArticleClick={handleNavigateToArticleDetail}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/coursecontent" element={
+                <>
+                    <CourseContent
+                        courseId={selectedCourseId}
+                        onBack={() => navigate('/mycourses')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'writearticle' && (
-          <>
-            <WriteArticle
-              onBack={() => setCurrentView('articles')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/bookmarks" element={
+                <>
+                    <Bookmarks
+                        onArticleClick={(id) => { setSelectedArticleId(id); navigate('/articledetail'); }}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'joininstructor' && (
-          <>
-            <JoinInstructor
-              onBack={() => setCurrentView('home')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/writearticle" element={
+                <>
+                    <WriteArticle
+                        onBack={() => navigate('/articles')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'joinexpert' && (
-          <>
-            <JoinExpert
-              onBack={() => setCurrentView('home')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/joininstructor" element={
+                <>
+                    <JoinInstructor
+                        onBack={() => navigate('/')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'publishcourse' && (
-          <>
-            <PublishCourse
-              onBack={() => setCurrentView('home')}
-              onMyCourses={() => setCurrentView('instructormycourses')}
-              editMode={!!editCourseId}
-              editCourseId={editCourseId}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/joinexpert" element={
+                <>
+                    <JoinExpert
+                        onBack={() => navigate('/')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'feedback' && (
-          <>
-            <Feedback
-              onBack={() => setCurrentView('home')}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/publishcourse" element={
+                <>
+                    <PublishCourse
+                        onBack={() => navigate('/')}
+                        onMyCourses={() => navigate('/instructormycourses')}
+                        editMode={!!editCourseId}
+                        editCourseId={editCourseId}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'instructormycourses' && (
-          <>
-            <InstructorMyCourses
-              onBack={() => setCurrentView('home')}
-              onCreateCourse={() => {
-                setEditCourseId('');
-                setCurrentView('publishcourse');
-              }}
-              onEditCourse={(courseId) => {
-                setEditCourseId(courseId);
-                setCurrentView('publishcourse');
-              }}
-            />
-            <Footer />
-          </>
-        )}
+            <Route path="/feedback" element={
+                <>
+                    <Feedback
+                        onBack={() => navigate('/')}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'settings' && (
-          <>
-            <Settings
-              onBack={() => setCurrentView('home')}
-              onEditProfile={() => setCurrentView('editprofile')}
-            />
-          </>
-        )}
+            <Route path="/instructormycourses" element={
+                <>
+                    <InstructorMyCourses
+                        onBack={() => navigate('/')}
+                        onCreateCourse={() => {
+                            setEditCourseId('');
+                            navigate('/publishcourse');
+                        }}
+                        onEditCourse={(id) => {
+                            setEditCourseId(id);
+                            navigate('/publishcourse');
+                        }}
+                    />
+                    <Footer />
+                </>
+            } />
 
-        {currentView === 'adminpanel' && (
-          <AdminPanel
-            onBack={() => setCurrentView('home')}
-          />
-        )}
+            <Route path="/settings" element={
+                <>
+                    <Settings
+                        onBack={() => navigate('/')}
+                        onEditProfile={() => navigate('/editprofile')}
+                    />
+                </>
+            } />
 
-        {currentView === 'tutorials' && (
-          <>
-            <Tutorials />
-            <Footer />
-          </>
-        )}
+            <Route path="/adminpanel" element={
+                <AdminPanel
+                    onBack={() => navigate('/')}
+                />
+            } />
+
+            <Route path="/tutorials" element={
+                <>
+                    <Tutorials />
+                    <Footer />
+                </>
+            } />
+        </Routes>
       </div>
       <Analytics />
     </div>

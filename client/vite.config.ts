@@ -51,7 +51,9 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    outDir: 'build',
+    outDir: '../server/public/build',
+    emptyOutDir: true,
+    manifest: true,
   },
   server: {
     port: 8080,

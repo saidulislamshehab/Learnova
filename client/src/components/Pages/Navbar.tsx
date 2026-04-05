@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   Search,
   Menu,
@@ -293,8 +294,8 @@ export function Navbar({
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <button
-              onClick={onHome}
+            <Link
+              to="/"
               className="navbar-logo-btn"
             >
               <div className="navbar-logo-icon-wrapper">
@@ -308,7 +309,7 @@ export function Navbar({
                   SYSTEM v1.0
                 </div>
               </div>
-            </button>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -361,13 +362,12 @@ export function Navbar({
                 </div>
               )}
             </div>
-            <a
-              href="#articles"
+            <Link
+              to="/articles"
               className="navbar-nav-link navbar-nav-link-underline"
-              onClick={onArticles}
             >
               ARTICLES
-            </a>
+            </Link>
             <div className="relative group" ref={tutorialsRef}>
               <button
                 className="navbar-nav-link navbar-nav-link-underline"
@@ -825,16 +825,15 @@ export function Navbar({
               )}
             </div>
 
-            <a
-              href="#articles"
+            <Link
+              to="/articles"
               className="navbar-mobile-link"
               onClick={() => {
-                onArticles();
                 setIsMobileMenuOpen(false);
               }}
             >
               ARTICLES
-            </a>
+            </Link>
 
             <div className="relative">
               <button
@@ -876,90 +875,76 @@ export function Navbar({
               {isAuthenticated ? (
                 <>
                   {/* Profile Links */}
-                  <a
-                    href="#my-profile"
+                  <Link
+                    to="/myprofile"
                     className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onMyProfile?.();
+                    onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     MY PROFILE
-                  </a>
-                  <a
-                    href="#my-courses"
+                  </Link>
+                  <Link
+                    to="/mycourses"
                     className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onMyCourses?.();
+                    onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     MY COURSES
-                  </a>
-                  <a
-                    href="#bookmarks"
+                  </Link>
+                  <Link
+                    to="/bookmarks"
                     className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onBookmarks?.();
+                    onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     BOOKMARKS
-                  </a>
+                  </Link>
 
                   <div className="h-px bg-[#A5C89E]/10 my-2"></div>
 
                   {/* Contributor Section */}
-                  <a
-                    href="#join-expert"
+                  <Link
+                    to="/joinexpert"
                     className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onJoinExpert?.();
+                    onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     JOIN AS EXPERT
-                  </a>
-                  <a
-                    href="#join-instructor"
+                  </Link>
+                  <Link
+                    to="/joininstructor"
                     className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onJoinInstructor?.();
+                    onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     JOIN AS INSTRUCTOR
-                  </a>
+                  </Link>
                   {canSeeWriteArticle && (
-                    <a
-                      href="#write-article"
+                    <Link
+                      to="/writearticle"
                       className="navbar-mobile-link"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onWriteArticle?.();
+                      onClick={() => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
                       WRITE ARTICLE
-                    </a>
+                    </Link>
                   )}
                   {canSeePublishCourse && (
-                    <a
-                      href="#publish-course"
+                    <Link
+                      to="/publishcourse"
                       className="navbar-mobile-link"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onPublishCourse?.();
+                      onClick={() => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
                       PUBLISH COURSE
-                    </a>
+                    </Link>
                   )}
 
                   <div className="h-px bg-[#A5C89E]/10 my-2"></div>
@@ -975,29 +960,25 @@ export function Navbar({
                     SETTINGS
                   </button>
                   {canSeeAdminPanel && (
-                    <a
-                      href="#admin-panel"
+                    <Link
+                      to="/adminpanel"
                       className="navbar-mobile-link"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onAdminPanel?.();
+                      onClick={() => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
                       ADMIN PANEL
-                    </a>
+                    </Link>
                   )}
-                  <a
-                    href="#feedback"
+                  <Link
+                    to="/feedback"
                     className="navbar-mobile-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onFeedback?.();
+                    onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     FEEDBACK
-                  </a>
+                  </Link>
 
                   <div className="h-px bg-[#A5C89E]/10 my-2"></div>
 
@@ -1039,4 +1020,4 @@ export function Navbar({
       )}
     </nav>
   );
-}
+}
