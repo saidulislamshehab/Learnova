@@ -96,6 +96,7 @@ export function Hero({
                     "GROW",
                     "SKILLS",
                     "SHEHAB",
+                    "MUGDHO",
                   ]}
                   typingSpeed={150}
                   deletingSpeed={100}
