@@ -86,15 +86,24 @@ class CourseController extends Controller
                 'UserID' => $request->user()->id,
                 'Title' => $validated['title'],
                 'Category' => $validated['category_name'] ?? (string) $validated['category_id'],
-                'category_name' => $validated['category_name'] ?? null,
                 'Description' => $validated['short_description'],
                 'Overview' => $validated['overview'],
                 'Thumbnail' => $thumbnailPath ? Storage::url($thumbnailPath) : null,
                 'Total_Hours' => $validated['duration'],
                 'Price' => $validated['price'],
+                'Old_Price' => $validated['old_price'] ?? null,
                 'Status' => $validated['status'] ?? 'draft',
                 'category_id' => $validated['category_id'],
             ]);
+
+            if (($validated['status'] ?? '') === 'pending') {
+                DB::table('course_approvals')->insert([
+                    'course_id' => $course->CourseID,
+                    'status' => 'pending',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             foreach ($contents as $index => $item) {
                 $course->contents()->create([
@@ -145,15 +154,26 @@ class CourseController extends Controller
             $course->update([
                 'Title' => $validated['title'],
                 'Category' => $validated['category_name'] ?? (string) $validated['category_id'],
-                'category_name' => $validated['category_name'] ?? null,
                 'Description' => $validated['short_description'],
                 'Overview' => $validated['overview'],
                 'Thumbnail' => $thumbnailUrl,
                 'Total_Hours' => $validated['duration'],
                 'Price' => $validated['price'],
+                'Old_Price' => $validated['old_price'] ?? null,
                 'Status' => $validated['status'] ?? 'draft',
                 'category_id' => $validated['category_id'],
             ]);
+
+            if (($validated['status'] ?? '') === 'pending') {
+                DB::table('course_approvals')->updateOrInsert(
+                    ['course_id' => $course->CourseID],
+                    [
+                        'status' => 'pending',
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
+            }
 
             $course->contents()->delete();
 
@@ -178,14 +198,27 @@ class CourseController extends Controller
     public function moderate(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
-            'status' => ['required', Rule::in(['published', 'draft'])],
+            'status' => ['required', Rule::in(['published', 'rejected', 'draft'])],
+            'comments' => ['nullable', 'string'],
         ]);
 
         $course = Course::query()->findOrFail($id);
+
+        $backendStatus = $validated['status'];
+
         $course->update([
-            'Status' => $validated['status'],
-            'status' => $validated['status'],
+            'Status' => $backendStatus,
         ]);
+
+        DB::table('course_approvals')->updateOrInsert(
+            ['course_id' => $course->CourseID],
+            [
+                'admin_id' => $request->user()->id,
+                'status' => $backendStatus === 'published' ? 'approved' : ($backendStatus === 'rejected' ? 'rejected' : 'pending'),
+                'comments' => $validated['comments'] ?? null,
+                'updated_at' => now(),
+            ]
+        );
 
         return response()->json([
             'message' => 'Course status updated successfully.',
@@ -203,6 +236,7 @@ class CourseController extends Controller
             'overview' => ['nullable', 'string'],
             'duration' => ['nullable', 'numeric', 'min:0'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'old_price' => ['nullable', 'numeric', 'min:0'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['nullable', Rule::in(['draft', 'pending', 'published'])],
             'course_contents' => ['required'],

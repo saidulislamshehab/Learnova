@@ -13,26 +13,34 @@ class Course extends Model
     protected $primaryKey = 'CourseID';
 
     protected $fillable = [
-        'I_ID',
         'UserID',
         'Title',
         'Category',
-        'category_name',
         'Description',
+        'Short_Description',
         'Overview',
         'Thumbnail',
         'Total_Hours',
         'Price',
+        'Old_Price',
         'Status',
+        'Course_Code',
         'category_id',
-        'category_name',
-        'short_description',
-        'overview',
-        'duration',
-        'price',
-        'thumbnail',
-        'status',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($course) {
+            if (empty($course->Course_Code)) {
+                $prefix = strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $course->Title), 0, 3));
+                $code = $prefix . '-' . strtoupper(\Illuminate\Support\Str::random(6));
+                while (static::where('Course_Code', $code)->exists()) {
+                    $code = $prefix . '-' . strtoupper(\Illuminate\Support\Str::random(6));
+                }
+                $course->Course_Code = $code;
+            }
+        });
+    }
 
     public function contents()
     {

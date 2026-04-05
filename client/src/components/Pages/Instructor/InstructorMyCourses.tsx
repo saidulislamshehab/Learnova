@@ -8,14 +8,14 @@ interface InstructorMyCoursesProps {
   onEditCourse: (courseId: string) => void;
 }
 
-type CourseStatus = 'all' | 'draft' | 'pending' | 'published';
+type CourseStatus = 'all' | 'draft' | 'pending' | 'published' | 'rejected';
 
 interface Course {
   id: string;
   title: string;
   category: string;
   description: string;
-  status: 'draft' | 'pending' | 'published';
+  status: 'draft' | 'pending' | 'published' | 'rejected';
   lastUpdated: string;
   thumbnail?: string;
 }
@@ -29,20 +29,18 @@ interface ApiCourseContent {
 
 interface ApiCourse {
   CourseID?: number;
-  id?: number;
   Title?: string;
-  title?: string;
   Category?: string;
   category_name?: string | null;
   category_id?: number | null;
-  short_description?: string | null;
   Description?: string | null;
-  status?: string | null;
+  Overview?: string | null;
   Status?: string | null;
   updated_at?: string;
   created_at?: string;
-  thumbnail?: string | null;
   Thumbnail?: string | null;
+  Price?: number | string | null;
+  Total_Hours?: number | string | null;
   contents?: ApiCourseContent[];
 }
 
@@ -122,13 +120,13 @@ export function InstructorMyCourses({ onBack, onCreateCourse, onEditCourse }: In
         });
 
         const list = (response.data.courses ?? []).map((course) => ({
-          id: String(course.CourseID ?? course.id ?? ''),
-          title: course.Title ?? course.title ?? 'Untitled Course',
+          id: String(course.CourseID ?? ''),
+          title: course.Title ?? 'Untitled Course',
           category: course.category_name ?? course.Category ?? (course.category_id ? `Category ${course.category_id}` : 'Uncategorized'),
-          description: course.short_description ?? course.Description ?? '',
-          status: ((course.status ?? course.Status ?? 'draft').toLowerCase() as Course['status']),
+          description: course.Description ?? '',
+          status: ((course.Status ?? 'draft').toLowerCase() as Course['status']),
           lastUpdated: course.updated_at ?? course.created_at ?? new Date().toISOString(),
-          thumbnail: course.thumbnail ?? course.Thumbnail ?? undefined,
+          thumbnail: course.Thumbnail ?? undefined,
         }));
 
         setCourses(list);
@@ -243,6 +241,8 @@ export function InstructorMyCourses({ onBack, onCreateCourse, onEditCourse }: In
         return 'bg-green-500/10 border-green-500/30 text-green-400';
       case 'pending':
         return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400';
+      case 'rejected':
+        return 'bg-red-500/10 border-red-500/30 text-red-400';
       case 'draft':
         return 'bg-gray-500/10 border-gray-500/30 text-gray-400';
       default:
@@ -250,11 +250,12 @@ export function InstructorMyCourses({ onBack, onCreateCourse, onEditCourse }: In
     }
   };
 
-  const statusFilters: { label: string; value: CourseStatus }[] = [
+  const statusFilters: { label: string; value: CourseStatus | 'rejected' }[] = [
     { label: 'All', value: 'all' },
     { label: 'Draft', value: 'draft' },
     { label: 'Pending', value: 'pending' },
     { label: 'Published', value: 'published' },
+    { label: 'Rejected', value: 'rejected' },
   ];
 
   return (

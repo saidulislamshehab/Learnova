@@ -36,19 +36,17 @@ interface ApiCourseContent {
 
 interface ApiCourse {
   CourseID?: number;
-  id?: number;
   Title?: string;
-  title?: string;
   Category?: string;
   category_id?: number | null;
-  short_description?: string | null;
+  category_name?: string | null;
+  Description?: string | null;
   Overview?: string | null;
-  overview?: string | null;
-  duration?: number | string | null;
-  price?: number | string | null;
+  Total_Hours?: number | string | null;
+  Price?: number | string | null;
+  Old_Price?: number | string | null;
   Thumbnail?: string | null;
-  thumbnail?: string | null;
-  status?: string | null;
+  Status?: string | null;
   contents?: ApiCourseContent[];
 }
 
@@ -120,6 +118,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   const [shortDescription, setShortDescription] = useState('');
   const [totalHours, setTotalHours] = useState('');
   const [price, setPrice] = useState('');
+  const [oldPrice, setOldPrice] = useState('');
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [overview, setOverview] = useState('');
@@ -150,15 +149,16 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
         });
 
         const course = response.data.course;
-        const resolvedCourseId = String(course.CourseID ?? course.id ?? '');
+        const resolvedCourseId = String(course.CourseID ?? '');
 
-        setCourseTitle(course.Title ?? course.title ?? '');
+        setCourseTitle(course.Title ?? '');
         setCategoryId(course.category_id ? String(course.category_id) : '');
-        setShortDescription(course.short_description ?? course.Category ?? '');
-        setOverview(course.overview ?? course.Overview ?? '');
-        setTotalHours(course.duration !== null && course.duration !== undefined ? String(course.duration) : '');
-        setPrice(course.price !== null && course.price !== undefined ? String(course.price) : '');
-        setThumbnailPreview(course.thumbnail ?? course.Thumbnail ?? null);
+        setShortDescription(course.Description ?? '');
+        setOverview(course.Overview ?? '');
+        setTotalHours(course.Total_Hours !== null && course.Total_Hours !== undefined ? String(course.Total_Hours) : '');
+        setPrice(course.Price !== null && course.Price !== undefined ? String(course.Price) : '');
+        setOldPrice(course.Old_Price !== null && course.Old_Price !== undefined ? String(course.Old_Price) : '');
+        setThumbnailPreview(course.Thumbnail ?? null);
         setThumbnailFile(null);
         setContentItems((course.contents ?? []).map((item, index) => ({
           id: `${resolvedCourseId || editCourseId}-content-${item.id ?? index}`,
@@ -246,6 +246,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
     formData.append('overview', overview.trim());
     formData.append('duration', totalHours.trim());
     formData.append('price', price.trim());
+    formData.append('old_price', oldPrice.trim());
     formData.append('status', status);
     formData.append(
       'course_contents',
@@ -601,7 +602,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 text-gray-300 rounded-lg hover:border-[#A5C89E]/50 hover:text-[#A5C89E] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Saving...' : editMode ? 'Save Changes' : 'Save as Draft'}
+            {isSaving ? 'Saving...' : 'Save as Draft'}
           </button>
           <button
             onClick={() => {
@@ -611,7 +612,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-[#A5C89E]/80 text-black rounded-lg hover:bg-[#A5C89E] transition-all font-medium hover:shadow-lg hover:shadow-[#A5C89E]/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4 mr-2" />
-            {isPublishing ? (editMode ? 'Updating...' : 'Publishing...') : editMode ? 'Update Course' : 'Publish Course'}
+            {isPublishing ? 'Publishing...' : 'Publish Course'}
           </button>
         </div>
 
