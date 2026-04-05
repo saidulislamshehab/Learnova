@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   CheckCircle2, 
   Circle, 
@@ -28,11 +29,13 @@ interface Module {
 }
 
 interface CourseContentProps {
-  courseId: string;
   onBack: () => void;
 }
 
-export function CourseContent({ courseId, onBack }: CourseContentProps) {
+export function CourseContent({ onBack }: CourseContentProps) {
+  const { id } = useParams<{ id: string }>();
+  const courseId = id || 'PY-001';
+  
   const [selectedLesson, setSelectedLesson] = useState<string>('lesson-1-1');
   const [expandedModules, setExpandedModules] = useState<string[]>(['module-1', 'module-2', 'module-3', 'module-4']);
 

@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, ChevronRight, BookOpen, ArrowRight, Send, X, CheckCircle, Sparkles } from 'lucide-react';
 
 interface ArticleDetailProps {
   onBack: () => void;
-  articleId: number;
 }
 
 // Sample article data (in a real app, this would come from an API)
@@ -179,7 +179,10 @@ def _search_recursive(self, node, val):
   },
 };
 
-export function ArticleDetail({ onBack, articleId }: ArticleDetailProps) {
+export function ArticleDetail({ onBack }: ArticleDetailProps) {
+  const { id } = useParams<{ id: string }>();
+  const articleId = parseInt(id || '1', 10);
+  
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
   const commentsRef = useRef<HTMLDivElement>(null);

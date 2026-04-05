@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -36,6 +37,9 @@ class User extends Authenticatable implements \PHPOpenSourceSaver\JWTAuth\Contra
         'institution',
         'github_link',
         'linkedin_link',
+        'two_factor_enabled',
+        'email_notifications',
+        'platform_notifications',
     ];
 
     /**
@@ -102,5 +106,10 @@ class User extends Authenticatable implements \PHPOpenSourceSaver\JWTAuth\Contra
     public function getJWTCustomClaims(): array
     {
         return [];
+    }
+
+    public function expertApplications(): HasMany
+    {
+        return $this->hasMany(ExpertApply::class, 'UserID', 'id');
     }
 }

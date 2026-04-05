@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   LayoutDashboard,
   Users,
@@ -56,6 +57,7 @@ type DetailView =
   | { type: 'expert-profile'; id: string };
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
+  const API_BASE = `http://${window.location.hostname}:8000/api`;
   const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -77,6 +79,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [detailView, setDetailView] = useState<DetailView>({ type: 'none' });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [expertApplications, setExpertApplications] = useState<any[]>([]);
+  const [isLoadingExpertApplications, setIsLoadingExpertApplications] = useState(false);
 
   // Tutorial Management State
   const [tutorials, setTutorials] = useState([
@@ -278,24 +282,44 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     },
   ];
 
-  const expertApplications = [
-    {
-      id: '1',
-      name: 'Dr. Emily Wilson',
-      email: 'emily.w@email.com',
-      expertise: 'Machine Learning',
-      appliedDate: '2026-01-16',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      name: 'Prof. John Smith',
-      email: 'john.s@email.com',
-      expertise: 'Algorithms',
-      appliedDate: '2026-01-19',
-      status: 'Pending',
-    },
-  ];
+  const fetchExpertApplications = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setExpertApplications([]);
+      return;
+    }
+
+    try {
+      setIsLoadingExpertApplications(true);
+      const response = await axios.get(`${API_BASE}/admin/expert-applications`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const list = (response.data?.applications ?? []).map((item: any) => ({
+        id: String(item.id),
+        name: item.user?.name ?? 'Unknown',
+        email: item.user?.email ?? 'N/A',
+        expertise: item.expertise || item.user?.bio || 'Not provided',
+        appliedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.status ? String(item.status).charAt(0).toUpperCase() + String(item.status).slice(1) : 'Pending',
+      }));
+
+      setExpertApplications(list);
+    } catch {
+      setExpertApplications([]);
+    } finally {
+      setIsLoadingExpertApplications(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'expert-applications') {
+      void fetchExpertApplications();
+    }
+  }, [activeSection]);
 
   const pendingArticles = [
     {
@@ -500,10 +524,66 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   ];
 
   const handleApprove = (type: string, id: string) => {
+    if (type === 'expert application') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/expert-applications/${id}`,
+          { status: 'approved' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Approved ${type} #${id}`);
+          void fetchExpertApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve application');
+        });
+      return;
+    }
+
     alert(`Approved ${type} #${id}`);
   };
 
   const handleReject = (type: string, id: string) => {
+    if (type === 'expert application') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/expert-applications/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Rejected ${type} #${id}`);
+          void fetchExpertApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject application');
+        });
+      return;
+    }
+
     alert(`Rejected ${type} #${id}`);
   };
 
@@ -728,7 +808,17 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>
-                    <span className="ml-2 text-yellow-400">{application.status}</span>
+                    <span
+                      className={`ml-2 ${
+                        application.status === 'Approved'
+                          ? 'text-green-400'
+                          : application.status === 'Rejected'
+                          ? 'text-red-400'
+                          : 'text-yellow-400'
+                      }`}
+                    >
+                      {application.status}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -832,20 +922,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => handleApprove('expert application', application.id)}
-                  className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Approve Application
-                </button>
-                <button
-                  onClick={() => handleReject('expert application', application.id)}
-                  className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reject Application
-                </button>
+                {application.status === 'Pending' ? (
+                  <>
+                    <button
+                      onClick={() => handleApprove('expert application', application.id)}
+                      className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Approve Application
+                    </button>
+                    <button
+                      onClick={() => handleReject('expert application', application.id)}
+                      className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject Application
+                    </button>
+                  </>
+                ) : (
+                  <span
+                    className={`px-6 py-3 rounded-xl font-medium border ${
+                      application.status === 'Approved'
+                        ? 'bg-green-500/10 border-green-500/40 text-green-400'
+                        : 'bg-red-500/10 border-red-500/40 text-red-400'
+                    }`}
+                  >
+                    {application.status}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -1382,7 +1486,19 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {expertApplications.map((app) => (
+                        {isLoadingExpertApplications ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              Loading expert applications...
+                            </td>
+                          </tr>
+                        ) : expertApplications.length === 0 ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              No expert applications found.
+                            </td>
+                          </tr>
+                        ) : expertApplications.map((app) => (
                           <tr
                             key={app.id}
                             className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -1401,18 +1517,32 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                 >
                                   View
                                 </button>
-                                <button
-                                  onClick={() => handleApprove('expert application', app.id)}
-                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject('expert application', app.id)}
-                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                >
-                                  Reject
-                                </button>
+                                {app.status === 'Pending' ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleApprove('expert application', app.id)}
+                                      className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleReject('expert application', app.id)}
+                                      className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                                      app.status === 'Approved'
+                                        ? 'bg-green-50 border-green-200 text-green-700'
+                                        : 'bg-red-50 border-red-200 text-red-700'
+                                    }`}
+                                  >
+                                    {app.status}
+                                  </span>
+                                )}
                               </div>
                             </td>
                           </tr>

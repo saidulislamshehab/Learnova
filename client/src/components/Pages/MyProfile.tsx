@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   User,
   MapPin,
@@ -50,6 +51,7 @@ const getTextValue = (value?: string | number | null, fallback = 'Not set') => {
 };
 
 export function MyProfile({ onBack, onEditProfile }: MyProfileProps) {
+  const { username } = useParams<{ username: string }>();
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

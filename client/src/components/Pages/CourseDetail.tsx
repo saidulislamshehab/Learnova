@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Clock, Users, Star, ChevronDown, ChevronUp, PlayCircle, FileText, Award, BookOpen } from 'lucide-react';
 
 interface CourseDetailProps {
-  courseId: string;
   onBack: () => void;
   onEnroll?: (courseId: string) => void;
 }
@@ -240,7 +240,10 @@ const getDefaultCourseData = (courseId: string) => ({
   ],
 });
 
-export function CourseDetail({ courseId, onBack, onEnroll }: CourseDetailProps) {
+export function CourseDetail({ onBack, onEnroll }: CourseDetailProps) {
+  const { id } = useParams<{ id: string }>();
+  const courseId = id || 'PY-001';
+  
   const [expandedModules, setExpandedModules] = useState<number[]>([0]);
 
   const course = courseData[courseId] || getDefaultCourseData(courseId);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   User,
   MapPin,
@@ -80,6 +81,7 @@ const initialFormData: FormDataState = {
 };
 
 export function EditProfile({ onBack, onSave }: EditProfileProps) {
+  const { username } = useParams<{ username: string }>();
   const [formData, setFormData] = useState<FormDataState>(initialFormData);
   const [profileImage, setProfileImage] = useState('');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);

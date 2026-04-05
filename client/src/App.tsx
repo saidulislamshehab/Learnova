@@ -28,6 +28,7 @@ import { Settings } from './components/Pages/Settings';
 import { Analytics } from "@vercel/analytics/react"
 import { AdminPanel } from './components/Pages/AdminPanel';
 import { Tutorials } from './components/Pages/Tutorials';
+import { AdminExpertApplications } from './components/Pages/AdminExpertApplications';
 
 export default function App() {
   const navigate = useNavigate();
@@ -43,11 +44,50 @@ export default function App() {
   const [editCourseId, setEditCourseId] = useState<string>('');
   // State for notification
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  // State for current user's identifier from database
+  const [currentUserIdentifier, setCurrentUserIdentifier] = useState<string | null>(null);
 
   // Sync authentication state
   useEffect(() => {
     setIsAuthenticated(Boolean(localStorage.getItem('auth_token')));
   }, [location.pathname]);
+
+  // Helper to fetch username from database
+  const getUserIdentifierFromDatabase = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return 'user';
+
+    try {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return 'user';
+      }
+
+      const data = await response.json();
+      // Use name (username) as identifier from database, fallback to email
+      return data.name || data.email || 'user';
+    } catch {
+      return 'user';
+    }
+  };
+
+  // Handler for navigating to profile - fetches username from database
+  const handleMyProfileClick = async () => {
+    const userIdentifier = await getUserIdentifierFromDatabase();
+    navigate(`/profile/${encodeURIComponent(userIdentifier)}`);
+  };
+
+  // Handler for navigating to edit profile - fetches username from database
+  const handleEditProfileClick = async () => {
+    const userIdentifier = await getUserIdentifierFromDatabase();
+    navigate(`/profile/${encodeURIComponent(userIdentifier)}/edit`);
+  };
 
   // Helper to show notification
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
@@ -104,7 +144,7 @@ export default function App() {
       {/* Content */}
       <div className="relative z-10">
         {/* Hide navbar when in admin panel */}
-        {!['/adminpanel', '/settings'].includes(location.pathname) && (
+                {!['/adminpanel', '/settings', '/admin/expert-applications'].includes(location.pathname) && (
           <Navbar
             currentView={location.pathname.substring(1) || 'home'}
             isAuthenticated={isAuthenticated}
@@ -117,7 +157,7 @@ export default function App() {
                 navigate('/allcourses');
             }}
             onArticles={() => navigate('/articles')}
-            onMyProfile={() => navigate('/myprofile')}
+            onMyProfile={handleMyProfileClick}
             onMyCourses={() => navigate('/mycourses')}
             onBookmarks={() => navigate('/bookmarks')}
             onWriteArticle={() => navigate('/writearticle')}
@@ -140,7 +180,7 @@ export default function App() {
                    onViewDocs={() => navigate('/articles')}
                  />
                  <ExploreTopics onViewAllArticles={() => navigate('/articles')} />
-                 <Courses onCourseClick={(id) => { setSelectedCourseId(id); navigate('/coursedetail'); }} />
+                 <Courses onCourseClick={(id) => navigate(`/course/${id}`)} />
                  <Footer />
                </>
             } />
@@ -166,7 +206,7 @@ export default function App() {
                 <>
                     <AllCourses
                         category={selectedCategory}
-                        onCourseClick={(id) => { setSelectedCourseId(id); navigate('/coursedetail'); }}
+                        onCourseClick={(id) => navigate(`/course/${id}`)}
                     />
                     <Footer />
                 </>
@@ -174,40 +214,34 @@ export default function App() {
 
             <Route path="/articles" element={
                 <>
-                    <Articles onArticleClick={(id) => { setSelectedArticleId(id); navigate('/articledetail'); }} />
+                    <Articles onArticleClick={(id) => navigate(`/article/${id}`)} />
                     <Footer />
                 </>
             } />
 
-            <Route path="/articledetail" element={
+            <Route path="/article/:id" element={
                 <>
                     <ArticleDetail
-                        articleId={selectedArticleId}
                         onBack={() => navigate('/articles')}
                     />
                     <Footer />
                 </>
             } />
 
-            <Route path="/coursedetail" element={
+            <Route path="/course/:id" element={
                 <>
                     <CourseDetail
-                        courseId={selectedCourseId}
                         onBack={() => navigate('/allcourses')}
-                        onEnroll={(id) => {
-                            setSelectedCourseId(id);
-                            navigate('/payment');
-                        }}
+                        onEnroll={(id) => navigate(`/course/${id}/payment`)}
                     />
                     <Footer />
                 </>
             } />
 
-            <Route path="/payment" element={
+            <Route path="/course/:id/payment" element={
                 <>
                     <CoursePayment
-                        courseId={selectedCourseId}
-                        onBack={() => navigate('/coursedetail')}
+                        onBack={() => navigate(-1)}
                     />
                     <Footer />
                 </>
@@ -217,7 +251,17 @@ export default function App() {
                 <>
                     <MyProfile
                         onBack={() => navigate('/')}
-                        onEditProfile={() => navigate('/editprofile')}
+                        onEditProfile={handleEditProfileClick}
+                    />
+                    <Footer />
+                </>
+            } />
+
+            <Route path="/profile/:username" element={
+                <>
+                    <MyProfile
+                        onBack={() => navigate('/')}
+                        onEditProfile={handleEditProfileClick}
                     />
                     <Footer />
                 </>
@@ -227,7 +271,7 @@ export default function App() {
                 <>
                     <MyProfile
                         onBack={() => navigate('/')}
-                        onEditProfile={() => navigate('/editprofile')}
+                        onEditProfile={handleEditProfileClick}
                     />
                     <Footer />
                 </>
@@ -236,8 +280,18 @@ export default function App() {
             <Route path="/editprofile" element={
                 <>
                     <EditProfile
-                        onBack={() => navigate('/myprofile')}
-                        onSave={() => navigate('/myprofile')}
+                        onBack={handleMyProfileClick}
+                        onSave={handleMyProfileClick}
+                    />
+                    <Footer />
+                </>
+            } />
+
+            <Route path="/profile/:username/edit" element={
+                <>
+                    <EditProfile
+                        onBack={handleMyProfileClick}
+                        onSave={handleMyProfileClick}
                     />
                     <Footer />
                 </>
@@ -247,19 +301,15 @@ export default function App() {
                 <>
                     <MyCourses
                         onBack={() => navigate('/')}
-                        onCourseClick={(id) => {
-                            setSelectedCourseId(id);
-                            navigate('/coursecontent');
-                        }}
+                        onCourseClick={(id) => navigate(`/course/${id}/content`)}
                     />
                     <Footer />
                 </>
             } />
 
-            <Route path="/coursecontent" element={
+            <Route path="/course/:id/content" element={
                 <>
                     <CourseContent
-                        courseId={selectedCourseId}
                         onBack={() => navigate('/mycourses')}
                     />
                     <Footer />
@@ -269,7 +319,7 @@ export default function App() {
             <Route path="/bookmarks" element={
                 <>
                     <Bookmarks
-                        onArticleClick={(id) => { setSelectedArticleId(id); navigate('/articledetail'); }}
+                        onArticleClick={(id) => navigate(`/article/${id}`)}
                     />
                     <Footer />
                 </>
@@ -352,6 +402,12 @@ export default function App() {
             <Route path="/adminpanel" element={
                 <AdminPanel
                     onBack={() => navigate('/')}
+                />
+            } />
+
+            <Route path="/admin/expert-applications" element={
+                <AdminExpertApplications
+                    onBack={() => navigate('/adminpanel')}
                 />
             } />
 

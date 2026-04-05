@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { CreditCard, Smartphone, Check, Sparkles, ArrowRight, Shield, Clock, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface CoursePaymentProps {
-  courseId: string;
   onBack: () => void;
   onSuccess?: () => void;
 }
@@ -39,7 +39,10 @@ const courseInfo: Record<string, any> = {
   },
 };
 
-export function CoursePayment({ courseId, onBack, onSuccess }: CoursePaymentProps) {
+export function CoursePayment({ onBack, onSuccess }: CoursePaymentProps) {
+  const { id } = useParams<{ id: string }>();
+  const courseId = id || 'PY-001';
+  
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
   const [showSuccess, setShowSuccess] = useState(false);
   const [formData, setFormData] = useState({
