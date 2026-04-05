@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('instructor_applies')) {
+            return;
+        }
         // Instructor application — mirrors ExpertApply but for Instructor role
         Schema::create('instructor_applies', function (Blueprint $table) {
             $table->id('In_Ap_ID');

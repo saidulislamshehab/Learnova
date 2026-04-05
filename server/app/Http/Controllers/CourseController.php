@@ -68,14 +68,6 @@ class CourseController extends Controller
             ], 403);
         }
 
-        $instructorId = $this->resolveInstructorId($request);
-
-        if (!$instructorId) {
-            return response()->json([
-                'message' => 'Unable to resolve instructor profile for course creation.',
-            ], 422);
-        }
-
         $contents = $this->normalizeCourseContents($validated['course_contents']);
 
         if ($contents === null) {
@@ -84,14 +76,13 @@ class CourseController extends Controller
             ], 422);
         }
 
-        $course = DB::transaction(function () use ($request, $validated, $instructorId, $contents) {
+        $course = DB::transaction(function () use ($request, $validated, $contents) {
             $thumbnailPath = null;
             if ($request->hasFile('thumbnail')) {
                 $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
             }
 
             $course = Course::create([
-                'I_ID' => $instructorId,
                 'UserID' => $request->user()->id,
                 'Title' => $validated['title'],
                 'Category' => $validated['category_name'] ?? (string) $validated['category_id'],
@@ -251,12 +242,12 @@ class CourseController extends Controller
 
             // Title is the only strictly required field for an item
             $title = $item['title'] ?? $item['Title'] ?? '';
-            if (trim((string)$title) === '') {
+            if (trim((string) $title) === '') {
                 continue;
             }
 
             $normalized[] = [
-                'title' => trim((string)$title),
+                'title' => trim((string) $title),
                 'description' => $item['description'] ?? $item['Description'] ?? null,
                 'youtube_url' => $item['youtube_url'] ?? $item['youtubeUrl'] ?? $item['videoUrl'] ?? null,
                 'order' => $item['order'] ?? $item['Order'] ?? (count($normalized) + 1),
@@ -264,24 +255,5 @@ class CourseController extends Controller
         }
 
         return $normalized;
-    }
-
-    private function resolveInstructorId(Request $request): ?int
-    {
-        $existingInstructorId = DB::table('instructors')
-            ->where('UserID', $request->user()->id)
-            ->value('I_ID');
-
-        if ($existingInstructorId) {
-            return (int) $existingInstructorId;
-        }
-
-        $newInstructorId = DB::table('instructors')->insertGetId([
-            'UserID' => $request->user()->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ], 'I_ID');
-
-        return $newInstructorId ? (int) $newInstructorId : null;
     }
 }
