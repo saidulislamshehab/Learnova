@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Search, ChevronDown, BookOpen, Clock, ArrowRight } from 'lucide-react';
-import { Pagination } from './Pagination';
-
+import { Pagination } from '../Common/Pagination';
 interface ArticlesProps {
   onArticleClick: (articleId: number) => void;
 }

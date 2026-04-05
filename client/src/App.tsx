@@ -1,34 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
-import { Navbar } from './components/Pages/Navbar';
-import { Hero } from './components/Pages/Hero';
-import { ExploreTopics } from './components/Pages/ExploreTopics';
-import { Courses } from './components/Pages/Courses';
-import { Footer } from './components/Pages/Footer';
-import { SignIn } from './components/Pages/SignIn';
-import { SignUp } from './components/Pages/SignUp';
-import { AllCourses } from './components/Pages/AllCourses';
-import { Articles } from './components/Pages/Articles';
-import { ArticleDetail } from './components/Pages/ArticleDetail';
-import { CourseDetail } from './components/Pages/CourseDetail';
-import { CoursePayment } from './components/Pages/CoursePayment';
-import { MyProfile } from './components/Pages/MyProfile';
-import { EditProfile } from './components/Pages/EditProfile';
-import { MyCourses } from './components/Pages/MyCourses';
-import { CourseContent } from './components/Pages/CourseContent';
-import { Bookmarks } from './components/Pages/Bookmarks';
-import { WriteArticle } from './components/Pages/WriteArticle';
-import { JoinInstructor } from './components/Pages/JoinInstructor';
-import { JoinExpert } from './components/Pages/JoinExpert';
-import { PublishCourse } from './components/Pages/PublishCourse';
-import { Feedback } from './components/Pages/Feedback';
-import { InstructorMyCourses } from './components/Pages/InstructorMyCourses';
-import { Settings } from './components/Pages/Settings';
+import { Navbar } from './components/Pages/Homepage/Navbar';
+import { Hero } from './components/Pages/Homepage/Hero';
+import { ExploreTopics } from './components/Pages/Homepage/ExploreTopics';
+import { Courses } from './components/Pages/course/Courses';
+import { Footer } from './components/Pages/Homepage/Footer';
+import { SignIn } from './components/Pages/Authentication/SignIn';
+import { SignUp } from './components/Pages/Authentication/SignUp';
+import { AllCourses } from './components/Pages/course/AllCourses';
+import { Articles } from './components/Pages/article/Articles';
+import { ArticleDetail } from './components/Pages/article/ArticleDetail';
+import { CourseDetail } from './components/Pages/course/CourseDetail';
+import { CoursePayment } from './components/Pages/course/CoursePayment';
+import { MyProfile } from './components/Pages/Profile/MyProfile';
+import { EditProfile } from './components/Pages/Profile/EditProfile';
+import { MyCourses } from './components/Pages/course/MyCourses';
+import { CourseContent } from './components/Pages/course/CourseContent';
+import { Bookmarks } from './components/Pages/course/Bookmarks';
+import { WriteArticle } from './components/Pages/article/WriteArticle';
+import { JoinInstructor } from './components/Pages/Instructor/JoinInstructor';
+import { JoinExpert } from './components/Pages/expert/JoinExpert';
+import { PublishCourse } from './components/Pages/Instructor/PublishCourse';
+import { Feedback } from './components/Pages/Profile/Feedback';
+import { InstructorMyCourses } from './components/Pages/Instructor/InstructorMyCourses';
+import { Settings } from './components/Pages/Profile/Settings';
 import { Analytics } from "@vercel/analytics/react"
-import { AdminPanel } from './components/Pages/AdminPanel';
-import { Tutorials } from './components/Pages/Tutorials';
-import { AdminExpertApplications } from './components/Pages/AdminExpertApplications';
+import { AdminPanel } from './components/Pages/Admin/AdminPanel';
+import { Tutorials } from './components/Pages/course/Tutorials';
+import { AdminExpertApplications } from './components/Pages/Admin/AdminExpertApplications';
 
 export default function App() {
   const navigate = useNavigate();
@@ -163,7 +163,10 @@ export default function App() {
             onWriteArticle={() => navigate('/writearticle')}
             onJoinInstructor={() => navigate('/joininstructor')}
             onJoinExpert={() => navigate('/joinexpert')}
-            onPublishCourse={() => navigate('/publishcourse')}
+            onPublishCourse={() => {
+                setEditCourseId('');
+                navigate('/publishcourse');
+            }}
             onFeedback={() => navigate('/feedback')}
             onInstructorMyCourses={() => navigate('/instructormycourses')}
             onSettings={() => navigate('/settings')}
@@ -355,7 +358,10 @@ export default function App() {
             <Route path="/publishcourse" element={
                 <>
                     <PublishCourse
-                        onBack={() => navigate('/')}
+                        onBack={() => {
+                            setEditCourseId('');
+                            navigate('/');
+                        }}
                         onMyCourses={() => navigate('/instructormycourses')}
                         editMode={!!editCourseId}
                         editCourseId={editCourseId}

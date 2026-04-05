@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import {
   BookOpen,
   Upload,
@@ -25,41 +26,161 @@ interface ContentItem {
   youtubeUrl: string;
 }
 
+interface ApiCourseContent {
+  id?: number;
+  title?: string;
+  description?: string | null;
+  youtube_url?: string | null;
+  order?: number | null;
+}
+
+interface ApiCourse {
+  CourseID?: number;
+  id?: number;
+  Title?: string;
+  title?: string;
+  Category?: string;
+  category_id?: number | null;
+  short_description?: string | null;
+  Overview?: string | null;
+  overview?: string | null;
+  duration?: number | string | null;
+  price?: number | string | null;
+  Thumbnail?: string | null;
+  thumbnail?: string | null;
+  status?: string | null;
+  contents?: ApiCourseContent[];
+}
+
+const API_BASE = `http://${window.location.hostname}:8000/api`;
+
+const courseCategories = [
+  { id: 1, label: 'Web Development' },
+  { id: 2, label: 'Mobile Development' },
+  { id: 3, label: 'Data Science' },
+  { id: 4, label: 'Machine Learning' },
+  { id: 5, label: 'Artificial Intelligence' },
+  { id: 6, label: 'Cloud Computing' },
+  { id: 7, label: 'Cybersecurity' },
+  { id: 8, label: 'DevOps' },
+  { id: 9, label: 'Blockchain' },
+  { id: 10, label: 'Game Development' },
+  { id: 11, label: 'UI/UX Design' },
+  { id: 12, label: 'Database Management' },
+];
+
+async function getValidAuthToken(): Promise<string | null> {
+  const currentToken = localStorage.getItem('auth_token');
+  if (!currentToken) {
+    return null;
+  }
+
+  try {
+    await axios.get(`${API_BASE}/me`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${currentToken}`,
+      },
+    });
+
+    return currentToken;
+  } catch (error: any) {
+    if (error?.response?.status !== 401) {
+      return currentToken;
+    }
+
+    try {
+      const refreshResponse = await axios.post(
+        `${API_BASE}/refresh`,
+        {},
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${currentToken}`,
+          },
+        }
+      );
+
+      const refreshedToken = refreshResponse.data?.authorization?.token;
+      if (refreshedToken) {
+        localStorage.setItem('auth_token', refreshedToken);
+        return refreshedToken;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+}
+
 export function PublishCourse({ onBack, onMyCourses, editMode = false, editCourseId }: PublishCourseProps) {
   const [courseTitle, setCourseTitle] = useState('');
-  const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [totalHours, setTotalHours] = useState('');
   const [price, setPrice] = useState('');
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [overview, setOverview] = useState('');
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isLoadingCourse, setIsLoadingCourse] = useState(false);
 
-  const categories = [
-    'Web Development',
-    'Mobile Development',
-    'Data Science',
-    'Machine Learning',
-    'Artificial Intelligence',
-    'Cloud Computing',
-    'Cybersecurity',
-    'DevOps',
-    'Blockchain',
-    'Game Development',
-    'UI/UX Design',
-    'Database Management',
-  ];
+  useEffect(() => {
+    if (!editMode || !editCourseId) {
+      return;
+    }
+
+    const loadCourse = async () => {
+      const token = await getValidAuthToken();
+      if (!token) {
+        alert('Your session expired. Please sign in again.');
+        return;
+      }
+
+      try {
+        setIsLoadingCourse(true);
+        const response = await axios.get<{ course: ApiCourse }>(`${API_BASE}/courses/${editCourseId}`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const course = response.data.course;
+        const resolvedCourseId = String(course.CourseID ?? course.id ?? '');
+
+        setCourseTitle(course.Title ?? course.title ?? '');
+        setCategoryId(course.category_id ? String(course.category_id) : '');
+        setShortDescription(course.short_description ?? course.Category ?? '');
+        setOverview(course.overview ?? course.Overview ?? '');
+        setTotalHours(course.duration !== null && course.duration !== undefined ? String(course.duration) : '');
+        setPrice(course.price !== null && course.price !== undefined ? String(course.price) : '');
+        setThumbnailPreview(course.thumbnail ?? course.Thumbnail ?? null);
+        setThumbnailFile(null);
+        setContentItems((course.contents ?? []).map((item, index) => ({
+          id: `${resolvedCourseId || editCourseId}-content-${item.id ?? index}`,
+          title: item.title ?? '',
+          description: item.description ?? '',
+          youtubeUrl: item.youtube_url ?? '',
+        })));
+      } catch {
+        alert('Failed to load the selected course.');
+      } finally {
+        setIsLoadingCourse(false);
+      }
+    };
+
+    void loadCourse();
+  }, [editMode, editCourseId]);
 
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnail(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
     }
   };
 
@@ -89,33 +210,104 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
     setContentItems(contentItems.filter((contentItem) => contentItem.id !== contentItemId));
   };
 
-  const handleSaveDraft = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      alert('Course saved as draft!');
-    }, 1000);
+  const buildCoursePayload = (status: 'draft' | 'pending') => {
+    const categoryName = courseCategories.find((item) => String(item.id) === categoryId)?.label ?? '';
+    const cleanedContentItems = contentItems
+      .map((item) => ({
+        title: item.title.trim(),
+        description: item.description.trim(),
+        youtube_url: item.youtubeUrl.trim(),
+      }))
+      .filter((item) => item.title || item.description || item.youtube_url);
+
+    const hasInvalidContent = cleanedContentItems.some((item) => !item.title);
+
+    if (!courseTitle.trim()) {
+      throw new Error('Please enter a course title.');
+    }
+
+    if (!categoryId) {
+      throw new Error('Please select a category.');
+    }
+
+    if (!price.trim()) {
+      throw new Error('Please enter a price.');
+    }
+
+    if (hasInvalidContent) {
+      throw new Error('Each course content item must have a title.');
+    }
+
+    const formData = new FormData();
+    formData.append('title', courseTitle.trim());
+    formData.append('category_id', categoryId);
+    formData.append('category_name', categoryName);
+    formData.append('short_description', shortDescription.trim());
+    formData.append('overview', overview.trim());
+    formData.append('duration', totalHours.trim());
+    formData.append('price', price.trim());
+    formData.append('status', status);
+    formData.append(
+      'course_contents',
+      JSON.stringify(
+        cleanedContentItems.map((item, index) => ({
+          title: item.title,
+          description: item.description,
+          youtube_url: item.youtube_url,
+          order: index + 1,
+        }))
+      )
+    );
+
+    if (thumbnailFile) {
+      formData.append('thumbnail', thumbnailFile);
+    }
+
+    if (editMode && editCourseId) {
+      formData.append('_method', 'PUT');
+    }
+
+    return formData;
   };
 
-  const handlePublish = () => {
-    if (!courseTitle.trim()) {
-      alert('Please enter a course title');
-      return;
-    }
-    if (!category) {
-      alert('Please select a category');
-      return;
-    }
-    if (!price) {
-      alert('Please enter a price');
+  const submitCourse = async (status: 'draft' | 'published') => {
+    const token = await getValidAuthToken();
+    if (!token) {
+      alert('Your session expired. Please sign in again.');
       return;
     }
 
-    setIsPublishing(true);
-    setTimeout(() => {
+    try {
+      if (status === 'draft') {
+        setIsSaving(true);
+      } else {
+        setIsPublishing(true);
+      }
+
+      const backendStatus = status === 'published' ? 'pending' : 'draft';
+      const formData = buildCoursePayload(backendStatus);
+      const method = editMode && editCourseId ? 'post' : 'post';
+      const endpoint = editMode && editCourseId ? `${API_BASE}/courses/${editCourseId}` : `${API_BASE}/courses`;
+
+      await axios.request({
+        url: endpoint,
+        method,
+        data: formData,
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      alert(editMode ? 'Course submitted for review.' : 'Course saved successfully.');
+      onMyCourses?.();
+    } catch (error: any) {
+      const apiMessage = error?.response?.data?.message;
+      alert(apiMessage || error.message || 'Failed to save course.');
+    } finally {
+      setIsSaving(false);
       setIsPublishing(false);
-      alert('Course published successfully!');
-    }, 1500);
+    }
   };
 
   return (
@@ -170,16 +362,16 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
               Category <span className="text-[#A5C89E]">*</span>
             </label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
               className="w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white focus:outline-none focus:border-[#A5C89E]/60 transition-all"
             >
               <option value="" disabled>
                 Select a category
               </option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              {courseCategories.map((cat) => (
+                <option key={cat.id} value={String(cat.id)}>
+                  {cat.label}
                 </option>
               ))}
             </select>
@@ -248,7 +440,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
         <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-6 sm:p-8 mb-6">
           <h2 className="text-xl font-bold text-white mb-6">Course Thumbnail</h2>
 
-          {!thumbnail ? (
+          {!thumbnailPreview ? (
             // Upload Area - Only shown when no thumbnail
             <div className="w-full">
               <label className="block">
@@ -287,7 +479,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
               </div>
               <div className="relative rounded-lg overflow-hidden border border-[#A5C89E]/30">
                 <img
-                  src={thumbnail}
+                  src={thumbnailPreview}
                   alt="Course thumbnail preview"
                   className="w-full h-64 object-cover"
                 />
@@ -402,7 +594,9 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
         {/* Bottom Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
           <button
-            onClick={handleSaveDraft}
+            onClick={() => {
+              void submitCourse('draft');
+            }}
             disabled={isSaving}
             className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 text-gray-300 rounded-lg hover:border-[#A5C89E]/50 hover:text-[#A5C89E] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -410,7 +604,9 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             {isSaving ? 'Saving...' : editMode ? 'Save Changes' : 'Save as Draft'}
           </button>
           <button
-            onClick={handlePublish}
+            onClick={() => {
+              void submitCourse('published');
+            }}
             disabled={isPublishing}
             className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-[#A5C89E]/80 text-black rounded-lg hover:bg-[#A5C89E] transition-all font-medium hover:shadow-lg hover:shadow-[#A5C89E]/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >

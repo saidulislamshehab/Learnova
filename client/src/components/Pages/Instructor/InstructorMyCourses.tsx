@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { BookOpen, Plus, Edit, Calendar, Tag, MessageCircle, X, Send, User } from 'lucide-react';
 
 interface InstructorMyCoursesProps {
@@ -19,43 +20,127 @@ interface Course {
   thumbnail?: string;
 }
 
-// Mock data for instructor courses
-const mockCourses: Course[] = [
-  {
-    id: 'course-1',
-    title: 'Advanced Python Programming',
-    category: 'Programming',
-    description: 'Master advanced Python concepts including decorators, generators, and async programming.',
-    status: 'published',
-    lastUpdated: '2024-01-15',
-  },
-  {
-    id: 'course-2',
-    title: 'Machine Learning Fundamentals',
-    category: 'AI & ML',
-    description: 'Learn the basics of machine learning with hands-on projects and real-world examples.',
-    status: 'pending',
-    lastUpdated: '2024-01-18',
-  },
-  {
-    id: 'course-3',
-    title: 'Web Development with React',
-    category: 'Web Development',
-    description: 'Build modern web applications using React, hooks, and best practices.',
-    status: 'draft',
-    lastUpdated: '2024-01-20',
-  },
-];
+interface ApiCourseContent {
+  title?: string;
+  description?: string | null;
+  youtube_url?: string | null;
+  order?: number | null;
+}
+
+interface ApiCourse {
+  CourseID?: number;
+  id?: number;
+  Title?: string;
+  title?: string;
+  Category?: string;
+  category_name?: string | null;
+  category_id?: number | null;
+  short_description?: string | null;
+  Description?: string | null;
+  status?: string | null;
+  Status?: string | null;
+  updated_at?: string;
+  created_at?: string;
+  thumbnail?: string | null;
+  Thumbnail?: string | null;
+  contents?: ApiCourseContent[];
+}
+
+const API_BASE = `http://${window.location.hostname}:8000/api`;
+
+async function getValidAuthToken(): Promise<string | null> {
+  const currentToken = localStorage.getItem('auth_token');
+  if (!currentToken) {
+    return null;
+  }
+
+  try {
+    await axios.get(`${API_BASE}/me`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${currentToken}`,
+      },
+    });
+
+    return currentToken;
+  } catch (error: any) {
+    if (error?.response?.status !== 401) {
+      return currentToken;
+    }
+
+    try {
+      const refreshResponse = await axios.post(
+        `${API_BASE}/refresh`,
+        {},
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${currentToken}`,
+          },
+        }
+      );
+
+      const refreshedToken = refreshResponse.data?.authorization?.token;
+      if (refreshedToken) {
+        localStorage.setItem('auth_token', refreshedToken);
+        return refreshedToken;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+}
 
 export function InstructorMyCourses({ onBack, onCreateCourse, onEditCourse }: InstructorMyCoursesProps) {
   const [activeStatus, setActiveStatus] = useState<CourseStatus>('all');
-  const [courses] = useState<Course[]>(mockCourses);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
 
   // Messaging state
   const [showMessaging, setShowMessaging] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      const token = await getValidAuthToken();
+      if (!token) {
+        setCourses([]);
+        return;
+      }
+
+      try {
+        setIsLoadingCourses(true);
+        const response = await axios.get<{ courses: ApiCourse[] }>(`${API_BASE}/courses/my`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const list = (response.data.courses ?? []).map((course) => ({
+          id: String(course.CourseID ?? course.id ?? ''),
+          title: course.Title ?? course.title ?? 'Untitled Course',
+          category: course.category_name ?? course.Category ?? (course.category_id ? `Category ${course.category_id}` : 'Uncategorized'),
+          description: course.short_description ?? course.Description ?? '',
+          status: ((course.status ?? course.Status ?? 'draft').toLowerCase() as Course['status']),
+          lastUpdated: course.updated_at ?? course.created_at ?? new Date().toISOString(),
+          thumbnail: course.thumbnail ?? course.Thumbnail ?? undefined,
+        }));
+
+        setCourses(list);
+      } catch {
+        setCourses([]);
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+
+    void loadCourses();
+  }, []);
 
   // Mock student messages data
   const studentMessages = {
@@ -214,7 +299,11 @@ export function InstructorMyCourses({ onBack, onCreateCourse, onEditCourse }: In
         </div>
 
         {/* Courses Grid */}
-        {filteredCourses.length === 0 ? (
+        {isLoadingCourses ? (
+          <div className="text-center py-20 bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl">
+            <p className="text-gray-400">Loading your courses...</p>
+          </div>
+        ) : filteredCourses.length === 0 ? (
           // Empty State
           <div className="text-center py-20 bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl">
             <div className="inline-flex items-center justify-center p-4 bg-[#A5C89E]/10 border border-[#A5C89E]/30 rounded-full mb-4">

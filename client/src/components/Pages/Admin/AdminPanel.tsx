@@ -58,6 +58,12 @@ type DetailView =
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const EMPTY_NEW_USER_FORM = {
+    name: '',
+    email: '',
+    password: '',
+    role: '',
+  };
   const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -86,15 +92,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
+  const [adminCourseApprovals, setAdminCourseApprovals] = useState<any[]>([]);
+  const [isLoadingCourseApprovals, setIsLoadingCourseApprovals] = useState(false);
+  const [courseApprovalsError, setCourseApprovalsError] = useState<string | null>(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [newUserForm, setNewUserForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'student',
-  });
+  const [newUserForm, setNewUserForm] = useState(EMPTY_NEW_USER_FORM);
 
   // Tutorial Management State
   const [tutorials, setTutorials] = useState([
@@ -379,6 +383,44 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
+  const fetchCourseApprovals = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setAdminCourseApprovals([]);
+      setCourseApprovalsError('Please sign in as admin to view pending courses.');
+      return;
+    }
+
+    try {
+      setIsLoadingCourseApprovals(true);
+      setCourseApprovalsError(null);
+      const response = await axios.get(`${API_BASE}/admin/courses/pending`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawCourses = response.data?.courses ?? response.data?.data ?? [];
+      const list = (Array.isArray(rawCourses) ? rawCourses : []).map((item: any) => ({
+        id: String(item.CourseID ?? item.id),
+        title: item.Title ?? item.title ?? 'Untitled Course',
+        instructor: item.user?.name ?? item.instructor_name ?? 'Unknown Instructor',
+        category: item.category_name ?? item.Category ?? (item.category_id ? `Category ${item.category_id}` : 'Uncategorized'),
+        description: item.short_description ?? item.Description ?? '',
+        submittedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.status ? String(item.status).charAt(0).toUpperCase() + String(item.status).slice(1) : 'Pending',
+      }));
+
+      setAdminCourseApprovals(list);
+    } catch (error: any) {
+      setAdminCourseApprovals([]);
+      setCourseApprovalsError(error?.response?.data?.message || 'Failed to load pending courses.');
+    } finally {
+      setIsLoadingCourseApprovals(false);
+    }
+  };
+
   const handleCreateUser = async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -386,8 +428,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       return;
     }
 
-    if (!newUserForm.name.trim() || !newUserForm.email.trim() || !newUserForm.password.trim()) {
-      alert('Name, email, and password are required.');
+    if (!newUserForm.name.trim() || !newUserForm.email.trim() || !newUserForm.password.trim() || !newUserForm.role) {
+      alert('Name, email, password, and role are required.');
       return;
     }
 
@@ -410,12 +452,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       );
 
       setIsAddUserModalOpen(false);
-      setNewUserForm({
-        name: '',
-        email: '',
-        password: '',
-        role: 'student',
-      });
+      setNewUserForm(EMPTY_NEW_USER_FORM);
       await fetchUsers();
       alert('User added successfully.');
     } catch (error: any) {
@@ -441,6 +478,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
 
     if (activeSection === 'users') {
       void fetchUsers();
+    }
+
+    if (activeSection === 'courses-approval') {
+      void fetchCourseApprovals();
     }
   }, [activeSection]);
 
@@ -651,6 +692,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   ];
 
   const handleApprove = (type: string, id: string) => {
+    if (type === 'course') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/courses/${id}`,
+          { status: 'published' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Approved ${type} #${id}`);
+          void fetchCourseApprovals();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve course');
+        });
+      return;
+    }
+
     if (type === 'instructor application') {
       const token = localStorage.getItem('auth_token');
       if (!token) {
@@ -711,6 +780,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   };
 
   const handleReject = (type: string, id: string) => {
+    if (type === 'course') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/courses/${id}`,
+          { status: 'draft' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Rejected ${type} #${id}`);
+          void fetchCourseApprovals();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject course');
+        });
+      return;
+    }
+
     if (type === 'instructor application') {
       const token = localStorage.getItem('auth_token');
       if (!token) {
@@ -908,7 +1005,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   }
 
   if (detailView.type === 'course' && detailView.id) {
-    const course = pendingCourses.find((c) => c.id === detailView.id);
+    const course = adminCourseApprovals.find((c) => c.id === detailView.id);
     if (course) {
       return (
         <div className="min-h-screen bg-[#0b0b0b] text-white">
@@ -1510,7 +1607,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     <Filter className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setIsAddUserModalOpen(true)}
+                    onClick={() => {
+                      setNewUserForm(EMPTY_NEW_USER_FORM);
+                      setIsAddUserModalOpen(true);
+                    }}
                     className="px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-xl text-white hover:bg-blue-700 transition-all text-sm font-medium inline-flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -1962,7 +2062,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">Courses Approval</h2>
                     <p className="text-gray-600 text-sm">
-                      Pending courses: {pendingCourses.length}
+                      Pending courses: {adminCourseApprovals.length}
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -2005,7 +2105,25 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {pendingCourses.map((course) => (
+                        {isLoadingCourseApprovals ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              Loading pending courses...
+                            </td>
+                          </tr>
+                        ) : courseApprovalsError ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-red-500" colSpan={5}>
+                              {courseApprovalsError}
+                            </td>
+                          </tr>
+                        ) : adminCourseApprovals.length === 0 ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              No pending courses found.
+                            </td>
+                          </tr>
+                        ) : adminCourseApprovals.map((course) => (
                           <tr
                             key={course.id}
                             className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -2683,22 +2801,26 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       {/* Add User Modal */}
       {isAddUserModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">Add New User</h3>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-start justify-between">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">Add New User</h3>
+                <p className="text-xs text-gray-500 mt-1">Create a new account for the platform</p>
+              </div>
               <button
                 onClick={() => {
+                  setNewUserForm(EMPTY_NEW_USER_FORM);
                   setIsAddUserModalOpen(false);
                 }}
-                className="p-2 hover:bg-gray-100 text-gray-500 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 text-gray-500 rounded-full transition-colors -mt-1"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-5 py-4 space-y-3.5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Full Name</label>
                 <input
                   type="text"
                   value={newUserForm.name}
@@ -2706,12 +2828,12 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     setNewUserForm((prev) => ({ ...prev, name: e.target.value }));
                   }}
                   placeholder="Enter full name"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Email</label>
                 <input
                   type="email"
                   value={newUserForm.email}
@@ -2719,46 +2841,50 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     setNewUserForm((prev) => ({ ...prev, email: e.target.value }));
                   }}
                   placeholder="user@example.com"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Password</label>
                 <input
                   type="password"
                   value={newUserForm.password}
                   onChange={(e) => {
                     setNewUserForm((prev) => ({ ...prev, password: e.target.value }));
                   }}
-                  placeholder="Minimum 8 characters"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Create a password"
+                  autoComplete="new-password"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Role</label>
                 <select
                   value={newUserForm.role}
                   onChange={(e) => {
                     setNewUserForm((prev) => ({ ...prev, role: e.target.value }));
                   }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
                 >
+                  <option value="" disabled>Select a role</option>
                   <option value="student">Student</option>
                   <option value="expert">Expert</option>
                   <option value="instructor">Instructor</option>
                   <option value="admin">Admin</option>
                 </select>
+                <p className="mt-1.5 text-xs text-gray-500">Assign the minimum required role for access control.</p>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <div className="px-5 py-3.5 border-t border-gray-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 bg-gray-50/70">
               <button
                 onClick={() => {
+                  setNewUserForm(EMPTY_NEW_USER_FORM);
                   setIsAddUserModalOpen(false);
                 }}
-                className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium"
+                className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium w-full sm:w-auto"
               >
                 Cancel
               </button>
@@ -2766,7 +2892,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                 onClick={() => {
                   void handleCreateUser();
                 }}
-                className="px-4 py-2.5 bg-blue-600 border border-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2.5 bg-blue-600 border border-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50 w-full sm:w-auto"
                 disabled={isCreatingUser}
               >
                 {isCreatingUser ? 'Adding...' : 'Add User'}
