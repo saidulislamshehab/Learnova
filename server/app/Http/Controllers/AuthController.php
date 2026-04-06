@@ -196,6 +196,38 @@ class AuthController extends Controller
         ]);
     }
 
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        try {
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:8|confirmed',
+            ]);
+
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'The provided current password does not match your record.',
+                    'errors' => ['current_password' => ['Incorrect current password.']]
+                ], 422);
+            }
+
+            $user->update([
+                'password' => Hash::make($validated['new_password'])
+            ]);
+
+            return response()->json([
+                'message' => 'Password updated successfully'
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function updateProfilePicture(Request $request)
     {
         $user = $request->user();
