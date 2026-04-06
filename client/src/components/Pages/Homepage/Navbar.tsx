@@ -554,7 +554,7 @@ export function Navbar({
                           setIsProfileOpen(false);
                         }}
                       >
-                        My Courses
+                        Enrolled Courses
                       </a>
                       <a
                         href="#bookmarks"
@@ -897,7 +897,7 @@ export function Navbar({
                       setIsMobileMenuOpen(false);
                     }}
                   >
-                    MY COURSES
+                    ENROLLED COURSES
                   </Link>
                   <Link
                     to="/bookmarks"

@@ -5,6 +5,7 @@ Learnova is a premium, modern SaaS platform designed to facilitate seamless onli
 ---
 
 ## 🎨 Design Vision
+
 Learnova follows a premium dark-blue aesthetic, incorporating **glassmorphism**, modern **typography**, and a **dynamic design system**. Every interaction is designed to feel fluid and professional, providing a state-of-the-art administrative and learning environment.
 
 ---
@@ -23,19 +24,20 @@ Learnova follows a premium dark-blue aesthetic, incorporating **glassmorphism**,
 
 ## 🏗 Tech Stack
 
-| Domain | Technologies |
-| :--- | :--- |
-| **Frontend** | React, Vite, TypeScript, Vanilla CSS |
-| **Backend** | Laravel 11 (PHP 8.2+), JWT Authentication |
-| **Database** | SQL Server (Azure SQL Compatible) |
-| **Storage** | Cloudinary (Media management) |
-| **Tooling** | Composer, NPM, Artisan |
+| Domain       | Technologies                              |
+| :----------- | :---------------------------------------- |
+| **Frontend** | React, Vite, TypeScript, Vanilla CSS      |
+| **Backend**  | Laravel 11 (PHP 8.2+), JWT Authentication |
+| **Database** | SQL Server (Azure SQL Compatible)         |
+| **Storage**  | Cloudinary (Media management)             |
+| **Tooling**  | Composer, NPM, Artisan                    |
 
 ---
 
 ## 🛠 Prerequisites
 
 Before starting, ensure you have the following installed:
+
 - **PHP 8.2+**
 - **Composer**
 - **Node.js 18+ & NPM**
@@ -50,28 +52,33 @@ To run the full Learnova ecosystem, you'll need to set up both the backend and t
 ### 1. Backend Setup (`/server`)
 
 1. **Navigate to the server directory:**
+
    ```bash
    cd server
    ```
 
 2. **Install PHP dependencies:**
+
    ```bash
    composer install
    ```
 
 3. **Configure Environment:**
    Copy `.env.example` to `.env` and configure your database credentials and JWT secret.
+
    ```bash
    cp .env.example .env
    # Update your DB_CONNECTION, DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD
    ```
 
 4. **Generate Application Key:**
+
    ```bash
    php artisan key:generate
    ```
 
 5. **Run Migrations & Seeders:**
+
    ```bash
    php artisan migrate --seed
    ```
@@ -80,16 +87,18 @@ To run the full Learnova ecosystem, you'll need to set up both the backend and t
    ```bash
    php artisan serve
    ```
-   *The backend will be available at `http://127.0.0.1:8000`.*
+   _The backend will be available at `http://127.0.0.1:8000`._
 
 ### 2. Frontend Setup (`/client`)
 
 1. **Navigate to the client directory:**
+
    ```bash
    cd client
    ```
 
 2. **Install NPM dependencies:**
+
    ```bash
    npm install
    ```
@@ -101,7 +110,7 @@ To run the full Learnova ecosystem, you'll need to set up both the backend and t
    ```bash
    npm run dev
    ```
-   *The frontend will be available at `http://localhost:5173`.*
+   _The frontend will be available at `http://localhost:5173`._
 
 ---
 
@@ -129,11 +138,13 @@ Learnova/
 ---
 
 ## 🤝 Contributing
+
 Contributions are welcome! Please feel free to submit a Pull Request or open an Issue if you find a bug or have a feature suggestion.
 
 ---
 
 ## 📄 License
+
 This project is for educational and commercial demonstration purposes. All rights reserved.
 
 <div align="center">

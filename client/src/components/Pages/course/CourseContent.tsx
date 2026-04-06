@@ -12,6 +12,8 @@ import {
   Send,
   User
 } from 'lucide-react';
+import { useEffect } from 'react';
+import axios from 'axios';
 
 interface Lesson {
   id: string;
@@ -36,8 +38,62 @@ export function CourseContent({ onBack }: CourseContentProps) {
   const { id } = useParams<{ id: string }>();
   const courseId = id || 'PY-001';
   
-  const [selectedLesson, setSelectedLesson] = useState<string>('lesson-1-1');
-  const [expandedModules, setExpandedModules] = useState<string[]>(['module-1', 'module-2', 'module-3', 'module-4']);
+  const [courseData, setCourseData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<string>('');
+  const [expandedModules, setExpandedModules] = useState<string[]>(['module-1']);
+
+  const formatYoutubeUrl = (url: string) => {
+    if (!url) return '';
+    if (url.includes('embed/')) return url;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) 
+      ? `https://www.youtube.com/embed/${match[2]}` 
+      : url;
+  };
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/${id}`);
+        const data = response.data.course;
+        
+        const mappedCourse = {
+          id: data.Course_Code || `ID-${data.CourseID}`,
+          title: data.Title,
+          instructor: data.user?.name || 'Instructor',
+          modules: [
+            {
+              id: 'module-1',
+              title: 'Course Content',
+              lessons: data.contents?.map((c: any, index: number) => ({
+                id: `lesson-${c.CourseContentID || c.id || index}`,
+                title: c.title,
+                duration: c.duration || (index % 2 === 0 ? '12:30' : '15:45'),
+                videoUrl: formatYoutubeUrl(c.youtube_url),
+                description: c.description || 'Learn about this topic in depth.',
+                completed: false
+              })) || []
+            }
+          ]
+        };
+        
+        setCourseData(mappedCourse);
+        if (mappedCourse.modules[0].lessons.length > 0) {
+          setSelectedLesson(mappedCourse.modules[0].lessons[0].id);
+        }
+      } catch (err) {
+        setError('Failed to load course content.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourse();
+  }, [id]);
 
   // Chat state
   const [showChat, setShowChat] = useState(false);
@@ -48,167 +104,6 @@ export function CourseContent({ onBack }: CourseContentProps) {
   ]);
   const [chatInput, setChatInput] = useState('');
 
-  // Mock course data
-  const courseData = {
-    id: courseId,
-    title: 'Complete Python Programming',
-    instructor: 'Dr. Sarah Johnson',
-    modules: [
-      {
-        id: 'module-1',
-        title: 'Introduction to Python',
-        lessons: [
-          { 
-            id: 'lesson-1-1', 
-            title: 'Welcome to Python', 
-            duration: '5:30', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Get started with Python programming. Learn what Python is, why it\'s popular, and what you can build with it.',
-            completed: true 
-          },
-          { 
-            id: 'lesson-1-2', 
-            title: 'Setting Up Your Environment', 
-            duration: '8:15', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Learn how to install Python and set up your development environment for coding.',
-            completed: true 
-          },
-          { 
-            id: 'lesson-1-3', 
-            title: 'Your First Python Program', 
-            duration: '10:45', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Write and run your first Python program. Understand the basic syntax and structure.',
-            completed: true 
-          },
-          { 
-            id: 'lesson-1-4', 
-            title: 'Python Basics Overview', 
-            duration: '6:20', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'A comprehensive overview of Python fundamentals and key concepts.',
-            completed: false 
-          }
-        ]
-      },
-      {
-        id: 'module-2',
-        title: 'Python Fundamentals',
-        lessons: [
-          { 
-            id: 'lesson-2-1', 
-            title: 'Variables and Data Types', 
-            duration: '12:30', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Understand variables, data types, and how to work with different types of data in Python.',
-            completed: true 
-          },
-          { 
-            id: 'lesson-2-2', 
-            title: 'Operators and Expressions', 
-            duration: '15:20', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Learn about arithmetic, comparison, and logical operators in Python.',
-            completed: true 
-          },
-          { 
-            id: 'lesson-2-3', 
-            title: 'Control Flow Statements', 
-            duration: '18:45', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Master if-else statements, loops, and control flow in your programs.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-2-4', 
-            title: 'Practice Exercises', 
-            duration: '10:00', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Apply what you\'ve learned with hands-on practice exercises.',
-            completed: false 
-          }
-        ]
-      },
-      {
-        id: 'module-3',
-        title: 'Data Structures',
-        lessons: [
-          { 
-            id: 'lesson-3-1', 
-            title: 'Lists and Tuples', 
-            duration: '14:20', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Learn how to work with lists and tuples to store collections of data.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-3-2', 
-            title: 'Dictionaries and Sets', 
-            duration: '16:30', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Understand dictionaries and sets for efficient data management.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-3-3', 
-            title: 'Working with Strings', 
-            duration: '12:15', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Master string manipulation and common string operations.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-3-4', 
-            title: 'Data Structures Quiz', 
-            duration: '8:00', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Test your knowledge with a comprehensive quiz on data structures.',
-            completed: false 
-          }
-        ]
-      },
-      {
-        id: 'module-4',
-        title: 'Functions and Modules',
-        lessons: [
-          { 
-            id: 'lesson-4-1', 
-            title: 'Defining Functions', 
-            duration: '13:45', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Learn how to create reusable functions in Python.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-4-2', 
-            title: 'Function Parameters', 
-            duration: '11:20', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Understand different types of function parameters and arguments.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-4-3', 
-            title: 'Lambda Functions', 
-            duration: '9:30', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Explore lambda functions and functional programming concepts.',
-            completed: false 
-          },
-          { 
-            id: 'lesson-4-4', 
-            title: 'Python Modules', 
-            duration: '15:00', 
-            videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
-            description: 'Learn how to organize code using modules and packages.',
-            completed: false 
-          }
-        ]
-      }
-    ]
-  };
-
   const toggleModule = (moduleId: string) => {
     setExpandedModules(prev =>
       prev.includes(moduleId)
@@ -218,9 +113,9 @@ export function CourseContent({ onBack }: CourseContentProps) {
   };
 
   // Get current lesson details
-  const currentLesson = courseData.modules
-    .flatMap(m => m.lessons)
-    .find(l => l.id === selectedLesson);
+  const currentLesson = courseData?.modules
+    .flatMap((m: any) => m.lessons)
+    .find((l: any) => l.id === selectedLesson);
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -244,6 +139,23 @@ export function CourseContent({ onBack }: CourseContentProps) {
       setChatMessages(prev => [...prev, response]);
     }, 1500);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-8 h-8 border-2 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error || !courseData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <p className="text-red-400 mb-4">{error || 'Course content not found'}</p>
+        <button onClick={onBack} className="text-[#A5C89E] hover:underline">← Back to My Courses</button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-32 pb-16 px-4 sm:px-6 lg:px-8">
@@ -330,7 +242,7 @@ export function CourseContent({ onBack }: CourseContentProps) {
         <div className="space-y-4">
           <h3 className="text-xl font-bold text-white/90 mb-6">Course Content</h3>
           
-          {courseData.modules.flatMap((module) => module.lessons).map((lesson, index) => (
+          {courseData.modules.flatMap((module: any) => module.lessons).map((lesson: any, index: number) => (
             <div 
               key={lesson.id}
               className="bg-[#0f0f0f]/80 backdrop-blur-xl border border-[#A5C89E]/20 rounded-2xl px-6 py-4 hover:bg-[#A5C89E]/5 transition-colors"
@@ -349,11 +261,19 @@ export function CourseContent({ onBack }: CourseContentProps) {
                     {lesson.description}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-500 text-sm font-mono">
-                    {lesson.duration}
-                  </span>
+                <div className="flex items-center space-x-4 flex-shrink-0">
+                  <button 
+                    onClick={() => setSelectedLesson(lesson.id)}
+                    className={`p-2 rounded-lg transition-all ${selectedLesson === lesson.id ? 'bg-[#A5C89E] text-black' : 'bg-[#A5C89E]/10 text-[#A5C89E] hover:bg-[#A5C89E]/20'}`}
+                  >
+                    <Play className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-500 text-sm font-mono">
+                      {lesson.duration}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

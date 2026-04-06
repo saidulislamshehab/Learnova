@@ -1,14 +1,18 @@
-import { useState } from 'react';
-import { FileText, Plus, Clock, CheckCircle2, Edit3, Eye, AlertTriangle, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileText, Plus, Clock, CheckCircle2, Edit3, Eye, AlertTriangle, X, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export interface Article {
   id: string;
   title: string;
   content: string;
   excerpt: string;
-  status: 'draft' | 'published' | 'pending';
+  status: 'draft' | 'published' | 'pending' | 'rejected';
   lastUpdated: string;
   views?: number;
+  category?: string;
+  tags?: string;
+  read_time?: string;
 }
 
 interface MyArticlesProps {
@@ -63,8 +67,60 @@ const mockArticles: Article[] = [
 ];
 
 export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'draft' | 'published' | 'pending'>('all');
-  const [articles] = useState<Article[]>(mockArticles);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'draft' | 'published' | 'pending' | 'rejected'>('all');
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMyArticles();
+  }, []);
+
+  const fetchMyArticles = async () => {
+    setIsLoading(true);
+    setError(null);
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+      setError('You must be logged in to view your articles.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`http://${window.location.hostname}:8000/api/articles/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const mappedArticles = response.data.articles.map((art: any) => ({
+        id: art.id || art.Article_ID,
+        title: art.Title,
+        content: art.Content,
+        excerpt: art.Excerpt || (art.Content ? art.Content.replace(/<[^>]*>/g, ' ').substring(0, 100) + '...' : ''),
+        status: art.Status,
+        lastUpdated: art.updated_at ? new Date(art.updated_at).toLocaleDateString() : 'Recently',
+        views: art.Views || 0,
+        category: art.Category,
+        tags: art.Tags,
+        read_time: art.Read_Time,
+      }));
+
+      setArticles(mappedArticles);
+    } catch (err: any) {
+      console.error(err);
+      if (err.response?.status === 401) {
+        setError('Your session has expired. Please log in again.');
+      } else if (err.response?.status === 404) {
+        setError('Article service not found.');
+      } else if (err.response?.status === 500) {
+        setError('Database error: Please ensure migrations are run (php artisan migrate).');
+      } else {
+        setError('Failed to load articles. Please check your connection.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [selectedArticleForReports, setSelectedArticleForReports] = useState<Article | null>(null);
 
@@ -143,6 +199,12 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
         bgColor: 'bg-yellow-500/20',
         textColor: 'text-yellow-400',
         borderColor: 'border-yellow-500/30',
+      },
+      rejected: {
+        label: 'Rejected',
+        bgColor: 'bg-red-500/20',
+        textColor: 'text-red-400',
+        borderColor: 'border-red-500/30',
       },
     };
 
@@ -241,7 +303,26 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
         </div>
 
         {/* Articles List */}
-        {filteredArticles.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-[#A5C89E]/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-[#A5C89E] font-medium animate-pulse">Fetching your articles...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
+            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-400 font-medium">{error}</p>
+            <button 
+              onClick={fetchMyArticles}
+              className="mt-4 px-6 py-2 bg-red-500/20 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500/30 transition-all font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filteredArticles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredArticles.map((article) => (
               <div
