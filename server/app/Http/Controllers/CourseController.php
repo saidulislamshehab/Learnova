@@ -80,6 +80,7 @@ class CourseController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $this->validateCourseRequest($request);
+        $categoryName = $this->resolveCategoryName($validated);
 
         $creatorRole = (string) ($request->user()->role ?? '');
         if (!in_array($creatorRole, ['admin', 'instructor'], true)) {
@@ -106,7 +107,7 @@ class CourseController extends Controller
             $course = Course::create([
                 'UserID' => $request->user()->id,
                 'Title' => $validated['title'],
-                'Category' => $validated['category_name'] ?? (string) $validated['category_id'],
+                'Category' => $categoryName,
                 'Description' => $validated['short_description'],
                 'Overview' => $validated['overview'],
                 'Thumbnail' => $thumbnailUrl,
@@ -114,7 +115,7 @@ class CourseController extends Controller
                 'Price' => $validated['price'],
                 'Old_Price' => $validated['old_price'] ?? null,
                 'Status' => $validated['status'] ?? 'draft',
-                'category_id' => $validated['category_id'],
+                'category_id' => $validated['category_id'] ?? null,
             ]);
 
             if (($validated['status'] ?? '') === 'pending') {
@@ -147,6 +148,7 @@ class CourseController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $validated = $this->validateCourseRequest($request);
+        $categoryName = $this->resolveCategoryName($validated);
 
         $course = Course::query()->findOrFail($id);
 
@@ -184,7 +186,7 @@ class CourseController extends Controller
 
             $course->update([
                 'Title' => $validated['title'],
-                'Category' => $validated['category_name'] ?? (string) $validated['category_id'],
+                'Category' => $categoryName,
                 'Description' => $validated['short_description'],
                 'Overview' => $validated['overview'],
                 'Thumbnail' => $thumbnailUrl,
@@ -192,7 +194,7 @@ class CourseController extends Controller
                 'Price' => $validated['price'],
                 'Old_Price' => $validated['old_price'] ?? null,
                 'Status' => $newStatus,
-                'category_id' => $validated['category_id'],
+                'category_id' => $validated['category_id'] ?? null,
             ]);
 
             if (($validated['status'] ?? '') === 'pending') {
@@ -261,8 +263,8 @@ class CourseController extends Controller
     {
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'category_id' => ['required', 'integer', 'min:1'],
-            'category_name' => ['nullable', 'string', 'max:255'],
+            'category_id' => ['nullable', 'integer', 'min:1', 'required_without:category_name'],
+            'category_name' => ['nullable', 'string', 'max:255', 'required_without:category_id'],
             'short_description' => ['nullable', 'string'],
             'overview' => ['nullable', 'string'],
             'duration' => ['nullable', 'numeric', 'min:0'],
@@ -272,6 +274,17 @@ class CourseController extends Controller
             'status' => ['nullable', Rule::in(['draft', 'pending', 'published'])],
             'course_contents' => ['required'],
         ]);
+    }
+
+    private function resolveCategoryName(array $validated): string
+    {
+        $name = trim((string) ($validated['category_name'] ?? ''));
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        return (string) ($validated['category_id'] ?? '');
     }
 
     private function normalizeCourseContents(mixed $rawContents): ?array

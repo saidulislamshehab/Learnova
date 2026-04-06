@@ -117,6 +117,7 @@ async function getValidAuthToken(): Promise<string | null> {
 export function PublishCourse({ onBack, onMyCourses, editMode = false, editCourseId }: PublishCourseProps) {
   const [courseTitle, setCourseTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [customCategoryName, setCustomCategoryName] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [totalHours, setTotalHours] = useState('');
   const [price, setPrice] = useState('');
@@ -153,10 +154,29 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
         const course = response.data.course;
         const resolvedCourseId = String(course.CourseID ?? '');
+        const detectedCategoryName = (course.category_name ?? course.Category ?? '').trim();
+        const matchedCategoryById = course.category_id
+          ? courseCategories.find((item) => item.id === course.category_id)
+          : null;
+        const matchedCategoryByName = detectedCategoryName
+          ? courseCategories.find(
+              (item) => item.label.toLowerCase() === detectedCategoryName.toLowerCase()
+            )
+          : null;
+        const resolvedCategory = matchedCategoryById ?? matchedCategoryByName;
 
         setCourseTitle(course.Title ?? '');
         setCourseStatus(course.Status ?? 'draft');
-        setCategoryId(course.category_id ? String(course.category_id) : '');
+        if (resolvedCategory) {
+          setCategoryId(String(resolvedCategory.id));
+          setCustomCategoryName('');
+        } else if (detectedCategoryName) {
+          setCategoryId('__custom__');
+          setCustomCategoryName(detectedCategoryName);
+        } else {
+          setCategoryId('');
+          setCustomCategoryName('');
+        }
         setShortDescription(course.Description ?? '');
         setOverview(course.Overview ?? '');
         setTotalHours(course.Total_Hours !== null && course.Total_Hours !== undefined ? String(course.Total_Hours) : '');
@@ -215,7 +235,10 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   };
 
   const buildCoursePayload = (status: 'draft' | 'pending', uploadedThumbnailUrl?: string | null) => {
-    const categoryName = courseCategories.find((item) => String(item.id) === categoryId)?.label ?? '';
+    const isCustomCategory = categoryId === '__custom__';
+    const selectedCategory = courseCategories.find((item) => String(item.id) === categoryId);
+    const categoryName = isCustomCategory ? customCategoryName.trim() : (selectedCategory?.label ?? '');
+    const selectedCategoryId = isCustomCategory ? '' : categoryId;
     const cleanedContentItems = contentItems
       .map((item) => ({
         title: item.title.trim(),
@@ -233,6 +256,9 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
     if (!categoryId) {
       throw new Error('Please select a category.');
     }
+    if (isCustomCategory && !categoryName) {
+      throw new Error('Please enter your new category name.');
+    }
 
     if (!price.trim()) {
       throw new Error('Please enter a price.');
@@ -244,7 +270,9 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
     const formData = new FormData();
     formData.append('title', courseTitle.trim());
-    formData.append('category_id', categoryId);
+    if (selectedCategoryId) {
+      formData.append('category_id', selectedCategoryId);
+    }
     formData.append('category_name', categoryName);
     formData.append('short_description', shortDescription.trim());
     formData.append('overview', overview.trim());
@@ -394,7 +422,12 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             </label>
             <select
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => {
+                setCategoryId(e.target.value);
+                if (e.target.value !== '__custom__') {
+                  setCustomCategoryName('');
+                }
+              }}
               className="w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white focus:outline-none focus:border-[#A5C89E]/60 transition-all"
             >
               <option value="" disabled>
@@ -405,7 +438,17 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
                   {cat.label}
                 </option>
               ))}
+              <option value="__custom__">+ Add New Category</option>
             </select>
+            {categoryId === '__custom__' && (
+              <input
+                type="text"
+                value={customCategoryName}
+                onChange={(e) => setCustomCategoryName(e.target.value)}
+                placeholder="Enter new category name"
+                className="mt-3 w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+              />
+            )}
           </div>
 
           {/* Short Description */}
