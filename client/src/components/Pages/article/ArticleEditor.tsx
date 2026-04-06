@@ -64,6 +64,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   const [categoryFeedback, setCategoryFeedback] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [activeCategorySuggestionIndex, setActiveCategorySuggestionIndex] = useState(-1);
+  const [activeTagSuggestionIndex, setActiveTagSuggestionIndex] = useState(-1);
   const editorRef = useRef<HTMLDivElement>(null);
 
   const predefinedCategories = [
@@ -117,6 +118,13 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   };
 
   const categoryPayload = categoryValue.trim();
+
+  // Compute tag suggestions from predefined categories
+  const tagSuggestions = predefinedCategories.filter(
+    (tag) =>
+      tag.toLowerCase().includes(customTag.toLowerCase()) &&
+      !selectedTags.includes(tag)
+  );
 
   // Load existing article content into editor
   useEffect(() => {
