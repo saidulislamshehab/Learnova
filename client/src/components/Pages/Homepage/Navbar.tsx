@@ -18,6 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
+import Loading from '../../ui/Loading';
 
 // Interface defining the props for the Navbar component
 interface NavbarProps {
@@ -663,10 +664,18 @@ export function Navbar({
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <div className="relative group" ref={coursesRef}>
+            <div
+              className="relative group"
+              ref={coursesRef}
+              onMouseEnter={() => setIsCoursesOpen(true)}
+              onMouseLeave={() => setIsCoursesOpen(false)}
+            >
               <button
                 className="navbar-nav-link navbar-nav-link-underline"
-                onClick={() => setIsCoursesOpen(!isCoursesOpen)}
+                onClick={() => {
+                  onAllCourses(undefined);
+                  setIsCoursesOpen(false);
+                }}
               >
                 COURSES
                 <ChevronDown
@@ -717,12 +726,22 @@ export function Navbar({
             >
               ARTICLES
             </Link>
-            <div className="relative group" ref={tutorialsRef}>
+            <div
+              className="relative group"
+              ref={tutorialsRef}
+              onMouseEnter={() => setIsTutorialsOpen(true)}
+              onMouseLeave={() => setIsTutorialsOpen(false)}
+            >
               <button
                 className="navbar-nav-link navbar-nav-link-underline"
-                onClick={() =>
-                  setIsTutorialsOpen(!isTutorialsOpen)
-                }
+                onClick={() => {
+                  if (onTutorials) {
+                    onTutorials();
+                  } else {
+                    navigate('/tutorials');
+                  }
+                  setIsTutorialsOpen(false);
+                }}
               >
                 TUTORIALS
                 <ChevronDown
@@ -1563,10 +1582,8 @@ export function Navbar({
 
           <div className="navbar-search-modal-content">
             {isSearchLoading ? (
-              <div className="navbar-search-modal-skeleton-list">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="navbar-search-modal-skeleton-card" />
-                ))}
+              <div className="flex items-center justify-center py-12">
+                <Loading message="Searching..." size="sm" />
               </div>
             ) : searchResults.length === 0 ? (
               <div className="navbar-search-empty-state">

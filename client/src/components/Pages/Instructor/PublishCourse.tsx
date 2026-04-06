@@ -4,6 +4,7 @@ import {
   BookOpen,
   Upload,
   Plus,
+  Tag,
   Trash2,
   ChevronDown,
   ChevronUp,
@@ -11,6 +12,7 @@ import {
   Send,
   GripVertical,
 } from 'lucide-react';
+import Loading from '../../ui/Loading';
 
 interface PublishCourseProps {
   onBack: () => void;
@@ -116,8 +118,9 @@ async function getValidAuthToken(): Promise<string | null> {
 
 export function PublishCourse({ onBack, onMyCourses, editMode = false, editCourseId }: PublishCourseProps) {
   const [courseTitle, setCourseTitle] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [customCategoryName, setCustomCategoryName] = useState('');
+  const [categoryValue, setCategoryValue] = useState('');
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const [categoryFeedback, setCategoryFeedback] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [totalHours, setTotalHours] = useState('');
   const [price, setPrice] = useState('');
@@ -167,16 +170,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
         setCourseTitle(course.Title ?? '');
         setCourseStatus(course.Status ?? 'draft');
-        if (resolvedCategory) {
-          setCategoryId(String(resolvedCategory.id));
-          setCustomCategoryName('');
-        } else if (detectedCategoryName) {
-          setCategoryId('__custom__');
-          setCustomCategoryName(detectedCategoryName);
-        } else {
-          setCategoryId('');
-          setCustomCategoryName('');
-        }
+        setCategoryValue(resolvedCategory?.label ?? detectedCategoryName ?? '');
         setShortDescription(course.Description ?? '');
         setOverview(course.Overview ?? '');
         setTotalHours(course.Total_Hours !== null && course.Total_Hours !== undefined ? String(course.Total_Hours) : '');
@@ -235,10 +229,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   };
 
   const buildCoursePayload = (status: 'draft' | 'pending', uploadedThumbnailUrl?: string | null) => {
-    const isCustomCategory = categoryId === '__custom__';
-    const selectedCategory = courseCategories.find((item) => String(item.id) === categoryId);
-    const categoryName = isCustomCategory ? customCategoryName.trim() : (selectedCategory?.label ?? '');
-    const selectedCategoryId = isCustomCategory ? '' : categoryId;
+    const categoryName = categoryValue.trim();
     const cleanedContentItems = contentItems
       .map((item) => ({
         title: item.title.trim(),
@@ -257,11 +248,8 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
       throw new Error('Please enter a course title.');
     }
 
-    if (!categoryId) {
-      throw new Error('Please select a category.');
-    }
-    if (isCustomCategory && !categoryName) {
-      throw new Error('Please enter your new category name.');
+    if (!categoryName) {
+      throw new Error('Please enter a category.');
     }
 
     if (!price.trim()) {
@@ -290,9 +278,6 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
     const formData = new FormData();
     formData.append('title', courseTitle.trim());
-    if (selectedCategoryId) {
-      formData.append('category_id', selectedCategoryId);
-    }
     formData.append('category_name', categoryName);
     formData.append('short_description', shortDescription.trim());
     formData.append('overview', overview.trim());
@@ -392,6 +377,10 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen">
       <div className="relative max-w-6xl mx-auto">
+        {isLoadingCourse ? (
+          <Loading message="Loading course details..." size="lg" />
+        ) : (
+        <>
         {/* Top Action Bar */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-4">
@@ -422,7 +411,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
           <h2 className="text-xl font-bold text-white mb-6">Basic Information</h2>
 
           {/* Course Title */}
-          <div className="mb-6">
+          <div className="mb-6 relative z-50">
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Course Title <span className="text-[#A5C89E]">*</span>
             </label>
@@ -440,35 +429,69 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Category <span className="text-[#A5C89E]">*</span>
             </label>
-            <select
-              value={categoryId}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
-                if (e.target.value !== '__custom__') {
-                  setCustomCategoryName('');
-                }
-              }}
-              className="w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white focus:outline-none focus:border-[#A5C89E]/60 transition-all"
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
-              {courseCategories.map((cat) => (
-                <option key={cat.id} value={String(cat.id)}>
-                  {cat.label}
-                </option>
-              ))}
-              <option value="__custom__">+ Add New Category</option>
-            </select>
-            {categoryId === '__custom__' && (
+            <div className="relative">
               <input
                 type="text"
-                value={customCategoryName}
-                onChange={(e) => setCustomCategoryName(e.target.value)}
-                placeholder="Enter new category name"
-                className="mt-3 w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+                value={categoryValue}
+                onChange={(e) => setCategoryValue(e.target.value)}
+                onFocus={() => setShowCategorySuggestions(true)}
+                onBlur={() => window.setTimeout(() => setShowCategorySuggestions(false), 200)}
+                placeholder="Type a category"
+                className="w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
               />
-            )}
+
+              {showCategorySuggestions && (
+                <div className="absolute z-[999] mt-2 w-full bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+                  <div className="p-2">
+                    <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">SUGGESTIONS</p>
+                    {courseCategories
+                      .map((cat) => cat.label)
+                      .filter((label) =>
+                        label.toLowerCase().includes(categoryValue.toLowerCase())
+                      )
+                      .slice(0, 12)
+                      .map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setCategoryValue(label);
+                            setShowCategorySuggestions(false);
+                          }}
+                        >
+                          <Tag className="w-4 h-4 mr-2 opacity-60 shrink-0" />
+                          {label}
+                        </button>
+                      ))}
+                    {categoryValue.trim() &&
+                      !courseCategories.some(
+                        (cat) => cat.label.toLowerCase() === categoryValue.trim().toLowerCase()
+                      ) && (
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center border-t border-[#A5C89E]/20 mt-1 pt-2"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            const normalized = categoryValue.trim();
+                            setCategoryValue(normalized);
+                            setCategoryFeedback(`Category "${normalized}" added`);
+                            window.setTimeout(() => setCategoryFeedback(''), 2500);
+                            setShowCategorySuggestions(false);
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-2 shrink-0" />
+                          Use &quot;{categoryValue.trim()}&quot;
+                        </button>
+                      )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {categoryFeedback ? (
+              <p className="text-xs text-[#A5C89E] mt-2">{categoryFeedback}</p>
+            ) : null}
           </div>
 
           {/* Short Description */}
@@ -753,6 +776,8 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             learn best when content is structured and easy to follow.
           </p>
         </div>
+        </>
+        )}
       </div>
     </section>
   );

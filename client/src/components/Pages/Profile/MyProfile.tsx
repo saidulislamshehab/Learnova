@@ -13,6 +13,7 @@ import {
   Github,
   Linkedin,
 } from 'lucide-react';
+import Loading from '../../ui/Loading';
 
 interface MyProfileProps {
   onBack: () => void;
@@ -140,36 +141,7 @@ export function MyProfile({ onBack, onEditProfile }: MyProfileProps) {
         </button>
 
         {isLoading && (
-          <div className="space-y-6">
-            <div className="relative overflow-hidden bg-[#0f0f0f]/80 backdrop-blur-xl border border-[#A5C89E]/20 rounded-2xl p-8 md:p-10 shadow-xl text-center">
-              <div className={`mx-auto w-24 h-24 md:w-28 md:h-28 rounded-full ${shimmerClass}`} />
-              <div className={`h-7 w-52 mx-auto mt-5 rounded-lg ${shimmerClass}`} />
-              <div className={`h-4 w-36 mx-auto mt-3 rounded ${shimmerClass}`} />
-              <div className={`h-5 w-20 mx-auto mt-4 rounded-full ${shimmerClass}`} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 max-w-2xl mx-auto">
-                <div className={`h-16 rounded-xl ${shimmerClass}`} />
-                <div className={`h-16 rounded-xl ${shimmerClass}`} />
-              </div>
-            </div>
-
-            <div className="bg-[#0f0f0f]/80 backdrop-blur-xl border border-[#A5C89E]/20 rounded-2xl p-6 md:p-8 shadow-xl">
-              <div className={`h-6 w-56 rounded-lg mb-6 ${shimmerClass}`} />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-[#A5C89E]/15 bg-[#0b0b0b]/70 p-5 space-y-3">
-                  <div className={`h-4 w-32 rounded ${shimmerClass}`} />
-                  <div className={`h-10 rounded-lg ${shimmerClass}`} />
-                  <div className={`h-10 rounded-lg ${shimmerClass}`} />
-                  <div className={`h-10 rounded-lg ${shimmerClass}`} />
-                </div>
-                <div className="rounded-xl border border-[#A5C89E]/15 bg-[#0b0b0b]/70 p-5 space-y-3">
-                  <div className={`h-4 w-40 rounded ${shimmerClass}`} />
-                  <div className={`h-10 rounded-lg ${shimmerClass}`} />
-                  <div className={`h-10 rounded-lg ${shimmerClass}`} />
-                  <div className={`h-10 rounded-lg ${shimmerClass}`} />
-                </div>
-              </div>
-            </div>
-          </div>
+          <Loading message="Loading profile..." size="lg" />
         )}
 
         {!isLoading && (

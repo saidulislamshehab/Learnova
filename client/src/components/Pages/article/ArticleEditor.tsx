@@ -42,14 +42,25 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   const [status, setStatus] = useState<'draft' | 'published' | 'pending' | 'rejected'>(
     existingArticle?.status || 'draft'
   );
-  const [category, setCategory] = useState(existingArticle?.category || 'Web Development');
+  const parseCategoriesFromString = (value: string | undefined): string[] => {
+    if (!value?.trim()) return [];
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  };
+
+  const [categoryValue, setCategoryValue] = useState<string>(() => {
+    if (!existingArticle?.category) return '';
+    const parsed = parseCategoriesFromString(existingArticle.category);
+    return parsed[0] ?? '';
+  });
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [activeTagSuggestionIndex, setActiveTagSuggestionIndex] = useState(-1);
-  const [customCategory, setCustomCategory] = useState('');
   const [categoryFeedback, setCategoryFeedback] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [activeCategorySuggestionIndex, setActiveCategorySuggestionIndex] = useState(-1);
@@ -89,57 +100,23 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
     }
   };
 
-  const addCustomCategory = () => {
-    const normalizedCategory = customCategory.trim();
-    if (!normalizedCategory) return;
+  const setCategory = (raw: string) => {
+    const normalized = raw.trim();
+    if (!normalized) return;
+    if (categoryValue.toLowerCase() === normalized.toLowerCase()) {
+      return;
+    }
 
-    const existingCategory = availableCategories.find(
-      (cat) => cat.toLowerCase() === normalizedCategory.toLowerCase()
-    );
-    const finalCategory = existingCategory ?? normalizedCategory;
-
-    if (!existingCategory) {
-      setAvailableCategories((prev) => [...prev, normalizedCategory]);
-      setCategoryFeedback(`Category "${normalizedCategory}" added`);
+    if (!availableCategories.some((c) => c.toLowerCase() === normalized.toLowerCase())) {
+      setAvailableCategories((prev) => [...prev, normalized]);
+      setCategoryFeedback(`Category "${normalized}" added`);
       window.setTimeout(() => setCategoryFeedback(''), 2500);
     }
 
-    setCategory(finalCategory);
-    setCustomCategory('');
-    setShowCategoryDropdown(false);
+    setCategoryValue(normalized);
   };
 
-  const handleCategorySelect = (selectedCategory: string) => {
-    setCategory(selectedCategory);
-    setCustomCategory(selectedCategory);
-    setShowCategoryDropdown(false);
-  };
-
-  const categorySearchWords = customCategory
-    .toLowerCase()
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  const filteredCategorySuggestions = availableCategories.filter((cat) => {
-    if (categorySearchWords.length === 0) return true;
-    const lowerCat = cat.toLowerCase();
-    return categorySearchWords.every((word) => lowerCat.includes(word));
-  });
-  const categorySuggestions = filteredCategorySuggestions.slice(0, 8);
-  const showAddCategoryOption = filteredCategorySuggestions.length === 0 && customCategory.trim();
-  const filteredTagSuggestions = predefinedCategories
-    .filter((cat) => !selectedTags.includes(cat))
-    .filter((cat) => cat.toLowerCase().includes(customTag.toLowerCase()));
-  const tagSuggestions = filteredTagSuggestions.slice(0, 8);
-
-  useEffect(() => {
-    setActiveCategorySuggestionIndex(-1);
-  }, [customCategory, showCategoryDropdown]);
-
-  useEffect(() => {
-    setActiveTagSuggestionIndex(-1);
-  }, [customTag, showTagDropdown]);
+  const categoryPayload = categoryValue.trim();
 
   // Load existing article content into editor
   useEffect(() => {
@@ -152,13 +129,17 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
         setSelectedTags(existingArticle.tags.split(','));
       }
       if (existingArticle.category) {
-        const articleCategory = existingArticle.category;
-        setCategory(articleCategory);
-        if (!predefinedCategories.includes(articleCategory)) {
-          setAvailableCategories((prev) =>
-            prev.includes(articleCategory) ? prev : [...prev, articleCategory]
-          );
+        const parsed = parseCategoriesFromString(existingArticle.category);
+        if (parsed.length > 0) {
+          setCategoryValue(parsed[0]);
         }
+        parsed.forEach((articleCategory) => {
+          if (!predefinedCategories.includes(articleCategory)) {
+            setAvailableCategories((prev) =>
+              prev.includes(articleCategory) ? prev : [...prev, articleCategory]
+            );
+          }
+        });
       }
     }
   }, [existingArticle]);
@@ -177,7 +158,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       alert('Please enter a title');
       return;
     }
-    
+    if (!categoryPayload) {
+      alert('Please add at least one category');
+      return;
+    }
+
     setIsSaving(true);
     const token = localStorage.getItem('auth_token');
     const readTime = calculateReadTime(content);
@@ -186,7 +171,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       const payload = {
         title,
         content,
-        category,
+        category: categoryPayload,
         tags: selectedTags.join(','),
         status: 'draft',
         read_time: readTime,
@@ -222,7 +207,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       alert('Please write some content for your article');
       return;
     }
-    
+    if (!categoryPayload) {
+      alert('Please add at least one category');
+      return;
+    }
+
     setIsPublishing(true);
     const token = localStorage.getItem('auth_token');
     const readTime = calculateReadTime(content);
@@ -231,7 +220,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       const payload = {
         title,
         content,
-        category,
+        category: categoryPayload,
         tags: selectedTags.join(','),
         status: 'pending',
         read_time: readTime,
@@ -259,6 +248,10 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   };
 
   const handleUpdate = async () => {
+    if (!categoryPayload) {
+      alert('Please add at least one category');
+      return;
+    }
     setIsSaving(true);
     const token = localStorage.getItem('auth_token');
     const readTime = calculateReadTime(content);
@@ -267,7 +260,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       const payload = {
         title,
         content,
-        category,
+        category: categoryPayload,
         tags: selectedTags.join(','),
         status: status, // Keep current status
         read_time: readTime,
@@ -589,128 +582,67 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           <label className="block text-sm font-medium text-gray-400 mb-2">
             Article Category <span className="text-[#A5C89E]">*</span>
           </label>
-          <div className="relative mb-3">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customCategory}
-                onChange={(e) => {
-                  setCustomCategory(e.target.value);
-                  setShowCategoryDropdown(true);
-                }}
-                onKeyDown={(e) => {
-                  if (!showCategoryDropdown) {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCustomCategory();
-                    }
-                    return;
-                  }
+          <div className="relative">
+            <input
+              type="text"
+              value={categoryValue}
+              onChange={(e) => setCategoryValue(e.target.value)}
+              onFocus={() => setShowCategorySuggestions(true)}
+              onBlur={() => window.setTimeout(() => setShowCategorySuggestions(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  setCategory(categoryValue);
+                }
+              }}
+              placeholder="Type a category"
+              className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+            />
 
-                  const navigableItemsCount = categorySuggestions.length + (showAddCategoryOption ? 1 : 0);
-
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (navigableItemsCount > 0) {
-                      setActiveCategorySuggestionIndex((prev) => (prev + 1) % navigableItemsCount);
-                    }
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    if (navigableItemsCount > 0) {
-                      setActiveCategorySuggestionIndex((prev) =>
-                        prev <= 0 ? navigableItemsCount - 1 : prev - 1
-                      );
-                    }
-                  } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (activeCategorySuggestionIndex >= 0) {
-                      if (activeCategorySuggestionIndex < categorySuggestions.length) {
-                        handleCategorySelect(categorySuggestions[activeCategorySuggestionIndex]);
-                      } else if (showAddCategoryOption) {
-                        addCustomCategory();
-                      }
-                    } else {
-                      addCustomCategory();
-                    }
-                  } else if (e.key === 'Escape') {
-                    setShowCategoryDropdown(false);
-                  }
-                }}
-                onFocus={() => {
-                  setShowCategoryDropdown(true);
-                  setActiveCategorySuggestionIndex(-1);
-                }}
-                onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 200)}
-                placeholder="Add new category"
-                className="flex-1 px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
-              />
-              <button
-                type="button"
-                onClick={addCustomCategory}
-                disabled={!customCategory.trim()}
-                className="px-5 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/40 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/30 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center"
-                title="Add category"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-
-            {showCategoryDropdown && (
-              <div className="absolute z-10 mt-2 w-[calc(100%-56px)] bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+            {showCategorySuggestions && (
+              <div className="absolute z-10 mt-2 w-full bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
                 <div className="p-2">
-                  <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">
-                    CATEGORY SUGGESTIONS
-                  </p>
-                  {categorySuggestions.map((cat, index) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className={`w-full text-left px-3 py-2 rounded transition-all text-sm font-medium flex items-center ${
-                        activeCategorySuggestionIndex === index
-                          ? 'text-[#A5C89E] bg-[#A5C89E]/10'
-                          : 'text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10'
-                      }`}
-                      onClick={() => handleCategorySelect(cat)}
-                    >
-                      <Tag className="w-4 h-4 mr-2 opacity-60" />
-                      {cat}
-                    </button>
-                  ))}
-                  {showAddCategoryOption && (
-                    <button
-                      type="button"
-                      className={`w-full text-left px-3 py-2 rounded transition-all text-sm font-medium flex items-center ${
-                        activeCategorySuggestionIndex === categorySuggestions.length
-                          ? 'text-[#A5C89E] bg-[#A5C89E]/10'
-                          : 'text-[#A5C89E] hover:bg-[#A5C89E]/10'
-                      }`}
-                      onClick={addCustomCategory}
-                    >
-                      <Plus className="w-4 h-4 mr-2 opacity-80" />
-                      Add "{customCategory.trim()}"
-                    </button>
-                  )}
+                  <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">SUGGESTIONS</p>
+                  {availableCategories
+                    .filter((cat) => cat.toLowerCase().includes(categoryValue.toLowerCase()))
+                    .slice(0, 12)
+                    .map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setCategory(cat);
+                          setShowCategorySuggestions(false);
+                        }}
+                      >
+                        <Tag className="w-4 h-4 mr-2 opacity-60 shrink-0" />
+                        {cat}
+                      </button>
+                    ))}
+                  {categoryValue.trim() &&
+                    !availableCategories.some((c) => c.toLowerCase() === categoryValue.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center border-t border-[#A5C89E]/20 mt-1 pt-2"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setCategory(categoryValue);
+                          setShowCategorySuggestions(false);
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2 shrink-0" />
+                        Use &quot;{categoryValue.trim()}&quot;
+                      </button>
+                    )}
                 </div>
               </div>
             )}
           </div>
-          <div className="relative">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white appearance-none focus:outline-none focus:border-[#A5C89E]/60 transition-all cursor-pointer"
-            >
-              {availableCategories.map(cat => (
-                <option key={cat} value={cat} className="bg-[#121212]">{cat}</option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Plus className="w-4 h-4 text-gray-500 rotate-45" />
-            </div>
-          </div>
-          {categoryFeedback && (
+          {categoryFeedback ? (
             <p className="text-xs text-[#A5C89E] mt-2">{categoryFeedback}</p>
-          )}
+          ) : null}
         </div>
 
         {/* Tags Section */}

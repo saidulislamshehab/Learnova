@@ -93,6 +93,20 @@ const getStatusTone = (value: string): StatusTone => {
   return 'pending';
 };
 
+const isHomepageFeatured = (value: unknown): boolean => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return value === 1;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized === '1' || normalized === 'true' || normalized === 'yes';
+  }
+  return false;
+};
+
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const API_BASE = `http://${window.location.hostname}:8000/api`;
 
@@ -138,10 +152,12 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [tutorials, setTutorials] = useState<any[]>([]);
   const [isLoadingTutorials, setIsLoadingTutorials] = useState(false);
   const [tutorialsError, setTutorialsError] = useState<string | null>(null);
+  const [homepageFeatureUpdatingId, setHomepageFeatureUpdatingId] = useState<number | null>(null);
   const [editingTutorial, setEditingTutorial] = useState<any>(null);
   const [articleSearchQuery, setArticleSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearchingArticles, setIsSearchingArticles] = useState(false);
+  const featuredTutorialCount = tutorials.filter((item: any) => isHomepageFeatured(item.Is_Homepage_Featured)).length;
 
   useEffect(() => {
     document.body.classList.add('admin-theme');
@@ -967,6 +983,40 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
+  const handleToggleHomepageFeature = async (tutorial: any) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    const isFeatured = isHomepageFeatured(tutorial.Is_Homepage_Featured);
+    const featuredCount = tutorials.filter((item) => isHomepageFeatured(item.Is_Homepage_Featured)).length;
+    if (!isFeatured && featuredCount >= 6) {
+      alert('You can feature only 6 tutorials on the homepage.');
+      return;
+    }
+
+    try {
+      setHomepageFeatureUpdatingId(Number(tutorial.T_ID));
+      await axios.put(
+        `${API_BASE}/admin/tutorials/${tutorial.T_ID}/homepage-featured`,
+        { featured: !isFeatured },
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      await fetchTutorials();
+    } catch (error: any) {
+      alert(error?.response?.data?.message || 'Failed to update homepage feature setting.');
+    } finally {
+      setHomepageFeatureUpdatingId(null);
+    }
+  };
+
   const handleAddArticleToTutorial = (article: any) => {
     const articleId = article.Article_ID || article.id;
     if (editingTutorial.articles.find((item: any) => (item.Article_ID || item.id) === articleId)) {
@@ -1788,7 +1838,9 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               {!editingTutorial ? (
                 <div className="admin-list-stack">
                   <div className="admin-toolbar">
-                    <p className="admin-muted">Manage and publish learning paths</p>
+                    <p className="admin-muted">
+                      Manage and publish learning paths ({featuredTutorialCount}/6 featured on homepage)
+                    </p>
                     <button
                       className="admin-btn admin-btn-primary"
                       onClick={() =>
@@ -1814,7 +1866,12 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       {tutorials.map((tutorial: any) => (
                         <article key={tutorial.T_ID} className="admin-surface admin-surface-padded">
                           <div className="admin-report-head">
-                            <p className="admin-list-title">{tutorial.Title}</p>
+                            <div>
+                              <p className="admin-list-title">{tutorial.Title}</p>
+                              {isHomepageFeatured(tutorial.Is_Homepage_Featured) ? (
+                                <p className="admin-list-caption">Homepage slot #{tutorial.Homepage_Featured_Order ?? '-'}</p>
+                              ) : null}
+                            </div>
                             <span className={STATUS_CLASS[getStatusTone(tutorial.Status)]}>{String(tutorial.Status)}</span>
                           </div>
                           <p className="admin-list-caption">{tutorial.Category}</p>
@@ -1822,6 +1879,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                           <div className="admin-inline-actions mt-4">
                             <button className="admin-btn admin-btn-muted" onClick={() => void handleEditTutorial(tutorial.T_ID)}>
                               Edit
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-muted"
+                              disabled={homepageFeatureUpdatingId === tutorial.T_ID}
+                              onClick={() => void handleToggleHomepageFeature(tutorial)}
+                            >
+                              {isHomepageFeatured(tutorial.Is_Homepage_Featured) ? 'Remove from Homepage' : 'Show on Homepage'}
                             </button>
                             <button className="admin-btn admin-btn-danger" onClick={() => void handleDeleteTutorial(tutorial.T_ID)}>
                               Delete

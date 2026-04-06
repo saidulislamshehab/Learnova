@@ -15,6 +15,7 @@ import {
   Award,
   Globe,
 } from 'lucide-react';
+import Loading from '../../ui/Loading';
 
 interface EditProfileProps {
   onBack: () => void;
@@ -366,22 +367,26 @@ export function EditProfile({ onBack, onSave }: EditProfileProps) {
           Back to Profile
         </button>
 
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white/90 mb-2">Edit Profile</h1>
-          <p className="text-gray-400">Update your personal and professional information</p>
-        </div>
+        {isLoadingProfile ? (
+          <Loading message="Loading profile..." size="lg" />
+        ) : (
+          <>
+            <div className="mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold text-white/90 mb-2">Edit Profile</h1>
+              <p className="text-gray-400">Update your personal and professional information</p>
+            </div>
 
-        <div className="bg-[#0f0f0f]/80 backdrop-blur-xl border border-[#A5C89E]/20 rounded-2xl p-8 md:p-10 shadow-xl">
-          {error && (
-            <div className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-6 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-emerald-300 text-sm">
-              {success}
-            </div>
-          )}
+            <div className="bg-[#0f0f0f]/80 backdrop-blur-xl border border-[#A5C89E]/20 rounded-2xl p-8 md:p-10 shadow-xl">
+              {error && (
+                <div className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-sm">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="mb-6 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-emerald-300 text-sm">
+                  {success}
+                </div>
+              )}
 
           <div className="mb-10 pb-8 border-b border-[#A5C89E]/10">
             <h2 className="text-xl font-bold text-white/90 mb-6 flex items-center">
@@ -628,11 +633,12 @@ export function EditProfile({ onBack, onSave }: EditProfileProps) {
             </button>
           </div>
         </div>
-      </div>
+            </>
+          )}
 
-      {isPictureModalOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4" onClick={() => setIsPictureModalOpen(false)}>
-          <div className="w-full max-w-xl bg-[#0f0f0f] border border-[#A5C89E]/20 rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          {isPictureModalOpen && (
+            <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4" onClick={() => setIsPictureModalOpen(false)}>
+              <div className="w-full max-w-xl bg-[#0f0f0f] border border-[#A5C89E]/20 rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Upload Profile Picture</h3>
               <button
@@ -709,6 +715,7 @@ export function EditProfile({ onBack, onSave }: EditProfileProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
