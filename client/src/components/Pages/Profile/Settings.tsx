@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { getAuthToken } from '../../../utils/authStorage';
 
 import {
   User,
@@ -14,6 +16,8 @@ import {
   EyeOff,
   Save,
   AlertTriangle,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -24,6 +28,7 @@ interface SettingsProps {
 type SettingsSection = 'profile' | 'password' | '2fa' | 'notifications' | 'delete';
 
 export function Settings({ onBack, onEditProfile }: SettingsProps) {
+  const API_BASE = `http://${window.location.hostname}:8000/api`;
   const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -34,6 +39,9 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // 2FA state
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
@@ -57,15 +65,57 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
   const handleSectionChange = (section: SettingsSection) => {
     setActiveSection(section);
     setIsSidebarOpen(false);
+    // Clear alerts on section change
+    setPasswordSuccess(null);
+    setPasswordError(null);
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle password change logic
-    console.log('Password change submitted');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    setIsPasswordUpdating(true);
+
+    try {
+      const token = getAuthToken();
+      const response = await axios.put(
+        `${API_BASE}/change-password`,
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+          new_password_confirmation: confirmPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      setPasswordSuccess(response.data.message || 'Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Password change error:', err);
+      const errorMessage =
+        err.response?.data?.message || err.response?.data?.errors?.current_password?.[0] || 'Failed to update password. Please check your current password.';
+      setPasswordError(errorMessage);
+    } finally {
+      setIsPasswordUpdating(false);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -265,6 +315,21 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
               </div>
 
               <form onSubmit={handlePasswordChange} className="space-y-6 max-w-lg">
+                {/* Status Messages */}
+                {passwordSuccess && (
+                  <div className="flex items-center gap-3 p-4 bg-[#A5C89E]/10 border border-[#A5C89E]/20 rounded-xl text-[#A5C89E] animate-in fade-in slide-in-from-top-2 duration-300">
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                    <p className="text-sm font-medium">{passwordSuccess}</p>
+                  </div>
+                )}
+
+                {passwordError && (
+                  <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <p className="text-sm font-medium">{passwordError}</p>
+                  </div>
+                )}
+
                 {/* Current Password */}
                 <div>
                   <label className="block text-xs font-mono tracking-wider text-gray-400 mb-2 ml-1">
@@ -278,11 +343,13 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                       className="w-full px-5 py-4 bg-[#0b0b0b]/60 border border-[#A5C89E]/20 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 focus:bg-[#0b0b0b] transition-all font-mono text-sm"
                       placeholder="••••••••"
                       required
+                      disabled={isPasswordUpdating}
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#A5C89E] transition-colors"
+                      disabled={isPasswordUpdating}
                     >
                       {showCurrentPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -306,11 +373,13 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                       className="w-full px-5 py-4 bg-[#0b0b0b]/60 border border-[#A5C89E]/20 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 focus:bg-[#0b0b0b] transition-all font-mono text-sm"
                       placeholder="••••••••"
                       required
+                      disabled={isPasswordUpdating}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#A5C89E] transition-colors"
+                      disabled={isPasswordUpdating}
                     >
                       {showNewPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -334,11 +403,13 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                       className="w-full px-5 py-4 bg-[#0b0b0b]/60 border border-[#A5C89E]/20 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 focus:bg-[#0b0b0b] transition-all font-mono text-sm"
                       placeholder="••••••••"
                       required
+                      disabled={isPasswordUpdating}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#A5C89E] transition-colors"
+                      disabled={isPasswordUpdating}
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -352,10 +423,20 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="inline-flex items-center px-8 py-4 bg-[#A5C89E] text-black rounded-xl hover:bg-[#bce3b5] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-[#A5C89E]/20 font-mono tracking-wide"
+                    disabled={isPasswordUpdating}
+                    className="inline-flex items-center px-8 py-4 bg-[#A5C89E] text-black rounded-xl hover:bg-[#bce3b5] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-[#A5C89E]/20 font-mono tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                   >
-                    <Save className="w-5 h-5 mr-3" />
-                    UPDATE_PASSWORD
+                    {isPasswordUpdating ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin mr-3" />
+                        UPDATING...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5 mr-3" />
+                        UPDATE_PASSWORD
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
