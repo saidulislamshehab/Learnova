@@ -185,7 +185,7 @@ export default function App() {
                    onExploreCourses={() => navigate('/allcourses')}
                    onViewDocs={() => navigate('/articles')}
                  />
-                 <ExploreTopics onViewAllArticles={() => navigate('/articles')} />
+                 <ExploreTopics onViewAllTutorials={() => navigate('/tutorials')} />
                  <Courses onCourseClick={(id) => navigate(`/course/${id}`)} />
                  <Footer />
                </>
@@ -448,6 +448,12 @@ export default function App() {
             } />
 
             <Route path="/tutorials" element={
+                <>
+                    <Tutorials />
+                    <Footer />
+                </>
+            } />
+            <Route path="/tutorials/:id" element={
                 <>
                     <Tutorials />
                     <Footer />

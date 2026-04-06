@@ -18,6 +18,13 @@ class Tutorial extends Model
         'Category',
         'Description',
         'Status',
+        'Is_Homepage_Featured',
+        'Homepage_Featured_Order',
+    ];
+
+    protected $casts = [
+        'Is_Homepage_Featured' => 'boolean',
+        'Homepage_Featured_Order' => 'integer',
     ];
 
     /**

@@ -11,6 +11,30 @@ use Illuminate\Support\Facades\Validator;
 
 class TutorialController extends Controller
 {
+    private function normalizeHomepageFeaturedOrder(): void
+    {
+        $featured = Tutorial::where('Status', 'published')
+            ->where('Is_Homepage_Featured', true)
+            ->orderByRaw('CASE WHEN Homepage_Featured_Order IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('Homepage_Featured_Order')
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get();
+
+        foreach ($featured as $index => $tutorial) {
+            $tutorial->Homepage_Featured_Order = $index + 1;
+            $tutorial->save();
+        }
+
+        Tutorial::where('Status', 'published')
+            ->where('Is_Homepage_Featured', true)
+            ->whereNotIn('T_ID', $featured->pluck('T_ID'))
+            ->update([
+                'Is_Homepage_Featured' => false,
+                'Homepage_Featured_Order' => null,
+            ]);
+    }
+
     /**
      * Display a listing of tutorials.
      */
@@ -161,6 +185,73 @@ class TutorialController extends Controller
 
         return response()->json([
             'tutorial' => $tutorial,
+        ]);
+    }
+
+    /**
+     * Display six admin-selected tutorials for homepage cards.
+     */
+    public function homepageFeatured(): JsonResponse
+    {
+        $tutorials = Tutorial::where('Status', 'published')
+            ->where('Is_Homepage_Featured', true)
+            ->orderByRaw('CASE WHEN Homepage_Featured_Order IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('Homepage_Featured_Order')
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get(['T_ID', 'Title', 'Category', 'Description']);
+
+        return response()->json([
+            'tutorials' => $tutorials,
+        ]);
+    }
+
+    /**
+     * Toggle tutorial visibility on homepage topics section.
+     */
+    public function updateHomepageFeatured(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'featured' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $tutorial = Tutorial::findOrFail($id);
+        $featured = (bool) $request->boolean('featured');
+
+        if ($featured && !$tutorial->Is_Homepage_Featured) {
+            $featuredCount = Tutorial::where('Status', 'published')
+                ->where('Is_Homepage_Featured', true)
+                ->count();
+
+            if ($featuredCount >= 6) {
+                return response()->json([
+                    'message' => 'You can feature a maximum of 6 tutorials on the homepage.',
+                ], 422);
+            }
+        }
+
+        if ($featured) {
+            $nextOrder = ((int) Tutorial::where('Status', 'published')
+                ->where('Is_Homepage_Featured', true)
+                ->max('Homepage_Featured_Order')) + 1;
+
+            $tutorial->Is_Homepage_Featured = true;
+            $tutorial->Homepage_Featured_Order = max(1, min($nextOrder, 6));
+            $tutorial->save();
+        } else {
+            $tutorial->Is_Homepage_Featured = false;
+            $tutorial->Homepage_Featured_Order = null;
+            $tutorial->save();
+        }
+
+        $this->normalizeHomepageFeaturedOrder();
+
+        return response()->json([
+            'message' => $featured ? 'Tutorial added to homepage topics.' : 'Tutorial removed from homepage topics.',
         ]);
     }
 }

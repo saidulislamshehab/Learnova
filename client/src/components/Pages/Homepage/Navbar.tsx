@@ -663,10 +663,18 @@ export function Navbar({
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <div className="relative group" ref={coursesRef}>
+            <div
+              className="relative group"
+              ref={coursesRef}
+              onMouseEnter={() => setIsCoursesOpen(true)}
+              onMouseLeave={() => setIsCoursesOpen(false)}
+            >
               <button
                 className="navbar-nav-link navbar-nav-link-underline"
-                onClick={() => setIsCoursesOpen(!isCoursesOpen)}
+                onClick={() => {
+                  onAllCourses(undefined);
+                  setIsCoursesOpen(false);
+                }}
               >
                 COURSES
                 <ChevronDown
@@ -717,12 +725,22 @@ export function Navbar({
             >
               ARTICLES
             </Link>
-            <div className="relative group" ref={tutorialsRef}>
+            <div
+              className="relative group"
+              ref={tutorialsRef}
+              onMouseEnter={() => setIsTutorialsOpen(true)}
+              onMouseLeave={() => setIsTutorialsOpen(false)}
+            >
               <button
                 className="navbar-nav-link navbar-nav-link-underline"
-                onClick={() =>
-                  setIsTutorialsOpen(!isTutorialsOpen)
-                }
+                onClick={() => {
+                  if (onTutorials) {
+                    onTutorials();
+                  } else {
+                    navigate('/tutorials');
+                  }
+                  setIsTutorialsOpen(false);
+                }}
               >
                 TUTORIALS
                 <ChevronDown

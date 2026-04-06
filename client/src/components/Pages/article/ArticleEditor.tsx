@@ -42,13 +42,27 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   const [status, setStatus] = useState<'draft' | 'published' | 'pending' | 'rejected'>(
     existingArticle?.status || 'draft'
   );
-  const [category, setCategory] = useState(existingArticle?.category || 'Web Development');
+  const parseCategoriesFromString = (value: string | undefined): string[] => {
+    if (!value?.trim()) return [];
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  };
+
+  const [categoryTags, setCategoryTags] = useState<string[]>(() =>
+    existingArticle?.category
+      ? parseCategoriesFromString(existingArticle.category)
+      : ['Web Development']
+  );
+  const [categoryInput, setCategoryInput] = useState('');
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const categoryInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [customCategory, setCustomCategory] = useState('');
   const [categoryFeedback, setCategoryFeedback] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -86,24 +100,35 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
     }
   };
 
-  const addCustomCategory = () => {
-    const normalizedCategory = customCategory.trim();
-    if (!normalizedCategory) return;
+  const addCategoryTag = (raw: string) => {
+    const normalized = raw.trim();
+    if (!normalized) return;
+    if (categoryTags.some((c) => c.toLowerCase() === normalized.toLowerCase())) {
+      setCategoryInput('');
+      return;
+    }
 
-    const existingCategory = availableCategories.find(
-      (cat) => cat.toLowerCase() === normalizedCategory.toLowerCase()
-    );
-    const finalCategory = existingCategory ?? normalizedCategory;
-
-    if (!existingCategory) {
-      setAvailableCategories((prev) => [...prev, normalizedCategory]);
-      setCategoryFeedback(`Category "${normalizedCategory}" added`);
+    if (!availableCategories.some((c) => c.toLowerCase() === normalized.toLowerCase())) {
+      setAvailableCategories((prev) => [...prev, normalized]);
+      setCategoryFeedback(`Category "${normalized}" added`);
       window.setTimeout(() => setCategoryFeedback(''), 2500);
     }
 
-    setCategory(finalCategory);
-    setCustomCategory('');
+    setCategoryTags((prev) => [...prev, normalized]);
+    setCategoryInput('');
   };
+
+  const removeCategoryTag = (tag: string) => {
+    setCategoryTags((prev) => prev.filter((t) => t !== tag));
+  };
+
+  const commitCategoryInput = () => {
+    if (categoryInput.trim()) {
+      addCategoryTag(categoryInput);
+    }
+  };
+
+  const categoryPayload = categoryTags.join(', ');
 
   // Load existing article content into editor
   useEffect(() => {
@@ -116,13 +141,17 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
         setSelectedTags(existingArticle.tags.split(','));
       }
       if (existingArticle.category) {
-        const articleCategory = existingArticle.category;
-        setCategory(articleCategory);
-        if (!predefinedCategories.includes(articleCategory)) {
-          setAvailableCategories((prev) =>
-            prev.includes(articleCategory) ? prev : [...prev, articleCategory]
-          );
+        const parsed = parseCategoriesFromString(existingArticle.category);
+        if (parsed.length > 0) {
+          setCategoryTags(parsed);
         }
+        parsed.forEach((articleCategory) => {
+          if (!predefinedCategories.includes(articleCategory)) {
+            setAvailableCategories((prev) =>
+              prev.includes(articleCategory) ? prev : [...prev, articleCategory]
+            );
+          }
+        });
       }
     }
   }, [existingArticle]);
@@ -141,7 +170,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       alert('Please enter a title');
       return;
     }
-    
+    if (categoryTags.length === 0) {
+      alert('Please add at least one category');
+      return;
+    }
+
     setIsSaving(true);
     const token = localStorage.getItem('auth_token');
     const readTime = calculateReadTime(content);
@@ -150,7 +183,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       const payload = {
         title,
         content,
-        category,
+        category: categoryPayload,
         tags: selectedTags.join(','),
         status: 'draft',
         read_time: readTime,
@@ -186,7 +219,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       alert('Please write some content for your article');
       return;
     }
-    
+    if (categoryTags.length === 0) {
+      alert('Please add at least one category');
+      return;
+    }
+
     setIsPublishing(true);
     const token = localStorage.getItem('auth_token');
     const readTime = calculateReadTime(content);
@@ -195,7 +232,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       const payload = {
         title,
         content,
-        category,
+        category: categoryPayload,
         tags: selectedTags.join(','),
         status: 'pending',
         read_time: readTime,
@@ -223,6 +260,10 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   };
 
   const handleUpdate = async () => {
+    if (categoryTags.length === 0) {
+      alert('Please add at least one category');
+      return;
+    }
     setIsSaving(true);
     const token = localStorage.getItem('auth_token');
     const readTime = calculateReadTime(content);
@@ -231,7 +272,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       const payload = {
         title,
         content,
-        category,
+        category: categoryPayload,
         tags: selectedTags.join(','),
         status: status, // Keep current status
         read_time: readTime,
@@ -548,52 +589,101 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           </div>
         </div>
 
-        {/* Category Section */}
+        {/* Category Section — single tag input */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-400 mb-2">
             Article Category <span className="text-[#A5C89E]">*</span>
           </label>
-          <div className="flex gap-2 mb-3">
-            <input
-              type="text"
-              value={customCategory}
-              onChange={(e) => setCustomCategory(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addCustomCategory();
-                }
-              }}
-              placeholder="Add new category"
-              className="flex-1 px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
-            />
-            <button
-              type="button"
-              onClick={addCustomCategory}
-              disabled={!customCategory.trim()}
-              className="px-5 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/40 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/30 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center"
-              title="Add category"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
           <div className="relative">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white appearance-none focus:outline-none focus:border-[#A5C89E]/60 transition-all cursor-pointer"
+            <div
+              className="flex flex-wrap items-center gap-2 min-h-[52px] px-3 py-2 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg focus-within:border-[#A5C89E]/60 focus-within:ring-1 focus-within:ring-[#A5C89E]/20 transition-all cursor-text"
+              onClick={() => categoryInputRef.current?.focus()}
+              role="group"
+              aria-label="Article categories"
             >
-              {availableCategories.map(cat => (
-                <option key={cat} value={cat} className="bg-[#121212]">{cat}</option>
+              {categoryTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-[#A5C89E]/15 text-[#A5C89E] border border-[#A5C89E]/35 text-sm font-medium"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeCategoryTag(tag);
+                    }}
+                    className="p-0.5 rounded-full hover:bg-[#A5C89E]/25 text-[#A5C89E] hover:text-white transition-colors"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
               ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Plus className="w-4 h-4 text-gray-500 rotate-45" />
+              <input
+                ref={categoryInputRef}
+                type="text"
+                value={categoryInput}
+                onChange={(e) => setCategoryInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    commitCategoryInput();
+                  }
+                  if (e.key === 'Backspace' && !categoryInput && categoryTags.length > 0) {
+                    removeCategoryTag(categoryTags[categoryTags.length - 1]);
+                  }
+                }}
+                onFocus={() => setShowCategorySuggestions(true)}
+                onBlur={() => window.setTimeout(() => setShowCategorySuggestions(false), 200)}
+                placeholder={categoryTags.length === 0 ? 'Type a category and press Enter…' : 'Add another…'}
+                className="flex-1 min-w-[160px] bg-transparent border-0 py-1.5 text-white placeholder-gray-600 focus:outline-none focus:ring-0 text-sm"
+              />
             </div>
+
+            {showCategorySuggestions && (
+              <div className="absolute z-10 mt-2 w-full bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+                <div className="p-2">
+                  <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">SUGGESTIONS</p>
+                  {availableCategories
+                    .filter((cat) => !categoryTags.some((t) => t.toLowerCase() === cat.toLowerCase()))
+                    .filter((cat) => cat.toLowerCase().includes(categoryInput.toLowerCase()))
+                    .slice(0, 12)
+                    .map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => addCategoryTag(cat)}
+                      >
+                        <Tag className="w-4 h-4 mr-2 opacity-60 shrink-0" />
+                        {cat}
+                      </button>
+                    ))}
+                  {categoryInput.trim() &&
+                    !availableCategories.some((c) => c.toLowerCase() === categoryInput.trim().toLowerCase()) &&
+                    !categoryTags.some((t) => t.toLowerCase() === categoryInput.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center border-t border-[#A5C89E]/20 mt-1 pt-2"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => commitCategoryInput()}
+                      >
+                        <Plus className="w-4 h-4 mr-2 shrink-0" />
+                        Add &quot;{categoryInput.trim()}&quot;
+                      </button>
+                    )}
+                </div>
+              </div>
+            )}
           </div>
-          {categoryFeedback && (
+          {categoryFeedback ? (
             <p className="text-xs text-[#A5C89E] mt-2">{categoryFeedback}</p>
-          )}
+          ) : null}
+          <p className="text-xs text-gray-500 mt-2">
+            Categories are saved as tags. Press Enter or comma to add; Backspace removes the last tag.
+          </p>
         </div>
 
         {/* Tags Section */}

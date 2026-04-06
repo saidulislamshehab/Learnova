@@ -27,6 +27,7 @@ Route::get('/articles', [ArticleController::class, 'index']);
 Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('id');
 Route::get('/articles/{id}/comments', [ArticleController::class, 'comments'])->whereNumber('id');
 Route::get('/tutorials', [TutorialController::class, 'indexPublic']);
+Route::get('/tutorials/homepage', [TutorialController::class, 'homepageFeatured']);
 Route::get('/tutorials/{id}', [TutorialController::class, 'showPublic'])->whereNumber('id');
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 Route::get('/search', [SearchController::class, 'search']);
@@ -102,6 +103,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/admin/tutorials', [TutorialController::class, 'store']);
         Route::get('/admin/tutorials/search-articles', [TutorialController::class, 'searchArticles']);
         Route::get('/admin/tutorials/{id}', [TutorialController::class, 'show']);
+        Route::put('/admin/tutorials/{id}/homepage-featured', [TutorialController::class, 'updateHomepageFeatured']);
         Route::delete('/admin/tutorials/{id}', [TutorialController::class, 'destroy']);
     });
 });

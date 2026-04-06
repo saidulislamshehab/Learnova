@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Search, ChevronDown, BookOpen, ArrowRight, Clock, FileText } from 'lucide-react';
 
@@ -18,6 +18,7 @@ const API_BASE = `http://${window.location.hostname}:8000/api`;
 
 export function Tutorials() {
     const navigate = useNavigate();
+    const { id: routeTutorialId } = useParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All Tutorials');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -27,6 +28,15 @@ export function Tutorials() {
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingTutorial, setIsLoadingTutorial] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const parsedId = Number(routeTutorialId);
+        if (routeTutorialId && Number.isFinite(parsedId) && parsedId > 0) {
+            setSelectedTutorialId(parsedId);
+            return;
+        }
+        setSelectedTutorialId(null);
+    }, [routeTutorialId]);
 
     // Fetch all published tutorials on mount
     useEffect(() => {
@@ -114,7 +124,7 @@ export function Tutorials() {
                 />
                 <div className="relative max-w-7xl mx-auto">
                     <button
-                        onClick={() => setSelectedTutorialId(null)}
+                        onClick={() => navigate('/tutorials')}
                         className="mb-8 flex items-center text-gray-400 hover:text-[#A5C89E] transition-colors"
                     >
                         <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
@@ -296,7 +306,7 @@ export function Tutorials() {
                                 </p>
 
                                 <button
-                                    onClick={() => setSelectedTutorialId(t.T_ID || t.id)}
+                                    onClick={() => navigate(`/tutorials/${t.T_ID || t.id}`)}
                                     className="flex items-center text-sm font-medium text-[#A5C89E]/90 hover:text-[#A5C89E] transition-colors group/btn relative z-10"
                                 >
                                     <BookOpen className="w-4 h-4 mr-2" />
