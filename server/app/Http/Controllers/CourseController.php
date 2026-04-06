@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\Notification;
+use App\Models\User;
 
 class CourseController extends Controller
 {
@@ -137,6 +139,20 @@ class CourseController extends Controller
 
             return $course->load('contents');
         });
+
+        // Notify all users about new course if it's published
+        if ($course->Status === 'published') {
+            $users = User::where('id', '!=', $request->user()->id)->get();
+            foreach ($users as $recipient) {
+                Notification::create([
+                    'user_id' => $recipient->id,
+                    'type' => 'course_posted',
+                    'message' => "published a new course: \"{$course->Title}\"",
+                    'author_name' => $request->user()->name,
+                    'resource_id' => $course->CourseID,
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Course created successfully.',

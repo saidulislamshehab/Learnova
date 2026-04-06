@@ -94,17 +94,85 @@ export function Navbar({
   const coursesRef = useRef<HTMLDivElement>(null);
   const tutorialsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
+  const notificationRefDesktop = useRef<HTMLDivElement>(null);
+  const notificationRefMobile = useRef<HTMLDivElement>(null);
 
-  // Sample notifications data
-  const notifications = [
-    { id: 1, title: 'New course available: Advanced React Patterns', isRead: false },
-    { id: 2, title: 'Your article "Introduction to AI" got 50 likes', isRead: false },
-    { id: 3, title: 'Sarah Chen commented on your post', isRead: true },
-    { id: 4, title: 'New badge unlocked: Expert Contributor', isRead: true },
-  ];
+  interface Notification {
+    id: number;
+    type: string;
+    message: string;
+    author_name?: string;
+    resource_id?: number;
+    is_read: boolean;
+    created_at: string;
+  }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications);
+        setUnreadCount(data.unread_count);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markAsRead = async (id: number) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications/read-all`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   const courseCategories = [
     { name: "DSA / Placements", icon: Code2, href: "#dsa" },
@@ -221,6 +289,18 @@ export function Navbar({
     syncProfilePicture();
   }, [isAuthenticated, currentView]);
 
+  // Fetch notifications on mount and periodically
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000); // Every 30s
+      return () => clearInterval(interval);
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated]);
+
   // Effect to handle scroll events and update time
   useEffect(() => {
     const handleScroll = () => {
@@ -259,8 +339,10 @@ export function Navbar({
         setIsProfileOpen(false);
       }
       if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
+        notificationRefDesktop.current &&
+        !notificationRefDesktop.current.contains(event.target as Node) &&
+        notificationRefMobile.current &&
+        !notificationRefMobile.current.contains(event.target as Node)
       ) {
         setIsNotificationOpen(false);
       }
@@ -429,7 +511,7 @@ export function Navbar({
 
             {/* Notification Button */}
             {isAuthenticated && (
-              <div className="relative" ref={notificationRef}>
+              <div className="relative" ref={notificationRefDesktop}>
                 <button
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                   className="navbar-icon-btn focus:outline-none"
@@ -451,8 +533,19 @@ export function Navbar({
                     }}
                   >
                     {/* Header */}
-                    <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20">
+                    <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20 flex items-center justify-between">
                       <h3 className="text-sm font-bold text-white">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAllAsRead();
+                          }}
+                          className="text-[10px] text-[#A5C89E] hover:text-[#A5C89E]/80 font-bold uppercase tracking-wider p-1"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
                     </div>
 
                     {/* Notification List */}
@@ -461,26 +554,34 @@ export function Navbar({
                         {notifications.map((notification) => (
                           <button
                             key={notification.id}
-                            className={`navbar-notification-item ${notification.isRead
+                            onClick={() => markAsRead(notification.id)}
+                            className={`navbar-notification-item w-full text-left transition-colors ${notification.is_read
                               ? 'navbar-notification-item-read'
-                              : 'navbar-notification-item-unread'
+                              : 'navbar-notification-item-unread bg-[#A5C89E]/5'
                               }`}
                           >
-                            <div className="flex items-start gap-2">
-                              {!notification.isRead && (
-                                <div className="w-2 h-2 bg-[#A5C89E] rounded-full mt-1.5 flex-shrink-0" />
+                            <div className="flex items-start gap-3">
+                              {!notification.is_read && (
+                                <div className="w-1.5 h-1.5 bg-[#A5C89E] rounded-full mt-1.5 flex-shrink-0" />
                               )}
-                              <p className={`text-sm leading-relaxed ${notification.isRead ? 'text-gray-400' : 'text-gray-300'
-                                }`}>
-                                {notification.title}
-                              </p>
+                              <div className="flex-1">
+                                <p className={`text-xs leading-relaxed ${notification.is_read ? 'text-gray-400' : 'text-gray-200'}`}>
+                                  {notification.author_name && (
+                                    <span className="font-bold text-[#A5C89E] mr-1">{notification.author_name}</span>
+                                  )}
+                                  {notification.message}
+                                </p>
+                                <p className="text-[10px] text-gray-500 mt-1">
+                                  {new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(notification.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
                             </div>
                           </button>
                         ))}
                       </div>
                     ) : (
                       <div className="px-4 py-12 text-center">
-                        <Bell className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+                        <Bell className="w-10 h-10 text-gray-700 mx-auto mb-3 opacity-20" />
                         <p className="text-sm text-gray-500">No new notifications</p>
                       </div>
                     )}
@@ -721,11 +822,10 @@ export function Navbar({
             )}
           </div>
 
-          {/* Mobile Notification & Menu Buttons */}
           <div className="flex items-center gap-3 md:hidden">
             {/* Mobile Notification Button */}
             {isAuthenticated && (
-              <div className="relative" ref={notificationRef}>
+              <div className="relative" ref={notificationRefMobile}>
                 <button
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                   className="navbar-icon-btn focus:outline-none"
@@ -747,8 +847,19 @@ export function Navbar({
                     }}
                   >
                     {/* Header */}
-                    <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20">
+                    <div className="px-4 pt-4 pb-3 border-b border-[#A5C89E]/20 flex items-center justify-between">
                       <h3 className="text-sm font-bold text-white">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAllAsRead();
+                          }}
+                          className="text-[10px] text-[#A5C89E] hover:text-[#A5C89E]/80 font-bold uppercase tracking-wider p-1"
+                        >
+                          Mark all
+                        </button>
+                      )}
                     </div>
 
                     {/* Notification List */}
@@ -757,26 +868,34 @@ export function Navbar({
                         {notifications.map((notification) => (
                           <button
                             key={notification.id}
-                            className={`navbar-notification-item ${notification.isRead
+                            onClick={() => markAsRead(notification.id)}
+                            className={`navbar-notification-item w-full text-left transition-colors ${notification.is_read
                               ? 'navbar-notification-item-read'
-                              : 'navbar-notification-item-unread'
+                              : 'navbar-notification-item-unread bg-[#A5C89E]/5'
                               }`}
                           >
-                            <div className="flex items-start gap-2">
-                              {!notification.isRead && (
-                                <div className="w-2 h-2 bg-[#A5C89E] rounded-full mt-1.5 flex-shrink-0" />
+                            <div className="flex items-start gap-3">
+                              {!notification.is_read && (
+                                <div className="w-1.5 h-1.5 bg-[#A5C89E] rounded-full mt-1.5 flex-shrink-0" />
                               )}
-                              <p className={`text-sm leading-relaxed ${notification.isRead ? 'text-gray-400' : 'text-gray-300'
-                                }`}>
-                                {notification.title}
-                              </p>
+                              <div className="flex-1">
+                                <p className={`text-xs leading-relaxed ${notification.is_read ? 'text-gray-400' : 'text-gray-200'}`}>
+                                  {notification.author_name && (
+                                    <span className="font-bold text-[#A5C89E] mr-1">{notification.author_name}</span>
+                                  )}
+                                  {notification.message}
+                                </p>
+                                <p className="text-[10px] text-gray-500 mt-1">
+                                  {new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
                             </div>
                           </button>
                         ))}
                       </div>
                     ) : (
                       <div className="px-4 py-12 text-center">
-                        <Bell className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+                        <Bell className="w-10 h-10 text-gray-700 mx-auto mb-3 opacity-20" />
                         <p className="text-sm text-gray-500">No new notifications</p>
                       </div>
                     )}
