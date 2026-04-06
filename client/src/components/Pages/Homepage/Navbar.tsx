@@ -18,6 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
+import Loading from '../../ui/Loading';
 
 // Interface defining the props for the Navbar component
 interface NavbarProps {
@@ -1581,10 +1582,8 @@ export function Navbar({
 
           <div className="navbar-search-modal-content">
             {isSearchLoading ? (
-              <div className="navbar-search-modal-skeleton-list">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="navbar-search-modal-skeleton-card" />
-                ))}
+              <div className="flex items-center justify-center py-12">
+                <Loading message="Searching..." size="sm" />
               </div>
             ) : searchResults.length === 0 ? (
               <div className="navbar-search-empty-state">

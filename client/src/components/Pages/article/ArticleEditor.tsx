@@ -50,14 +50,12 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       .filter(Boolean);
   };
 
-  const [categoryTags, setCategoryTags] = useState<string[]>(() =>
-    existingArticle?.category
-      ? parseCategoriesFromString(existingArticle.category)
-      : ['Web Development']
-  );
-  const [categoryInput, setCategoryInput] = useState('');
+  const [categoryValue, setCategoryValue] = useState<string>(() => {
+    if (!existingArticle?.category) return '';
+    const parsed = parseCategoriesFromString(existingArticle.category);
+    return parsed[0] ?? '';
+  });
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
-  const categoryInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -100,11 +98,10 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
     }
   };
 
-  const addCategoryTag = (raw: string) => {
+  const setCategory = (raw: string) => {
     const normalized = raw.trim();
     if (!normalized) return;
-    if (categoryTags.some((c) => c.toLowerCase() === normalized.toLowerCase())) {
-      setCategoryInput('');
+    if (categoryValue.toLowerCase() === normalized.toLowerCase()) {
       return;
     }
 
@@ -114,21 +111,10 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       window.setTimeout(() => setCategoryFeedback(''), 2500);
     }
 
-    setCategoryTags((prev) => [...prev, normalized]);
-    setCategoryInput('');
+    setCategoryValue(normalized);
   };
 
-  const removeCategoryTag = (tag: string) => {
-    setCategoryTags((prev) => prev.filter((t) => t !== tag));
-  };
-
-  const commitCategoryInput = () => {
-    if (categoryInput.trim()) {
-      addCategoryTag(categoryInput);
-    }
-  };
-
-  const categoryPayload = categoryTags.join(', ');
+  const categoryPayload = categoryValue.trim();
 
   // Load existing article content into editor
   useEffect(() => {
@@ -143,7 +129,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       if (existingArticle.category) {
         const parsed = parseCategoriesFromString(existingArticle.category);
         if (parsed.length > 0) {
-          setCategoryTags(parsed);
+          setCategoryValue(parsed[0]);
         }
         parsed.forEach((articleCategory) => {
           if (!predefinedCategories.includes(articleCategory)) {
@@ -170,7 +156,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       alert('Please enter a title');
       return;
     }
-    if (categoryTags.length === 0) {
+    if (!categoryPayload) {
       alert('Please add at least one category');
       return;
     }
@@ -219,7 +205,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       alert('Please write some content for your article');
       return;
     }
-    if (categoryTags.length === 0) {
+    if (!categoryPayload) {
       alert('Please add at least one category');
       return;
     }
@@ -260,7 +246,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   };
 
   const handleUpdate = async () => {
-    if (categoryTags.length === 0) {
+    if (!categoryPayload) {
       alert('Please add at least one category');
       return;
     }
@@ -589,65 +575,34 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           </div>
         </div>
 
-        {/* Category Section — single tag input */}
+        {/* Category Section */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-400 mb-2">
             Article Category <span className="text-[#A5C89E]">*</span>
           </label>
           <div className="relative">
-            <div
-              className="flex flex-wrap items-center gap-2 min-h-[52px] px-3 py-2 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg focus-within:border-[#A5C89E]/60 focus-within:ring-1 focus-within:ring-[#A5C89E]/20 transition-all cursor-text"
-              onClick={() => categoryInputRef.current?.focus()}
-              role="group"
-              aria-label="Article categories"
-            >
-              {categoryTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-[#A5C89E]/15 text-[#A5C89E] border border-[#A5C89E]/35 text-sm font-medium"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeCategoryTag(tag);
-                    }}
-                    className="p-0.5 rounded-full hover:bg-[#A5C89E]/25 text-[#A5C89E] hover:text-white transition-colors"
-                    aria-label={`Remove ${tag}`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </span>
-              ))}
-              <input
-                ref={categoryInputRef}
-                type="text"
-                value={categoryInput}
-                onChange={(e) => setCategoryInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    commitCategoryInput();
-                  }
-                  if (e.key === 'Backspace' && !categoryInput && categoryTags.length > 0) {
-                    removeCategoryTag(categoryTags[categoryTags.length - 1]);
-                  }
-                }}
-                onFocus={() => setShowCategorySuggestions(true)}
-                onBlur={() => window.setTimeout(() => setShowCategorySuggestions(false), 200)}
-                placeholder={categoryTags.length === 0 ? 'Type a category and press Enter…' : 'Add another…'}
-                className="flex-1 min-w-[160px] bg-transparent border-0 py-1.5 text-white placeholder-gray-600 focus:outline-none focus:ring-0 text-sm"
-              />
-            </div>
+            <input
+              type="text"
+              value={categoryValue}
+              onChange={(e) => setCategoryValue(e.target.value)}
+              onFocus={() => setShowCategorySuggestions(true)}
+              onBlur={() => window.setTimeout(() => setShowCategorySuggestions(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  setCategory(categoryValue);
+                }
+              }}
+              placeholder="Type a category"
+              className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+            />
 
             {showCategorySuggestions && (
               <div className="absolute z-10 mt-2 w-full bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
                 <div className="p-2">
                   <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">SUGGESTIONS</p>
                   {availableCategories
-                    .filter((cat) => !categoryTags.some((t) => t.toLowerCase() === cat.toLowerCase()))
-                    .filter((cat) => cat.toLowerCase().includes(categoryInput.toLowerCase()))
+                    .filter((cat) => cat.toLowerCase().includes(categoryValue.toLowerCase()))
                     .slice(0, 12)
                     .map((cat) => (
                       <button
@@ -655,23 +610,28 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
                         type="button"
                         className="w-full text-left px-3 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center"
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => addCategoryTag(cat)}
+                        onClick={() => {
+                          setCategory(cat);
+                          setShowCategorySuggestions(false);
+                        }}
                       >
                         <Tag className="w-4 h-4 mr-2 opacity-60 shrink-0" />
                         {cat}
                       </button>
                     ))}
-                  {categoryInput.trim() &&
-                    !availableCategories.some((c) => c.toLowerCase() === categoryInput.trim().toLowerCase()) &&
-                    !categoryTags.some((t) => t.toLowerCase() === categoryInput.trim().toLowerCase()) && (
+                  {categoryValue.trim() &&
+                    !availableCategories.some((c) => c.toLowerCase() === categoryValue.trim().toLowerCase()) && (
                       <button
                         type="button"
                         className="w-full text-left px-3 py-2 text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center border-t border-[#A5C89E]/20 mt-1 pt-2"
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => commitCategoryInput()}
+                        onClick={() => {
+                          setCategory(categoryValue);
+                          setShowCategorySuggestions(false);
+                        }}
                       >
                         <Plus className="w-4 h-4 mr-2 shrink-0" />
-                        Add &quot;{categoryInput.trim()}&quot;
+                        Use &quot;{categoryValue.trim()}&quot;
                       </button>
                     )}
                 </div>
@@ -681,9 +641,6 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           {categoryFeedback ? (
             <p className="text-xs text-[#A5C89E] mt-2">{categoryFeedback}</p>
           ) : null}
-          <p className="text-xs text-gray-500 mt-2">
-            Categories are saved as tags. Press Enter or comma to add; Backspace removes the last tag.
-          </p>
         </div>
 
         {/* Tags Section */}
