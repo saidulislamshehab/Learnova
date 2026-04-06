@@ -48,6 +48,8 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
+  const [categoryFeedback, setCategoryFeedback] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
 
   const predefinedCategories = [
@@ -64,6 +66,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
     'AI/ML',
     'Software Engineering',
   ];
+  const [availableCategories, setAvailableCategories] = useState<string[]>(predefinedCategories);
 
   const addTag = (tag: string) => {
     if (tag && !selectedTags.includes(tag)) {
@@ -83,6 +86,25 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
     }
   };
 
+  const addCustomCategory = () => {
+    const normalizedCategory = customCategory.trim();
+    if (!normalizedCategory) return;
+
+    const existingCategory = availableCategories.find(
+      (cat) => cat.toLowerCase() === normalizedCategory.toLowerCase()
+    );
+    const finalCategory = existingCategory ?? normalizedCategory;
+
+    if (!existingCategory) {
+      setAvailableCategories((prev) => [...prev, normalizedCategory]);
+      setCategoryFeedback(`Category "${normalizedCategory}" added`);
+      window.setTimeout(() => setCategoryFeedback(''), 2500);
+    }
+
+    setCategory(finalCategory);
+    setCustomCategory('');
+  };
+
   // Load existing article content into editor
   useEffect(() => {
     if (existingArticle) {
@@ -94,7 +116,13 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
         setSelectedTags(existingArticle.tags.split(','));
       }
       if (existingArticle.category) {
-        setCategory(existingArticle.category);
+        const articleCategory = existingArticle.category;
+        setCategory(articleCategory);
+        if (!predefinedCategories.includes(articleCategory)) {
+          setAvailableCategories((prev) =>
+            prev.includes(articleCategory) ? prev : [...prev, articleCategory]
+          );
+        }
       }
     }
   }, [existingArticle]);
@@ -525,13 +553,37 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           <label className="block text-sm font-medium text-gray-400 mb-2">
             Article Category <span className="text-[#A5C89E]">*</span>
           </label>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addCustomCategory();
+                }
+              }}
+              placeholder="Add new category"
+              className="flex-1 px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+            />
+            <button
+              type="button"
+              onClick={addCustomCategory}
+              disabled={!customCategory.trim()}
+              className="px-5 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/40 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/30 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center"
+              title="Add category"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
           <div className="relative">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white appearance-none focus:outline-none focus:border-[#A5C89E]/60 transition-all cursor-pointer"
             >
-              {predefinedCategories.map(cat => (
+              {availableCategories.map(cat => (
                 <option key={cat} value={cat} className="bg-[#121212]">{cat}</option>
               ))}
             </select>
@@ -539,6 +591,9 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
               <Plus className="w-4 h-4 text-gray-500 rotate-45" />
             </div>
           </div>
+          {categoryFeedback && (
+            <p className="text-xs text-[#A5C89E] mt-2">{categoryFeedback}</p>
+          )}
         </div>
 
         {/* Tags Section */}
