@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
+import { persistAuthSession } from '../../../utils/authStorage';
 
 // Interface for SignIn props with navigation callbacks
 interface SignInProps {
   onSwitchToSignUp: () => void;
   onBackToHome: () => void;
+  onForgotPassword: () => void;
   onLogin: () => void;
   onShowNotification?: (message: string, type: 'success' | 'error') => void;
 }
@@ -18,12 +20,14 @@ interface SignInProps {
 export function SignIn({
   onSwitchToSignUp,
   onBackToHome,
+  onForgotPassword,
   onLogin,
   onShowNotification,
 }: SignInProps) {
   // State for form inputs and focus tracking
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<
     string | null
@@ -67,10 +71,7 @@ export function SignIn({
         throw new Error("Login response did not include an auth token");
       }
 
-      localStorage.setItem("auth_token", token);
-      if (data?.user) {
-        localStorage.setItem("auth_user", JSON.stringify(data.user));
-      }
+      persistAuthSession(token, data?.user ?? null, rememberMe);
 
       console.log("Login successful:", data);
       if (onShowNotification) {
@@ -173,14 +174,25 @@ export function SignIn({
               </div>
             </div>
 
-            {/* Forgot Password Link */}
-            <div className="text-right">
-              <a
-                href="#forgot"
+            {/* Remember Me + Forgot Password */}
+            <div className="flex items-center justify-between gap-4">
+              <label className="inline-flex items-center gap-2 text-sm text-gray-400 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-600 bg-[#0b0b0b]/60 text-[#A5C89E] focus:ring-[#A5C89E]/40"
+                />
+                Remember me
+              </label>
+
+              <button
+                type="button"
+                onClick={onForgotPassword}
                 className="text-gray-500 hover:text-[#A5C89E]/90 text-sm transition-colors"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             {/* Sign In Button */}

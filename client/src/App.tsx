@@ -8,6 +8,8 @@ import { Courses } from './components/Pages/course/Courses';
 import { Footer } from './components/Pages/Homepage/Footer';
 import { SignIn } from './components/Pages/Authentication/SignIn';
 import { SignUp } from './components/Pages/Authentication/SignUp';
+import { ForgotPassword } from './components/Pages/Authentication/ForgotPassword';
+import { ResetPassword } from './components/Pages/Authentication/ResetPassword';
 import { AllCourses } from './components/Pages/course/AllCourses';
 import { Articles } from './components/Pages/article/Articles';
 import { ArticleDetail } from './components/Pages/article/ArticleDetail';
@@ -29,13 +31,14 @@ import { Analytics } from "@vercel/analytics/react"
 import { AdminPanel } from './components/Pages/Admin/AdminPanel';
 import { Tutorials } from './components/Pages/course/Tutorials';
 import { AdminExpertApplications } from './components/Pages/Admin/AdminExpertApplications';
+import { clearAuthSession, getAuthToken } from './utils/authStorage';
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   
   // State to track user authentication status
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => Boolean(localStorage.getItem('auth_token')));
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => Boolean(getAuthToken()));
   // State for selected category in courses
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
   // State for keys/IDs to navigate to specific details
@@ -49,12 +52,12 @@ export default function App() {
 
   // Sync authentication state
   useEffect(() => {
-    setIsAuthenticated(Boolean(localStorage.getItem('auth_token')));
+    setIsAuthenticated(Boolean(getAuthToken()));
   }, [location.pathname]);
 
   // Helper to fetch username from database
   const getUserIdentifierFromDatabase = async () => {
-    const token = localStorage.getItem('auth_token');
+        const token = getAuthToken();
     if (!token) return 'user';
 
     try {
@@ -103,8 +106,7 @@ export default function App() {
 
   // Handler for logging out
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+        clearAuthSession();
     setIsAuthenticated(false);
     navigate('/');
     showNotification('Logged out successfully');
@@ -193,7 +195,24 @@ export default function App() {
                 <SignIn
                     onSwitchToSignUp={() => navigate('/signup')}
                     onBackToHome={() => navigate('/')}
+                    onForgotPassword={() => navigate('/forgot-password')}
                     onLogin={handleLogin}
+                    onShowNotification={showNotification}
+                />
+            } />
+
+            <Route path="/forgot-password" element={
+                <ForgotPassword
+                    onSwitchToSignIn={() => navigate('/signin')}
+                    onBackToHome={() => navigate('/')}
+                    onShowNotification={showNotification}
+                />
+            } />
+
+            <Route path="/reset-password" element={
+                <ResetPassword
+                    onSwitchToSignIn={() => navigate('/signin')}
+                    onBackToHome={() => navigate('/')}
                     onShowNotification={showNotification}
                 />
             } />
