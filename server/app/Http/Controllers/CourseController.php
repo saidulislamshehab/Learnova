@@ -98,6 +98,32 @@ class CourseController extends Controller
             ], 422);
         }
 
+        // Admin-specific validation: Minimum one title and YouTube URL for each title
+        $creatorRole = strtolower((string) ($request->user()->role ?? ''));
+        if ($creatorRole === 'admin') {
+            if (empty($contents)) {
+                return response()->json([
+                    'message' => 'Admins must add at least one title (course content) to the article.',
+                ], 422);
+            }
+
+            foreach ($contents as $item) {
+                if (empty($item['youtube_url'])) {
+                    return response()->json([
+                        'message' => 'Every title must have a valid YouTube link.',
+                    ], 422);
+                }
+                
+                // Generic youtube URL validation (at least check if it's a URL)
+                if (!filter_var($item['youtube_url'], FILTER_VALIDATE_URL) || 
+                    !(str_contains($item['youtube_url'], 'youtube.com') || str_contains($item['youtube_url'], 'youtu.be'))) {
+                    return response()->json([
+                        'message' => "The YouTube link for \"{$item['title']}\" is invalid.",
+                    ], 422);
+                }
+            }
+        }
+
         $course = DB::transaction(function () use ($request, $validated, $contents) {
             $thumbnailUrl = $validated['thumbnail'] ?? null;
             if ($request->hasFile('thumbnail')) {
@@ -178,6 +204,31 @@ class CourseController extends Controller
             return response()->json([
                 'message' => 'Invalid course_contents payload. Send a valid JSON array or array.',
             ], 422);
+        }
+
+        // Admin-specific validation: Minimum one title and YouTube URL for each title
+        $creatorRole = strtolower((string) ($request->user()->role ?? ''));
+        if ($creatorRole === 'admin') {
+            if (empty($contents)) {
+                return response()->json([
+                    'message' => 'Admins must add at least one title (course content) to the article.',
+                ], 422);
+            }
+
+            foreach ($contents as $item) {
+                if (empty($item['youtube_url'])) {
+                    return response()->json([
+                        'message' => 'Every title must have a valid YouTube link.',
+                    ], 422);
+                }
+                
+                if (!filter_var($item['youtube_url'], FILTER_VALIDATE_URL) || 
+                    !(str_contains($item['youtube_url'], 'youtube.com') || str_contains($item['youtube_url'], 'youtu.be'))) {
+                    return response()->json([
+                        'message' => "The YouTube link for \"{$item['title']}\" is invalid.",
+                    ], 422);
+                }
+            }
         }
 
         $updatedCourse = DB::transaction(function () use ($request, $validated, $course, $contents) {

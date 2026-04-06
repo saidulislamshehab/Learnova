@@ -225,6 +225,10 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
       .filter((item) => item.title || item.description || item.youtube_url);
 
     const hasInvalidContent = cleanedContentItems.some((item) => !item.title);
+    
+    // Check if user is admin for specific validation
+    const storedUser = localStorage.getItem('auth_user');
+    const isAdmin = storedUser ? JSON.parse(storedUser).role?.toLowerCase() === 'admin' : false;
 
     if (!courseTitle.trim()) {
       throw new Error('Please enter a course title.');
@@ -236,6 +240,22 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
     if (!price.trim()) {
       throw new Error('Please enter a price.');
+    }
+
+    if (isAdmin) {
+      if (cleanedContentItems.length === 0) {
+        throw new Error('Admins must add at least one title to the article.');
+      }
+
+      const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+      for (const item of cleanedContentItems) {
+        if (!item.youtube_url) {
+          throw new Error('Every title must have a valid YouTube link.');
+        }
+        if (!youtubeRegex.test(item.youtube_url)) {
+          throw new Error(`The YouTube link for "${item.title}" is invalid.`);
+        }
+      }
     }
 
     if (hasInvalidContent) {
