@@ -547,6 +547,16 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   };
 
   useEffect(() => {
+    // Initial fetch for overview / stats
+    void fetchInstructorApplications();
+    void fetchExpertApplications();
+    void fetchUsers();
+    void fetchCourseApprovals();
+    void fetchPendingArticles();
+    void fetchReports();
+  }, []);
+
+  useEffect(() => {
     if (activeSection === 'instructor-applications') {
       void fetchInstructorApplications();
     }
@@ -1654,38 +1664,109 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               <div className="mt-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h3>
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4 pb-4 border-b border-gray-100">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">New user registered: Alex Johnson</p>
-                        <p className="text-gray-500 text-sm mt-1">2 hours ago</p>
+                  {(() => {
+                    const activities: any[] = [];
+
+                    // Instructor Apps
+                    instructorApplications.filter(a => a.status === 'Pending').forEach(a => {
+                      activities.push({
+                        id: `ia-${a.id}`,
+                        text: `New instructor application from ${a.name}`,
+                        time: a.appliedDate,
+                        section: 'instructor-applications',
+                        icon: UserPlus,
+                        color: 'bg-blue-600'
+                      });
+                    });
+
+                    // Expert Apps
+                    expertApplications.filter(a => a.status === 'Pending').forEach(a => {
+                      activities.push({
+                        id: `ea-${a.id}`,
+                        text: `New expert application from ${a.name}`,
+                        time: a.appliedDate,
+                        section: 'expert-applications',
+                        icon: UserCheck,
+                        color: 'bg-indigo-600'
+                      });
+                    });
+
+                    // Courses
+                    adminCourseApprovals.filter(c => c.status === 'Pending').forEach(c => {
+                      activities.push({
+                        id: `ca-${c.id}`,
+                        text: `Course pending approval: ${c.title}`,
+                        time: c.submittedDate,
+                        section: 'courses-approval',
+                        icon: BookOpen,
+                        color: 'bg-green-600'
+                      });
+                    });
+
+                    // Articles
+                    pendingArticles.filter(a => a.status === 'pending').forEach(a => {
+                      activities.push({
+                        id: `aa-${a.id}`,
+                        text: `New article for review: ${a.title}`,
+                        time: a.submittedDate,
+                        section: 'articles-approval',
+                        icon: FileText,
+                        color: 'bg-amber-600'
+                      });
+                    });
+
+                    // Reports
+                    adminReports.filter(r => r.status === 'Pending').forEach(r => {
+                      activities.push({
+                        id: `ar-${r.id}`,
+                        text: `Report on article: ${r.articleTitle}`,
+                        time: r.reportedAt,
+                        section: 'reports',
+                        icon: AlertTriangle,
+                        color: 'bg-red-600'
+                      });
+                    });
+
+                    // Sort by time (approximate since we only have date strings)
+                    // In a real app we'd have timestamps
+                    if (activities.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <Check className="w-12 h-12 text-green-500 mb-4 bg-green-50 p-2 rounded-full" />
+                          <p className="text-gray-900 font-bold">All caught up!</p>
+                          <p className="text-gray-500 text-sm">No new pending actions at this time.</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-4">
+                        {activities.map((activity) => {
+                          const Icon = activity.icon;
+                          return (
+                            <div key={activity.id} className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                              <div className={`w-8 h-8 rounded-lg ${activity.color} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                                <Icon className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-gray-800 font-medium">{activity.text}</p>
+                                  <button
+                                    onClick={() => setActiveSection(activity.section as ActiveSection)}
+                                    className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 group"
+                                  >
+                                    View Action
+                                    <TrendingUp className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                  </button>
+                                </div>
+                                <p className="text-gray-500 text-xs mt-1">{activity.time}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                    <div className="flex items-start gap-4 pb-4 border-b border-gray-100">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">Course approved: React Masterclass</p>
-                        <p className="text-gray-500 text-sm mt-1">5 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 pb-4 border-b border-gray-100">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">
-                          New instructor application: David Martinez
-                        </p>
-                        <p className="text-gray-500 text-sm mt-1">1 day ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">Article published: Understanding AI</p>
-                        <p className="text-gray-500 text-sm mt-1">2 days ago</p>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
