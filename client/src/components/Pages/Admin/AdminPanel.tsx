@@ -110,25 +110,15 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   // Tutorial Management State
-  const [tutorials, setTutorials] = useState([
-    { id: '1', title: 'C Programming Basics', category: 'C', status: 'Active', articleCount: 15, description: 'Complete guide to C', articles: [] as any[] },
-    { id: '2', title: 'Advanced Python', category: 'Python', status: 'Draft', articleCount: 8, description: 'Master Python features', articles: [] as any[] },
-  ]);
+  const [tutorials, setTutorials] = useState<any[]>([]);
+  const [isLoadingTutorials, setIsLoadingTutorials] = useState(false);
+  const [tutorialsError, setTutorialsError] = useState<string | null>(null);
   const [editingTutorial, setEditingTutorial] = useState<any>(null);
   const [articleSearchQuery, setArticleSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearchingArticles, setIsSearchingArticles] = useState(false);
 
-  const allDatabaseArticles = [
-    { id: '101', title: 'Intro to C', category: 'C', author: 'Dr. Coder' },
-    { id: '102', title: 'Variables in C', category: 'C', author: 'Dr. Coder' },
-    { id: '103', title: 'Pointers Explained', category: 'C', author: 'Dr. Coder' },
-    { id: '104', title: 'Python Lists', category: 'Python', author: 'Py Guru' },
-    { id: '105', title: 'Python Loops', category: 'Python', author: 'Py Guru' },
-    { id: '106', title: 'Java Classes', category: 'Java', author: 'Java Master' },
-    { id: '107', title: 'React Hooks', category: 'Web Dev', author: 'Frontend Pro' },
-    { id: '108', title: 'Neural Networks', category: 'AI/ML', author: 'AI Expert' },
-    { id: '109', title: 'Graph Algorithms', category: 'DSA', author: 'Algo Master' },
-    { id: '110', title: 'Docker Basics', category: 'DevOps', author: 'Cloud Ninja' },
-  ];
+  // Removed allDatabaseArticles mock
 
   // Standard background component
   const BackgroundEffects = () => (
@@ -678,6 +668,160 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     } catch (error: any) {
       alert(error?.response?.data?.message || 'Failed to update feedback status.');
     }
+  };
+
+  const fetchTutorials = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    setIsLoadingTutorials(true);
+    setTutorialsError(null);
+    try {
+      const response = await axios.get(`${API_BASE}/admin/tutorials`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTutorials(response.data.tutorials || []);
+    } catch (err: any) {
+      setTutorialsError(err.response?.data?.message || 'Failed to fetch tutorials');
+    } finally {
+      setIsLoadingTutorials(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'tutorials') {
+      void fetchTutorials();
+    }
+  }, [activeSection]);
+
+  const searchArticlesForTutorial = async (query: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token || !query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearchingArticles(true);
+    try {
+      const response = await axios.get(`${API_BASE}/admin/tutorials/search-articles`, {
+        params: { query },
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setSearchResults(response.data.articles || []);
+    } catch (err) {
+      console.error('Failed to search articles', err);
+    } finally {
+      setIsSearchingArticles(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      void searchArticlesForTutorial(articleSearchQuery);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [articleSearchQuery]);
+
+  const handleEditTutorial = async (id: number) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    try {
+      const response = await axios.get(`${API_BASE}/admin/tutorials/${id}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const t = response.data.tutorial;
+      setEditingTutorial({
+        id: t.T_ID,
+        title: t.Title,
+        category: t.Category,
+        description: t.Description,
+        status: t.Status,
+        articles: t.articles.map((a: any) => ({
+          ...a,
+          Article_ID: a.Article_ID,
+        })) || []
+      });
+    } catch (err) {
+      console.error('Failed to fetch tutorial details', err);
+      alert('Failed to fetch tutorial details');
+    }
+  };
+
+  const handleSaveTutorial = async (status: 'draft' | 'published') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    if (!editingTutorial.title || !editingTutorial.category || !editingTutorial.description || editingTutorial.articles.length === 0) {
+      alert('Please fill in all basic info and add at least one article.');
+      return;
+    }
+
+    try {
+      const payload = {
+        title: editingTutorial.title,
+        category: editingTutorial.category,
+        description: editingTutorial.description,
+        status: status,
+        articles: editingTutorial.articles.map((a: any, index: number) => ({
+          id: a.Article_ID || a.id,
+          order: index + 1
+        }))
+      };
+
+      await axios.post(`${API_BASE}/admin/tutorials`, payload, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      alert(`Tutorial ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
+      setEditingTutorial(null);
+      void fetchTutorials();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to save tutorial');
+    }
+  };
+
+  const handleDeleteTutorial = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this tutorial? This action cannot be undone.')) {
+      return;
+    }
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+    try {
+      await axios.delete(`${API_BASE}/admin/tutorials/${id}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      alert('Tutorial deleted successfully!');
+      void fetchTutorials();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete tutorial');
+    }
+  };
+
+  const handleAddArticleToTutorial = (article: any) => {
+    const articleId = article.Article_ID || article.id;
+    if (editingTutorial.articles.find((a: any) => (a.Article_ID || a.id) === articleId)) {
+      return;
+    }
+    setEditingTutorial({
+      ...editingTutorial,
+      articles: [...editingTutorial.articles, article]
+    });
   };
 
   const articleReports = adminReports;
@@ -2362,265 +2506,214 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
 
           {/* Tutorials Management */}
           {activeSection === 'tutorials' && (
-            <div>
+            <div className="space-y-6">
               {!editingTutorial ? (
                 // Tutorials List View
                 <>
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-2">Tutorials</h2>
-                      <p className="text-gray-600 text-sm">
-                        Manage course collections and learning paths
-                      </p>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-1">Tutorials</h2>
+                      <p className="text-gray-600 text-sm">Manage course collections and learning paths</p>
                     </div>
                     <button
                       onClick={() => setEditingTutorial({
-                        id: Date.now().toString(),
                         title: '',
                         category: '',
                         description: '',
-                        status: 'Draft',
+                        status: 'draft',
                         articles: []
                       })}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
                     >
                       <Plus className="w-4 h-4" />
                       Create New Tutorial
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {tutorials.map((tutorial) => (
-                      <div
-                        key={tutorial.id}
-                        onClick={() => setEditingTutorial({ ...tutorial, articles: [] })} // Reset articles mock for demo
-                        className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                          <BookOpen className="w-24 h-24 text-blue-600 transform rotate-12 translate-x-8 -translate-y-8" />
-                        </div>
+                  {isLoadingTutorials ? (
+                    <div className="flex items-center justify-center py-20 text-gray-400 animate-pulse">Loading tutorials...</div>
+                  ) : tutorialsError ? (
+                    <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-center">{tutorialsError}</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {tutorials.map((tutorial: any) => (
+                        <div
+                          key={tutorial.T_ID}
+                          onClick={() => void handleEditTutorial(tutorial.T_ID)}
+                          className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                            <BookOpen className="w-24 h-24 text-blue-600 transform rotate-12 translate-x-8 -translate-y-8" />
+                          </div>
 
-                        <div className="flex justify-between items-start mb-6 relative z-10">
-                          {/* Enhanced Status Badge */}
-                          <span
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${tutorial.status === 'Active'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-gray-50 text-gray-600 border-gray-200'
-                              }`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${tutorial.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                            {tutorial.status}
-                          </span>
-                        </div>
-
-                        <div className="relative z-10">
-                          <span className="inline-block px-2 py-0.5 mb-3 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                            {tutorial.category}
-                          </span>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">
-                            {tutorial.title}
-                          </h3>
-                          <p className="text-sm text-gray-500 mb-6 line-clamp-2">
-                            {tutorial.description}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 relative z-10">
-                          <span className="text-xs font-mono text-gray-500 flex items-center">
-                            <FileText className="w-3 h-3 mr-1" />
-                            {tutorial.articleCount} Articles
-                          </span>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingTutorial({ ...tutorial, articles: [] });
-                              }}
-                              className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                          <div className="flex justify-between items-start mb-6">
+                            <span
+                              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${ tutorial.Status === 'published'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}
                             >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Delete logic here
-                              }}
-                              className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                              <span className={`w-1.5 h-1.5 rounded-full ${ tutorial.Status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                              {tutorial.Status}
+                            </span>
+                          </div>
+
+                          <div className="relative z-10">
+                            <span className="inline-block px-2 py-0.5 mb-3 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold tracking-wide uppercase">
+                              {tutorial.Category}
+                            </span>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors line-clamp-1">
+                              {tutorial.Title}
+                            </h3>
+                            <p className="text-sm text-gray-500 mb-6 line-clamp-2 h-10">
+                              {tutorial.Description}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                            <div className="flex items-center text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
+                              <FileText className="w-3 h-3 mr-1.5 text-blue-500" />
+                              {tutorial.articles_count ?? 0} Articles
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); void handleEditTutorial(tutorial.T_ID); }}
+                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); void handleDeleteTutorial(tutorial.T_ID); }}
+                                className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 // Create / Edit View
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/20">
                     <div className="flex items-center gap-4 w-full sm:w-auto">
                       <button
                         onClick={() => setEditingTutorial(null)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                        className="p-2 hover:bg-white bg-white/50 border border-gray-200 rounded-xl transition-colors shadow-sm"
                       >
                         <ChevronLeft className="w-5 h-5 text-gray-600" />
                       </button>
                       <div className="min-w-0">
                         <h2 className="text-2xl font-bold text-gray-900 truncate">
-                          {tutorials.find(t => t.id === editingTutorial.id) ? 'Edit Tutorial' : 'Create Tutorial'}
+                          {editingTutorial.id ? 'Edit Tutorial' : 'Create Tutorial'}
                         </h2>
-                        <p className="text-sm text-gray-500 truncate">Configure details and manage articles</p>
+                        <p className="text-sm text-gray-500">Configure details and manage articles</p>
                       </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                      <button
-                        onClick={() => setEditingTutorial(null)}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm w-full sm:w-auto justify-center"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Save logic would go here
-                          setEditingTutorial(null);
-                        }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm flex items-center justify-center gap-2 shadow-sm transition-all w-full sm:w-auto"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save Draft
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Publish logic would go here
-                          setEditingTutorial(null);
-                        }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2 shadow-sm transition-all w-full sm:w-auto"
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        Publish Tutorial
-                      </button>
+                      <button onClick={() => setEditingTutorial(null)} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold text-sm transition-all shadow-sm">Cancel</button>
+                      <button onClick={() => void handleSaveTutorial('draft')} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"><Save className="w-4 h-4" />Save Draft</button>
+                      <button onClick={() => void handleSaveTutorial('published')} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20"><BookOpen className="w-4 h-4" />Publish Tutorial</button>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                    {/* Left Col: Basic Info & Source Articles */}
+                    {/* Left: Info & Search */}
                     <div className="lg:col-span-1 space-y-6">
-                      {/* Basic Info Card */}
-                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Basic Information</h3>
-                        <div className="space-y-4">
+                      <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">Basic Information</h3>
+                        <div className="space-y-5">
                           <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">Title</label>
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Title</label>
                             <input
                               type="text"
                               value={editingTutorial.title}
                               onChange={e => setEditingTutorial({ ...editingTutorial, title: e.target.value })}
-                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                              className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
                               placeholder="e.g. Master React Basics"
                             />
                           </div>
-
                           <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">Category</label>
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Category</label>
                             <input
                               type="text"
                               value={editingTutorial.category}
                               onChange={e => setEditingTutorial({ ...editingTutorial, category: e.target.value })}
-                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                              className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
                               placeholder="e.g. C, Python, Web Dev"
                             />
                           </div>
-
                           <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Description</label>
                             <textarea
                               value={editingTutorial.description}
                               onChange={e => setEditingTutorial({ ...editingTutorial, description: e.target.value })}
-                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-24 resize-none"
+                              className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-32 resize-none placeholder:text-gray-400"
                               placeholder="Brief description of this tutorial..."
                             />
                           </div>
                         </div>
                       </div>
 
-                      {/* Source Articles Selector */}
-                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col h-[500px]">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Add Articles</h3>
-
-                        <div className="relative mb-4">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm flex flex-col h-[500px]">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">Add Articles</h3>
+                        <div className="relative mb-6">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                           <input
                             type="text"
-                            placeholder="Search database..."
+                            placeholder="Search published articles..."
                             value={articleSearchQuery}
                             onChange={(e) => setArticleSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-all"
+                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-all placeholder:text-gray-400"
                           />
                         </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                          {allDatabaseArticles
-                            .filter(a =>
-                              !editingTutorial.articles.find((selected: any) => selected.id === a.id) &&
-                              (a.title.toLowerCase().includes(articleSearchQuery.toLowerCase()) ||
-                                a.category.toLowerCase().includes(articleSearchQuery.toLowerCase()))
-                            )
-                            .map(article => (
-                              <div key={article.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors group">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-800 line-clamp-1">{article.title}</p>
-                                  <p className="text-xs text-gray-500">{article.category} • {article.author}</p>
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                          {isSearchingArticles ? (
+                            <div className="h-full flex items-center justify-center"><div className="w-6 h-6 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div></div>
+                          ) : searchResults.length > 0 ? (
+                            searchResults
+                              .filter((a: any) => !editingTutorial.articles.find((selected: any) => (selected.Article_ID || selected.id) === (a.Article_ID || a.id)))
+                              .map((article: any) => (
+                                <div key={article.Article_ID || article.id} className="flex items-center justify-between p-4 border border-gray-50 rounded-2xl hover:bg-blue-50/30 hover:border-blue-100 transition-all group">
+                                  <div className="min-w-0 pr-4">
+                                    <p className="text-sm font-bold text-gray-800 truncate">{article.Title || article.title}</p>
+                                    <p className="text-[11px] text-gray-500 mt-0.5">{(article.Category || article.category)} • {article.user?.name || 'Author'}</p>
+                                  </div>
+                                  <button onClick={() => handleAddArticleToTutorial(article)} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Plus className="w-4 h-4" /></button>
                                 </div>
-                                <button
-                                  onClick={() => setEditingTutorial({
-                                    ...editingTutorial,
-                                    articles: [...editingTutorial.articles, article]
-                                  })}
-                                  className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))
-                          }
-                          {allDatabaseArticles.filter(a => !editingTutorial.articles.find((selected: any) => selected.id === a.id)).length === 0 && (
-                            <p className="text-center text-gray-400 text-sm mt-8">No available articles found.</p>
+                              ))
+                          ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm gap-2 opacity-60">
+                              <p>Search above to find articles</p>
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Right Col: Drag & Drop List */}
+                    {/* Right: Selected Articles */}
                     <div className="lg:col-span-2">
-                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm min-h-[600px] flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-lg font-bold text-gray-900">
-                            Selected Articles <span className="text-gray-400 font-normal ml-2">({editingTutorial.articles.length})</span>
+                      <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm min-h-[600px] flex flex-col">
+                        <div className="flex items-center justify-between mb-8">
+                          <h3 className="text-xl font-bold text-gray-900">
+                            Selected Articles <span className="text-blue-500 font-medium text-sm ml-2 px-2 py-0.5 bg-blue-50 rounded-lg">{editingTutorial.articles.length}</span>
                           </h3>
-                          <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                            Preview Order
-                          </button>
                         </div>
-
                         {editingTutorial.articles.length > 0 ? (
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             {editingTutorial.articles.map((article: any, index: number) => (
-                              <div key={article.id} className="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl group hover:border-blue-300 transition-all">
-                                {/* Serial Number */}
-                                <div className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 text-gray-500 rounded-lg font-mono font-bold text-lg shadow-sm">
+                              <div key={article.Article_ID || article.id} className="flex items-center gap-5 p-5 bg-gray-50/50 border border-transparent rounded-[1.5rem] group hover:bg-white hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+                                <div className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 text-blue-600 rounded-2xl font-mono font-black text-lg shadow-sm">
                                   {String(index + 1).padStart(2, '0')}
                                 </div>
-
-                                {/* Article Info */}
-                                <div className="flex-1">
-                                  <h4 className="text-base font-bold text-gray-900">{article.title}</h4>
-                                  <p className="text-sm text-gray-500">{article.category} • by {article.author}</p>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-base font-bold text-gray-900 mb-0.5 truncate">{article.Title || article.title}</h4>
+                                  <p className="text-xs text-gray-500">{(article.Category || article.category)} • by {article.user?.name || 'Author'}</p>
                                 </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-3">
                                   <div className="flex flex-col gap-1">
                                     <button
                                       disabled={index === 0}
@@ -2629,7 +2722,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                         [newArticles[index - 1], newArticles[index]] = [newArticles[index], newArticles[index - 1]];
                                         setEditingTutorial({ ...editingTutorial, articles: newArticles });
                                       }}
-                                      className="p-1 hover:bg-gray-200 text-gray-500 rounded disabled:opacity-30"
+                                      className="p-1.5 hover:bg-white shadow-sm text-gray-400 hover:text-blue-600 rounded-lg disabled:opacity-30 transition-all"
                                     >
                                       <ArrowUp className="w-4 h-4" />
                                     </button>
@@ -2640,18 +2733,17 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                         [newArticles[index + 1], newArticles[index]] = [newArticles[index], newArticles[index + 1]];
                                         setEditingTutorial({ ...editingTutorial, articles: newArticles });
                                       }}
-                                      className="p-1 hover:bg-gray-200 text-gray-500 rounded disabled:opacity-30"
+                                      className="p-1.5 hover:bg-white shadow-sm text-gray-400 hover:text-blue-600 rounded-lg disabled:opacity-30 transition-all"
                                     >
                                       <ArrowDown className="w-4 h-4" />
                                     </button>
                                   </div>
-                                  <div className="h-8 w-px bg-gray-200 mx-2"></div>
                                   <button
                                     onClick={() => {
                                       const newArticles = editingTutorial.articles.filter((_: any, i: number) => i !== index);
                                       setEditingTutorial({ ...editingTutorial, articles: newArticles });
                                     }}
-                                    className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                                    className="p-3 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-2xl shadow-sm hover:shadow-md transition-all"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -2660,17 +2752,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                             ))}
                           </div>
                         ) : (
-                          <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50 p-12">
-                            <BookOpen className="w-16 h-16 text-gray-300 mb-4" />
-                            <h4 className="text-lg font-bold text-gray-500 mb-1">No articles added yet</h4>
-                            <p className="text-gray-400 text-center max-w-sm">
-                              Select articles from the left panel to build your tutorial structure.
-                            </p>
+                          <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-gray-50/50 p-12 text-center text-gray-400">
+                            <BookOpen className="w-12 h-12 mb-4 opacity-20" />
+                            <p>No articles added yet</p>
                           </div>
                         )}
                       </div>
                     </div>
-
                   </div>
                 </div>
               )}

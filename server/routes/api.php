@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\PublicStatsController;
+use App\Http\Controllers\TutorialController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -24,6 +25,8 @@ Route::get('/articles', [ArticleController::class, 'index']);
 // Constrain {id} so it doesn't capture fixed routes like /articles/my
 Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('id');
 Route::get('/articles/{id}/comments', [ArticleController::class, 'comments'])->whereNumber('id');
+Route::get('/tutorials', [TutorialController::class, 'indexPublic']);
+Route::get('/tutorials/{id}', [TutorialController::class, 'showPublic'])->whereNumber('id');
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -86,6 +89,13 @@ Route::middleware('auth:api')->group(function () {
         // Feedback Management
         Route::get('/admin/feedbacks', [FeedbackController::class, 'index']);
         Route::put('/admin/feedbacks/{id}', [FeedbackController::class, 'updateStatus']);
+
+        // Tutorial Management
+        Route::get('/admin/tutorials', [TutorialController::class, 'index']);
+        Route::post('/admin/tutorials', [TutorialController::class, 'store']);
+        Route::get('/admin/tutorials/search-articles', [TutorialController::class, 'searchArticles']);
+        Route::get('/admin/tutorials/{id}', [TutorialController::class, 'show']);
+        Route::delete('/admin/tutorials/{id}', [TutorialController::class, 'destroy']);
     });
 });
 

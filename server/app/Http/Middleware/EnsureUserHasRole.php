@@ -11,9 +11,9 @@ class EnsureUserHasRole
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    public function handle(Request $request, \Closure $next, string ...$roles): Response
     {
-        $user = $request->user();
+        $user = \Illuminate\Support\Facades\Auth::guard('api')->user();
 
         if (! $user) {
             return response()->json([
@@ -27,8 +27,13 @@ class EnsureUserHasRole
         if (! in_array($normalizedUserRole, $normalizedAllowedRoles, true)) {
             return response()->json([
                 'message' => 'Forbidden. You do not have the required role.',
+                'user_role' => $normalizedUserRole,
+                'required_roles' => $normalizedAllowedRoles,
             ], 403);
         }
+
+        // Share the authenticated user for the remainder of the request
+        $request->setUserResolver(fn() => $user);
 
         return $next($request);
     }
