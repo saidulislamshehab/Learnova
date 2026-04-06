@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
   Menu,
   X,
+  ChevronLeft,
+  ChevronRight,
   Terminal,
   ChevronDown,
   User,
@@ -70,6 +72,7 @@ export function Navbar({
   onAdminPanel,
   onTutorials,
 }: NavbarProps) {
+  const navigate = useNavigate();
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string>('Learner');
   const [profileEmail, setProfileEmail] = useState<string>('');
@@ -90,12 +93,209 @@ export function Navbar({
     useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchCounts, setSearchCounts] = useState({
+    all: 0,
+    articles: 0,
+    courses: 0,
+    tutorials: 0,
+  });
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [showDesktopSuggestions, setShowDesktopSuggestions] = useState(false);
+  const [showMobileSuggestions, setShowMobileSuggestions] = useState(false);
+  const [isDesktopSearchExpanded, setIsDesktopSearchExpanded] = useState(false);
+  const [activeSearchTab, setActiveSearchTab] = useState<'all' | 'article' | 'course' | 'tutorial'>('all');
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotalPages, setSearchTotalPages] = useState(0);
+  const [searchTotal, setSearchTotal] = useState(0);
   // Refs for click outside detection
   const coursesRef = useRef<HTMLDivElement>(null);
   const tutorialsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRefDesktop = useRef<HTMLDivElement>(null);
   const notificationRefMobile = useRef<HTMLDivElement>(null);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+
+  const fetchSearchSuggestions = async (query: string) => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setSearchSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://${window.location.hostname}:8000/api/search/suggestions?query=${encodeURIComponent(trimmed)}`,
+        {
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        setSearchSuggestions([]);
+        return;
+      }
+
+      const data = await response.json();
+      setSearchSuggestions(Array.isArray(data?.results) ? data.results : []);
+    } catch {
+      setSearchSuggestions([]);
+    }
+  };
+
+  const fetchSearchResults = async (
+    query: string,
+    options?: { tab?: 'all' | 'article' | 'course' | 'tutorial'; page?: number; openModal?: boolean }
+  ) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setSearchCounts({ all: 0, articles: 0, courses: 0, tutorials: 0 });
+      setSearchTotal(0);
+      setSearchTotalPages(0);
+      return;
+    }
+
+    const tab = options?.tab ?? activeSearchTab;
+    const page = options?.page ?? searchPage;
+    const shouldOpenModal = options?.openModal ?? false;
+
+    try {
+      setIsSearchLoading(true);
+      const response = await fetch(
+        `http://${window.location.hostname}:8000/api/search?query=${encodeURIComponent(trimmed)}&type=${tab}&page=${page}&per_page=6`,
+        {
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        setSearchResults([]);
+        setSearchTotal(0);
+        setSearchTotalPages(0);
+        setSearchCounts({ all: 0, articles: 0, courses: 0, tutorials: 0 });
+        if (shouldOpenModal) {
+          setIsSearchModalOpen(true);
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setSearchResults(Array.isArray(data?.items) ? data.items : []);
+      setSearchTotal(Number(data?.total) || 0);
+      setSearchTotalPages(Number(data?.total_pages) || 0);
+      setSearchPage(Number(data?.page) || 1);
+      setSearchCounts({
+        all: Number(data?.counts?.all) || 0,
+        articles: Number(data?.counts?.articles) || 0,
+        courses: Number(data?.counts?.courses) || 0,
+        tutorials: Number(data?.counts?.tutorials) || 0,
+      });
+      if (shouldOpenModal) {
+        setIsSearchModalOpen(true);
+      }
+    } catch {
+      setSearchResults([]);
+      setSearchTotal(0);
+      setSearchTotalPages(0);
+      setSearchCounts({ all: 0, articles: 0, courses: 0, tutorials: 0 });
+      if (shouldOpenModal) {
+        setIsSearchModalOpen(true);
+      }
+    } finally {
+      setIsSearchLoading(false);
+    }
+  };
+
+  const handleSelectSearchItem = (item: any) => {
+    const itemType = String(item?.type || '').toLowerCase();
+    const id = item?.id;
+
+    setIsSearchModalOpen(false);
+    setShowDesktopSuggestions(false);
+    setShowMobileSuggestions(false);
+    setIsDesktopSearchExpanded(false);
+    setIsMobileMenuOpen(false);
+
+    if (itemType === 'article' && id) {
+      navigate(`/article/${id}`);
+      return;
+    }
+
+    if (itemType === 'course' && id) {
+      navigate(`/course/${id}`);
+      return;
+    }
+
+    if (itemType === 'tutorial') {
+      if (onTutorials) {
+        onTutorials();
+      } else {
+        navigate('/tutorials');
+      }
+    }
+  };
+
+  const handleSearchEnter = async () => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      return;
+    }
+    setShowDesktopSuggestions(false);
+    setShowMobileSuggestions(false);
+    setIsDesktopSearchExpanded(false);
+    setActiveSearchTab('all');
+    setSearchPage(1);
+    await fetchSearchResults(trimmed, { tab: 'all', page: 1, openModal: true });
+  };
+
+  const pageWindowStart = Math.max(1, searchPage - 1);
+  const pageWindowEnd = Math.min(searchTotalPages, pageWindowStart + 2);
+  const visiblePages = Array.from(
+    { length: Math.max(0, pageWindowEnd - pageWindowStart + 1) },
+    (_, index) => pageWindowStart + index
+  );
+
+  const renderSuggestionItem = (item: any) => (
+    <button
+      key={`${item.type}-${item.id}`}
+      className="navbar-search-suggestion-item"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        handleSelectSearchItem(item);
+      }}
+    >
+      <div className="navbar-search-suggestion-main">
+        <span className="navbar-search-suggestion-type">{String(item.type || '').toUpperCase()}</span>
+        <span className="navbar-search-suggestion-title">{item.title}</span>
+      </div>
+      {item.subtitle ? <span className="navbar-search-suggestion-sub">{item.subtitle}</span> : null}
+    </button>
+  );
+
+  const renderSearchResultCard = (item: any) => (
+    <button
+      key={`${item.type}-${item.id}`}
+      className="navbar-search-result-card"
+      onClick={() => handleSelectSearchItem(item)}
+    >
+      <div className="navbar-search-result-card-head">
+        <span className="navbar-search-result-type">{String(item.type || '').toUpperCase()}</span>
+      </div>
+      <h4 className="navbar-search-result-title">{item.title}</h4>
+      <p className="navbar-search-result-description">
+        {item.description || item.subtitle || 'No description available'}
+      </p>
+    </button>
+  );
 
   interface Notification {
     id: number;
@@ -346,9 +546,32 @@ export function Navbar({
       ) {
         setIsNotificationOpen(false);
       }
+
+      if (
+        desktopSearchRef.current &&
+        !desktopSearchRef.current.contains(event.target as Node)
+      ) {
+        setShowDesktopSuggestions(false);
+        setIsDesktopSearchExpanded(false);
+      }
+
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target as Node)
+      ) {
+        setShowMobileSuggestions(false);
+      }
     };
 
-    if (isCoursesOpen || isTutorialsOpen || isProfileOpen || isNotificationOpen) {
+    if (
+      isCoursesOpen ||
+      isTutorialsOpen ||
+      isProfileOpen ||
+      isNotificationOpen ||
+      showDesktopSuggestions ||
+      showMobileSuggestions ||
+      isDesktopSearchExpanded
+    ) {
       document.addEventListener(
         "mousedown",
         handleClickOutside,
@@ -363,9 +586,49 @@ export function Navbar({
         handleClickOutside,
       );
     };
-  }, [isCoursesOpen, isTutorialsOpen, isProfileOpen, isNotificationOpen]);
+  }, [
+    isCoursesOpen,
+    isTutorialsOpen,
+    isProfileOpen,
+    isNotificationOpen,
+    showDesktopSuggestions,
+    showMobileSuggestions,
+    isDesktopSearchExpanded,
+  ]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void fetchSearchSuggestions(searchQuery);
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!isSearchModalOpen) {
+      return;
+    }
+
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setSearchTotal(0);
+      setSearchTotalPages(0);
+      setSearchCounts({ all: 0, articles: 0, courses: 0, tutorials: 0 });
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void fetchSearchResults(trimmed, { tab: activeSearchTab, page: searchPage });
+    }, 260);
+
+    return () => window.clearTimeout(timeout);
+  }, [isSearchModalOpen, searchQuery, activeSearchTab, searchPage]);
 
   return (
+    <>
     <nav className="navbar-root">
       <div
         className={`navbar-container ${isScrolled ? "scrolled" : ""}`}
@@ -500,14 +763,44 @@ export function Navbar({
 
           {/* Right Side */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="navbar-search-btn">
-              <Search className="w-4 h-4 absolute left-2 group-hover:left-3 transition-all duration-300" />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                className="navbar-search-input"
-              />
-            </button>
+            <div className="navbar-search-container" ref={desktopSearchRef}>
+              <button
+                type="button"
+                className={`navbar-search-btn ${isDesktopSearchExpanded ? 'expanded' : ''}`}
+                onClick={() => {
+                  setIsDesktopSearchExpanded(true);
+                  setShowDesktopSuggestions(true);
+                }}
+              >
+                <Search className="w-4 h-4 absolute left-2 group-hover:left-3 transition-all duration-300" />
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  className="navbar-search-input"
+                  value={searchQuery}
+                  onFocus={() => {
+                    setIsDesktopSearchExpanded(true);
+                    setShowDesktopSuggestions(true);
+                  }}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void handleSearchEnter();
+                    }
+                  }}
+                />
+              </button>
+              {showDesktopSuggestions && searchQuery.trim().length > 0 ? (
+                <div className="navbar-search-suggestion-panel">
+                  {searchSuggestions.length > 0 ? (
+                    searchSuggestions.map((item) => renderSuggestionItem(item))
+                  ) : (
+                    <div className="navbar-search-suggestion-empty">No quick matches</div>
+                  )}
+                </div>
+              ) : null}
+            </div>
 
             {/* Notification Button */}
             {isAuthenticated && (
@@ -926,13 +1219,31 @@ export function Navbar({
         <div className="navbar-mobile-dropdown">
           <div className="space-y-4">
             {/* Mobile Search */}
-            <div className="relative">
+            <div className="relative" ref={mobileSearchRef}>
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search resources..."
                 className="w-full bg-[#1a1a1a]/50 border border-[#A5C89E]/20 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#A5C89E]/40"
+                value={searchQuery}
+                onFocus={() => setShowMobileSuggestions(true)}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void handleSearchEnter();
+                  }
+                }}
               />
+              {showMobileSuggestions && searchQuery.trim().length > 0 ? (
+                <div className="navbar-search-suggestion-panel navbar-search-suggestion-panel-mobile">
+                  {searchSuggestions.length > 0 ? (
+                    searchSuggestions.map((item) => renderSuggestionItem(item))
+                  ) : (
+                    <div className="navbar-search-suggestion-empty">No quick matches</div>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             {/* Mobile Navigation Links */}
@@ -1197,6 +1508,110 @@ export function Navbar({
           </div>
         </div>
       )}
+
     </nav>
+    {isSearchModalOpen && (
+      <div className="navbar-search-modal-overlay" onClick={() => setIsSearchModalOpen(false)}>
+        <div className="navbar-search-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="navbar-search-modal-header">
+            <div className="navbar-search-modal-header-main">
+              <h3 className="navbar-search-modal-title">Results for "{searchQuery}"</h3>
+              <p className="navbar-search-modal-subtitle">{searchTotal} matches</p>
+            </div>
+            <button className="navbar-search-modal-close" onClick={() => setIsSearchModalOpen(false)}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="navbar-search-modal-tabs">
+            <button
+              className={`navbar-search-tab ${activeSearchTab === 'all' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveSearchTab('all');
+                setSearchPage(1);
+              }}
+            >
+              All ({searchCounts.all})
+            </button>
+            <button
+              className={`navbar-search-tab ${activeSearchTab === 'article' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveSearchTab('article');
+                setSearchPage(1);
+              }}
+            >
+              Articles ({searchCounts.articles})
+            </button>
+            <button
+              className={`navbar-search-tab ${activeSearchTab === 'course' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveSearchTab('course');
+                setSearchPage(1);
+              }}
+            >
+              Courses ({searchCounts.courses})
+            </button>
+            <button
+              className={`navbar-search-tab ${activeSearchTab === 'tutorial' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveSearchTab('tutorial');
+                setSearchPage(1);
+              }}
+            >
+              Tutorials ({searchCounts.tutorials})
+            </button>
+          </div>
+
+          <div className="navbar-search-modal-content">
+            {isSearchLoading ? (
+              <div className="navbar-search-modal-skeleton-list">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="navbar-search-modal-skeleton-card" />
+                ))}
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="navbar-search-empty-state">
+                <h4>No results found</h4>
+                <p>Try a different keyword or switch a category tab.</p>
+              </div>
+            ) : (
+              <div className="navbar-search-results-grid">
+                {searchResults.map((item) => renderSearchResultCard(item))}
+              </div>
+            )}
+          </div>
+
+          <div className="navbar-search-pagination">
+            <button
+              className="navbar-search-pagination-btn"
+              disabled={searchPage <= 1 || searchTotalPages === 0}
+              onClick={() => setSearchPage((prev) => Math.max(1, prev - 1))}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <div className="navbar-search-pagination-pages">
+              {visiblePages.map((pageNo) => (
+                <button
+                  key={pageNo}
+                  className={`navbar-search-page-pill ${pageNo === searchPage ? 'active' : ''}`}
+                  onClick={() => setSearchPage(pageNo)}
+                >
+                  {pageNo}
+                </button>
+              ))}
+            </div>
+            <button
+              className="navbar-search-pagination-btn"
+              disabled={searchPage >= searchTotalPages || searchTotalPages === 0}
+              onClick={() => setSearchPage((prev) => Math.min(searchTotalPages, prev + 1))}
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

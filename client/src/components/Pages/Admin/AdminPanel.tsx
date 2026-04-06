@@ -8,7 +8,6 @@ import {
   Check,
   ChevronLeft,
   FileText,
-  Filter,
   GraduationCap,
   LayoutDashboard,
   Menu,
@@ -16,7 +15,6 @@ import {
   Plus,
   RefreshCw,
   Save,
-  Search,
   ShieldCheck,
   Trash2,
   UserCheck,
@@ -1286,7 +1284,6 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             <div>
-              <p className="admin-label">Administrative Control</p>
               <h1 className="admin-heading">Learnova Admin</h1>
             </div>
           </div>
@@ -1297,7 +1294,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               Refresh
             </button>
             <button onClick={onBack} className="admin-btn admin-btn-danger">
-              Exit Panel
+              Exit
             </button>
           </div>
         </div>
@@ -1306,7 +1303,6 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       <aside className={`admin-sidebar ${isSidebarOpen ? 'admin-sidebar-open' : ''}`}>
         <div className="admin-sidebar-header">
           <ShieldCheck className="h-5 w-5 text-[var(--admin-accent)]" />
-          <span>Operations</span>
         </div>
         <nav className="admin-sidebar-nav">
           {MENU_ITEMS.map((item) => {
@@ -1339,17 +1335,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               <p className="admin-section-subtitle">Responsive moderation workspace with reusable dark components.</p>
             </div>
             {activeSection !== 'overview' && activeSection !== 'reports' && activeSection !== 'feedback' && activeSection !== 'tutorials' ? (
-              <div className="admin-search-wrap">
-                <Search className="admin-search-icon" />
+              <div className="min-w-[220px]">
                 <input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search"
                   className="admin-input"
                 />
-                <button className="admin-icon-btn" aria-label="Filter list">
-                  <Filter className="h-4 w-4" />
-                </button>
               </div>
             ) : null}
           </div>
@@ -1893,8 +1885,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   <div className="admin-editor-columns">
                     <div className="admin-surface admin-surface-padded">
                       <h4 className="admin-subheading">Article Search</h4>
-                      <div className="admin-search-wrap mt-3">
-                        <Search className="admin-search-icon" />
+                      <div className="mt-3">
                         <input
                           className="admin-input"
                           value={articleSearchQuery}
