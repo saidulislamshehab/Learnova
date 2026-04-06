@@ -25,6 +25,8 @@ Route::get('/articles', [ArticleController::class, 'index']);
 // Constrain {id} so it doesn't capture fixed routes like /articles/my
 Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('id');
 Route::get('/articles/{id}/comments', [ArticleController::class, 'comments'])->whereNumber('id');
+Route::get('/tutorials', [TutorialController::class, 'indexPublic']);
+Route::get('/tutorials/{id}', [TutorialController::class, 'showPublic'])->whereNumber('id');
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -93,6 +95,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/admin/tutorials', [TutorialController::class, 'store']);
         Route::get('/admin/tutorials/search-articles', [TutorialController::class, 'searchArticles']);
         Route::get('/admin/tutorials/{id}', [TutorialController::class, 'show']);
+        Route::delete('/admin/tutorials/{id}', [TutorialController::class, 'destroy']);
     });
 });
 

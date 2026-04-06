@@ -790,6 +790,29 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
+  const handleDeleteTutorial = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this tutorial? This action cannot be undone.')) {
+      return;
+    }
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+    try {
+      await axios.delete(`${API_BASE}/admin/tutorials/${id}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      alert('Tutorial deleted successfully!');
+      void fetchTutorials();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete tutorial');
+    }
+  };
+
   const handleAddArticleToTutorial = (article: any) => {
     const articleId = article.Article_ID || article.id;
     if (editingTutorial.articles.find((a: any) => (a.Article_ID || a.id) === articleId)) {
@@ -2558,6 +2581,12 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                                 className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                               >
                                 <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); void handleDeleteTutorial(tutorial.T_ID); }}
+                                className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </div>

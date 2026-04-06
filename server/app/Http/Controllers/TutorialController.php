@@ -108,4 +108,59 @@ class TutorialController extends Controller
             'tutorial' => $tutorial,
         ]);
     }
+    /**
+     * Delete a tutorial.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $tutorial = Tutorial::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            // Detach all articles first (clean the pivot table)
+            $tutorial->articles()->detach();
+            // Delete the tutorial
+            $tutorial->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Tutorial deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to delete tutorial: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Display a listing of published tutorials for the public.
+     */
+    public function indexPublic(): JsonResponse
+    {
+        $tutorials = Tutorial::where('Status', 'published')
+            ->withCount('articles')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'tutorials' => $tutorials,
+        ]);
+    }
+
+    /**
+     * Show a specific tutorial for public.
+     */
+    public function showPublic(int $id): JsonResponse
+    {
+        $tutorial = Tutorial::where('Status', 'published')
+            ->with(['articles' => function ($q) {
+                $q->with('user:id,name');
+            }])
+            ->findOrFail($id);
+
+        return response()->json([
+            'tutorial' => $tutorial,
+        ]);
+    }
 }
