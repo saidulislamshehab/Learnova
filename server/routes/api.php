@@ -37,6 +37,10 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/change-password', [AuthController::class, 'changePassword']);
     Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
 
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::put('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+
     Route::post('/expert-applications', [ExpertApplicationController::class, 'store']);
     Route::get('/expert-applications/my-status', [ExpertApplicationController::class, 'myStatus']);
     Route::post('/instructor-applications', [InstructorApplicationController::class, 'store']);
