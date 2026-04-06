@@ -1,9 +1,40 @@
-import { useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, ChevronRight, BookOpen, ArrowRight, Send, X, CheckCircle, Sparkles } from 'lucide-react';
+import axios from 'axios';
 
 interface ArticleDetailProps {
   onBack: () => void;
+}
+
+function timeAgo(input: string | number | Date): string {
+  const date = input instanceof Date ? input : new Date(input);
+  const ms = Date.now() - date.getTime();
+  if (!Number.isFinite(ms)) return '';
+
+  const sec = Math.floor(ms / 1000);
+  if (sec < 5) return 'just now';
+  if (sec < 60) return `${sec} seconds ago`;
+
+  const min = Math.floor(sec / 60);
+  if (min === 1) return '1 minute ago';
+  if (min < 60) return `${min} minutes ago`;
+
+  const hr = Math.floor(min / 60);
+  if (hr === 1) return '1 hour ago';
+  if (hr < 24) return `${hr} hours ago`;
+
+  const day = Math.floor(hr / 24);
+  if (day === 1) return '1 day ago';
+  if (day < 30) return `${day} days ago`;
+
+  const month = Math.floor(day / 30);
+  if (month === 1) return '1 month ago';
+  if (month < 12) return `${month} months ago`;
+
+  const year = Math.floor(month / 12);
+  if (year === 1) return '1 year ago';
+  return `${year} years ago`;
 }
 
 // Sample article data (in a real app, this would come from an API)
@@ -182,37 +213,23 @@ def _search_recursive(self, node, val):
 export function ArticleDetail({ onBack }: ArticleDetailProps) {
   const { id } = useParams<{ id: string }>();
   const articleId = parseInt(id || '1', 10);
+
+  const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dbArticle, setDbArticle] = useState<any | null>(null);
+  const [relatedFromDb, setRelatedFromDb] = useState<Array<{ id: number; title: string; excerpt: string; readTime: string }>>([]);
+  const [commentsFromDb, setCommentsFromDb] = useState<Array<{ id: number; userName: string; userAvatar: string; timestamp: string; text: string }>>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
   const commentsRef = useRef<HTMLDivElement>(null);
   
   // Comments state
-  const [isSignedIn, setIsSignedIn] = useState(true); // Toggle this to test both states
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(() => Boolean(localStorage.getItem('auth_token')));
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      userName: 'Alex Johnson',
-      userAvatar: '',
-      timestamp: '2 hours ago',
-      text: 'Great article! The explanation of BST operations is really clear and the code examples are super helpful.',
-    },
-    {
-      id: 2,
-      userName: 'Maria Garcia',
-      userAvatar: '',
-      timestamp: '5 hours ago',
-      text: 'I was struggling with understanding tree rotations, but this article made it so much clearer. Thank you!',
-    },
-    {
-      id: 3,
-      userName: 'David Lee',
-      userAvatar: '',
-      timestamp: '1 day ago',
-      text: 'The time complexity analysis section is excellent. Would love to see a follow-up article on self-balancing trees like AVL or Red-Black trees.',
-    },
-  ]);
+  const comments = commentsFromDb;
 
   // Report popup state
   const [showReportPopup, setShowReportPopup] = useState(false);
@@ -241,12 +258,138 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
     'How can I apply this in practice?',
   ];
 
-  const article = articleData[articleId] || articleData[1];
-  
-  // Initialize likes from article data
-  useState(() => {
+  useEffect(() => {
+    const fetchArticle = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(`${API_BASE}/articles/${articleId}`, {
+          headers: { Accept: 'application/json' },
+        });
+        setDbArticle(response.data?.article ?? null);
+      } catch (err: any) {
+        console.error(err);
+        setDbArticle(null);
+        setError('Failed to load article.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchRelated = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/articles`, {
+          headers: { Accept: 'application/json' },
+        });
+        const raw = response.data?.articles ?? [];
+        const listAll = (Array.isArray(raw) ? raw : [])
+          .map((a: any) => {
+            const idNum = Number(a.id ?? a.Article_ID);
+            const title = String(a.Title ?? a.title ?? 'Untitled Article');
+            const content = String(a.Content ?? a.content ?? '');
+            const readTime = String(a.Read_Time ?? a.read_time ?? '0 min read');
+            const tags = String(a.Tags ?? a.tags ?? '')
+              .split(',')
+              .map((t: string) => t.trim().toLowerCase())
+              .filter(Boolean);
+            const excerpt =
+              String(a.Excerpt ?? '').trim() ||
+              (content
+                ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90) +
+                  (content.length > 90 ? '...' : '')
+                : '');
+            return { id: idNum, title, excerpt, readTime, tags };
+          })
+          .filter((a: any) => Number.isFinite(a.id) && a.id !== articleId);
+
+        const currentTags = String(dbArticle?.Tags ?? dbArticle?.tags ?? '')
+          .split(',')
+          .map((t: string) => t.trim().toLowerCase())
+          .filter(Boolean);
+
+        const scored = listAll
+          .map((a: any) => {
+            const overlap = currentTags.length
+              ? a.tags.filter((t: string) => currentTags.includes(t)).length
+              : 0;
+            return { ...a, overlap };
+          })
+          .sort((a: any, b: any) => b.overlap - a.overlap)
+          .filter((a: any) => (currentTags.length ? a.overlap > 0 : true))
+          .slice(0, 3)
+          .map(({ id, title, excerpt, readTime }: any) => ({ id, title, excerpt, readTime }));
+
+        setRelatedFromDb(scored);
+      } catch {
+        setRelatedFromDb([]);
+      }
+    };
+
+    const fetchComments = async () => {
+      try {
+        setIsLoadingComments(true);
+        const response = await axios.get(`${API_BASE}/articles/${articleId}/comments`, {
+          headers: { Accept: 'application/json' },
+        });
+        const raw = response.data?.comments ?? [];
+        const list = (Array.isArray(raw) ? raw : []).map((c: any) => ({
+          id: Number(c.C_ID ?? c.id),
+          userName: String(c.user?.name ?? 'Unknown'),
+          userAvatar: String(c.user?.picture ?? ''),
+          timestamp: c.created_at ? timeAgo(c.created_at) : '',
+          text: String(c.Content ?? c.content ?? ''),
+        }));
+        setCommentsFromDb(list.filter((c: any) => Number.isFinite(c.id)));
+      } catch {
+        setCommentsFromDb([]);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
+    void fetchArticle();
+    void fetchRelated();
+    void fetchComments();
+  }, [API_BASE, articleId]);
+
+  const article = useMemo(() => {
+    if (!dbArticle) {
+      return articleData[articleId] || articleData[1];
+    }
+
+    const title = String(dbArticle.Title ?? dbArticle.title ?? 'Untitled Article');
+    const category = String(dbArticle.Category ?? dbArticle.category ?? 'General');
+    const readTime = String(dbArticle.Read_Time ?? dbArticle.read_time ?? '0 min read');
+    const updatedAt = dbArticle.updated_at ? timeAgo(dbArticle.updated_at) : '';
+    const author = String(dbArticle.user?.name ?? 'Unknown');
+    const authorRole = String(dbArticle.user?.role ?? 'Contributor');
+    const authorPicture = String(dbArticle.user?.picture ?? '');
+    const tags = String(dbArticle.Tags ?? dbArticle.tags ?? '')
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter(Boolean);
+    const contentHtml = String(dbArticle.Content ?? dbArticle.content ?? '');
+
+    return {
+      title,
+      category,
+      readTime,
+      lastUpdated: updatedAt || 'Recently',
+      author,
+      authorRole,
+      authorPicture,
+      likes: Number(dbArticle.Reaction ?? dbArticle.reaction ?? 0) || 0,
+      comments: 0,
+      tags: tags.length ? tags : ['Learnova'],
+      contentHtml,
+      relatedArticles: relatedFromDb.length ? relatedFromDb : (articleData[1]?.relatedArticles ?? []),
+    };
+  }, [dbArticle, articleId, relatedFromDb]);
+
+  useEffect(() => {
     setLikes(article.likes);
-  });
+    setIsLiked(false);
+  }, [article.likes, articleId]);
 
   const handleLike = () => {
     if (isLiked) {
@@ -263,17 +406,39 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
   };
 
   const handlePostComment = () => {
-    if (newComment.trim()) {
-      const comment = {
-        id: comments.length + 1,
-        userName: 'You',
-        userAvatar: '',
-        timestamp: 'Just now',
-        text: newComment,
-      };
-      setComments([comment, ...comments]);
-      setNewComment('');
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setIsSignedIn(false);
+      alert('Please sign in to comment.');
+      return;
     }
+
+    if (!newComment.trim()) return;
+
+    void axios
+      .post(
+        `${API_BASE}/articles/${articleId}/comments`,
+        { content: newComment.trim() },
+        { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } }
+      )
+      .then((response) => {
+        const c = response.data?.comment;
+        if (c) {
+          const created = {
+            id: Number(c.C_ID ?? c.id),
+            userName: String(c.user?.name ?? 'You'),
+            userAvatar: String(c.user?.picture ?? ''),
+            timestamp: c.created_at ? timeAgo(c.created_at) : 'just now',
+            text: String(c.Content ?? c.content ?? newComment.trim()),
+          };
+          setCommentsFromDb((prev) => [...prev, created]);
+        }
+        setNewComment('');
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err?.response?.data?.message || 'Failed to post comment.');
+      });
   };
 
   const handleSignIn = () => {
@@ -306,11 +471,36 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
   };
 
   const handleReportSubmit = () => {
-    // Submit report logic here
-    setReportStep('success');
-    setTimeout(() => {
-      handleCloseReport();
-    }, 2000);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setIsSignedIn(false);
+      alert('Please sign in to report an article.');
+      return;
+    }
+
+    if (!selectedReportType) {
+      return;
+    }
+
+    void axios
+      .post(
+        `${API_BASE}/articles/${articleId}/report`,
+        {
+          report_type: selectedReportType,
+          description: reportReason.trim() || null,
+        },
+        { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } }
+      )
+      .then(() => {
+        setReportStep('success');
+        setTimeout(() => {
+          handleCloseReport();
+        }, 2000);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err?.response?.data?.message || 'Failed to submit report.');
+      });
   };
 
   const handleShare = () => {
@@ -423,9 +613,18 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
             <div className="flex items-center space-x-4">
               {/* Author */}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-[#A5C89E]/90" />
-                </div>
+                {Boolean((article as any).authorPicture) ? (
+                  <img
+                    src={(article as any).authorPicture}
+                    alt={article.author}
+                    className="w-10 h-10 rounded-full object-cover border border-[#A5C89E]/30"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-[#A5C89E]/90" />
+                  </div>
+                )}
                 <div>
                   <div className="text-sm font-medium text-white">{article.author}</div>
                   <div className="text-xs text-gray-500">{article.authorRole}</div>
@@ -464,7 +663,7 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
                 className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-[#121212]/80 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 transition-all"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">{article.comments}</span>
+                <span className="text-sm font-medium">{comments.length}</span>
               </button>
 
               <button
@@ -486,54 +685,27 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
 
         {/* Article Content */}
         <div className="prose prose-invert max-w-none mb-16">
-          {article.content.map((block, index) => {
-            if (block.type === 'heading') {
-              return (
-                <h2 key={index} className="text-2xl font-bold text-white mt-12 mb-4 flex items-center">
-                  <ChevronRight className="w-5 h-5 text-[#A5C89E]/80 mr-2" />
-                  {block.content as string}
-                </h2>
-              );
-            }
-
-            if (block.type === 'paragraph') {
-              return (
-                <p key={index} className="text-gray-300 leading-relaxed mb-6 text-base">
-                  {block.content as string}
-                </p>
-              );
-            }
-
-            if (block.type === 'code') {
-              return (
-                <div key={index} className="my-6 bg-[#0b0b0b]/80 border border-[#A5C89E]/20 rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 bg-[#121212]/60 border-b border-[#A5C89E]/10">
-                    <span className="text-xs font-mono text-gray-500 uppercase">{block.language || 'code'}</span>
-                  </div>
-                  <pre className="p-4 overflow-x-auto">
-                    <code className="text-sm font-mono text-gray-300 leading-relaxed">
-                      {block.content as string}
-                    </code>
-                  </pre>
-                </div>
-              );
-            }
-
-            if (block.type === 'list') {
-              return (
-                <ul key={index} className="space-y-3 mb-6 ml-4">
-                  {(block.content as string[]).map((item, i) => (
-                    <li key={i} className="text-gray-300 flex items-start">
-                      <span className="text-[#A5C89E]/80 mr-3 mt-1.5">•</span>
-                      <span className="flex-1">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              );
-            }
-
-            return null;
-          })}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 space-y-4">
+              <div className="relative w-16 h-16">
+                <div className="absolute inset-0 border-4 border-[#A5C89E]/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <p className="text-[#A5C89E] font-medium animate-pulse">Fetching article...</p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
+              <BookOpen className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-400 font-medium">{error}</p>
+            </div>
+          ) : (article as any).contentHtml ? (
+            <div
+              className="text-gray-300 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: (article as any).contentHtml }}
+            />
+          ) : (
+            <p className="text-gray-500">No content available.</p>
+          )}
         </div>
 
         {/* Tags Section */}
@@ -648,15 +820,29 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
           )}
 
           {/* Comments List */}
-          {comments.length > 0 ? (
+          {isLoadingComments ? (
+            <div className="py-12 text-center">
+              <MessageCircle className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">Loading comments...</p>
+            </div>
+          ) : comments.length > 0 ? (
             <div className="space-y-6">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-4 py-1">
                   {/* User Avatar */}
                   <div className="flex-shrink-0 mt-1">
-                    <div className="w-9 h-9 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                      <User className="w-4.5 h-4.5 text-[#A5C89E]/90" />
-                    </div>
+                    {comment.userAvatar ? (
+                      <img
+                        src={comment.userAvatar}
+                        alt={comment.userName}
+                        className="w-9 h-9 rounded-full object-cover border border-[#A5C89E]/30"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
+                        <User className="w-4.5 h-4.5 text-[#A5C89E]/90" />
+                      </div>
+                    )}
                   </div>
                   
                   {/* Comment Content */}

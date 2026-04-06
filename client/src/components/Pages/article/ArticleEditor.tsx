@@ -29,6 +29,7 @@ import {
   AlignRight,
 } from 'lucide-react';
 import { Article } from './MyArticles';
+import axios from 'axios';
 
 interface ArticleEditorProps {
   onMyArticles?: () => void;
@@ -38,9 +39,10 @@ interface ArticleEditorProps {
 export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorProps) {
   const [title, setTitle] = useState(existingArticle?.title || '');
   const [content, setContent] = useState(existingArticle?.content || '');
-  const [status, setStatus] = useState<'draft' | 'published' | 'pending'>(
+  const [status, setStatus] = useState<'draft' | 'published' | 'pending' | 'rejected'>(
     existingArticle?.status || 'draft'
   );
+  const [category, setCategory] = useState(existingArticle?.category || 'Web Development');
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -83,23 +85,71 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
 
   // Load existing article content into editor
   useEffect(() => {
-    if (existingArticle && editorRef.current) {
-      editorRef.current.innerHTML = existingArticle.content;
+    if (existingArticle) {
+      if (editorRef.current) {
+        editorRef.current.innerHTML = existingArticle.content;
+      }
       setContent(existingArticle.content);
+      if (existingArticle.tags) {
+        setSelectedTags(existingArticle.tags.split(','));
+      }
+      if (existingArticle.category) {
+        setCategory(existingArticle.category);
+      }
     }
   }, [existingArticle]);
 
-  const handleSave = () => {
-    setIsSaving(true);
-    // Simulate save
-    setTimeout(() => {
-      setIsSaving(false);
-      setStatus('draft');
-      alert('Article saved as draft!');
-    }, 1000);
+  const calculateReadTime = (htmlContent: string) => {
+    const text = htmlContent.replace(/<[^>]*>/g, ' '); // Strip HTML tags
+    const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+    const wordCount = words.length;
+    const wpm = 200; // Words per minute
+    const minutes = Math.ceil(wordCount / wpm);
+    return `${minutes} min read`;
   };
 
-  const handlePublish = () => {
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert('Please enter a title');
+      return;
+    }
+    
+    setIsSaving(true);
+    const token = localStorage.getItem('auth_token');
+    const readTime = calculateReadTime(content);
+    
+    try {
+      const payload = {
+        title,
+        content,
+        category,
+        tags: selectedTags.join(','),
+        status: 'draft',
+        read_time: readTime,
+      };
+
+      if (existingArticle) {
+        await axios.put(`http://${window.location.hostname}:8000/api/articles/${existingArticle.id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        await axios.post(`http://${window.location.hostname}:8000/api/articles`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      
+      setStatus('draft');
+      alert('Article saved as draft!');
+      onMyArticles?.();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save article.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
     if (!title.trim()) {
       alert('Please enter a title for your article');
       return;
@@ -110,21 +160,67 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
     }
     
     setIsPublishing(true);
-    // Simulate publish
-    setTimeout(() => {
+    const token = localStorage.getItem('auth_token');
+    const readTime = calculateReadTime(content);
+
+    try {
+      const payload = {
+        title,
+        content,
+        category,
+        tags: selectedTags.join(','),
+        status: 'pending',
+        read_time: readTime,
+      };
+
+      if (existingArticle) {
+        await axios.put(`http://${window.location.hostname}:8000/api/articles/${existingArticle.id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        await axios.post(`http://${window.location.hostname}:8000/api/articles`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+
+      setStatus('pending');
+      alert('Article submitted for review!');
+      onMyArticles?.();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to publish article.');
+    } finally {
       setIsPublishing(false);
-      setStatus('published');
-      alert('Article published successfully!');
-    }, 1500);
+    }
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     setIsSaving(true);
-    // Simulate update
-    setTimeout(() => {
-      setIsSaving(false);
+    const token = localStorage.getItem('auth_token');
+    const readTime = calculateReadTime(content);
+
+    try {
+      const payload = {
+        title,
+        content,
+        category,
+        tags: selectedTags.join(','),
+        status: status, // Keep current status
+        read_time: readTime,
+      };
+
+      await axios.put(`http://${window.location.hostname}:8000/api/articles/${existingArticle!.id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
       alert('Article updated successfully!');
-    }, 1000);
+      onMyArticles?.();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update article.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getStatusBadge = () => {
@@ -149,6 +245,13 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
         bgColor: 'bg-yellow-500/20',
         textColor: 'text-yellow-400',
         borderColor: 'border-yellow-500/30',
+      },
+      rejected: {
+        label: 'Rejected',
+        icon: X,
+        bgColor: 'bg-red-500/20',
+        textColor: 'text-red-400',
+        borderColor: 'border-red-500/30',
       },
     };
 
@@ -417,10 +520,31 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           </div>
         </div>
 
+        {/* Category Section */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-400 mb-2">
+            Article Category <span className="text-[#A5C89E]">*</span>
+          </label>
+          <div className="relative">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white appearance-none focus:outline-none focus:border-[#A5C89E]/60 transition-all cursor-pointer"
+            >
+              {predefinedCategories.map(cat => (
+                <option key={cat} value={cat} className="bg-[#121212]">{cat}</option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <Plus className="w-4 h-4 text-gray-500 rotate-45" />
+            </div>
+          </div>
+        </div>
+
         {/* Tags Section */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-400 mb-2">
-            Categories & Tags
+            Tags
           </label>
           
           {/* Selected Tags Display */}

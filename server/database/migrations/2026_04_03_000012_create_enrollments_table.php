@@ -7,21 +7,22 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        if (Schema::hasTable('enrollments')) {
-            return;
-        }
+        Schema::dropIfExists('enrollments');
+        
         Schema::create('enrollments', function (Blueprint $table) {
-            $table->id('EnrollmentID');
+            $table->id();
             $table->unsignedBigInteger('UserID');
             $table->unsignedBigInteger('CourseID');
+            $table->string('Payment_Method', 20)->nullable();
             $table->decimal('Amount_Paid', 8, 2);
+            $table->dateTime('Enrolled_At')->useCurrent();
             $table->unsignedTinyInteger('Progress_Percent')->default(0);
-            $table->unsignedInteger('Completed_Lessons')->default(0);
-            $table->timestamp('Last_Accessed_At')->nullable();
+            $table->integer('Completed_Lessons')->default(0);
+            $table->dateTime('Last_Accessed_At')->nullable();
             $table->timestamps();
 
             $table->foreign('UserID')->references('id')->on('users')->onDelete('cascade');
-            $table->index('CourseID');
+            $table->foreign('CourseID')->references('CourseID')->on('courses')->onDelete('cascade');
         });
     }
 

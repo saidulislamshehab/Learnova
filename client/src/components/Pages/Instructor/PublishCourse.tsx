@@ -51,6 +51,8 @@ interface ApiCourse {
 }
 
 const API_BASE = `http://${window.location.hostname}:8000/api`;
+const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/dp1li5tkd/image/upload';
+const CLOUDINARY_COURSE_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_COURSE;
 
 const courseCategories = [
   { id: 1, label: 'Web Development' },
@@ -126,6 +128,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoadingCourse, setIsLoadingCourse] = useState(false);
+  const [courseStatus, setCourseStatus] = useState<string>('draft');
 
   useEffect(() => {
     if (!editMode || !editCourseId) {
@@ -152,6 +155,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
         const resolvedCourseId = String(course.CourseID ?? '');
 
         setCourseTitle(course.Title ?? '');
+        setCourseStatus(course.Status ?? 'draft');
         setCategoryId(course.category_id ? String(course.category_id) : '');
         setShortDescription(course.Description ?? '');
         setOverview(course.Overview ?? '');
@@ -210,7 +214,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
     setContentItems(contentItems.filter((contentItem) => contentItem.id !== contentItemId));
   };
 
-  const buildCoursePayload = (status: 'draft' | 'pending') => {
+  const buildCoursePayload = (status: 'draft' | 'pending', uploadedThumbnailUrl?: string | null) => {
     const categoryName = courseCategories.find((item) => String(item.id) === categoryId)?.label ?? '';
     const cleanedContentItems = contentItems
       .map((item) => ({
@@ -260,7 +264,9 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
       )
     );
 
-    if (thumbnailFile) {
+    if (uploadedThumbnailUrl) {
+      formData.append('thumbnail', uploadedThumbnailUrl);
+    } else if (thumbnailFile) {
       formData.append('thumbnail', thumbnailFile);
     }
 
@@ -285,8 +291,32 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
         setIsPublishing(true);
       }
 
+      // Handle Cloudinary upload if preset exists and we have a new file
+      let uploadedUrl: string | null = null;
+      if (thumbnailFile && CLOUDINARY_COURSE_PRESET) {
+        try {
+          const cloudinaryFormData = new FormData();
+          cloudinaryFormData.append('file', thumbnailFile);
+          cloudinaryFormData.append('upload_preset', CLOUDINARY_COURSE_PRESET);
+
+          const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+            method: 'POST',
+            body: cloudinaryFormData,
+          });
+
+          if (!response.ok) {
+            throw new Error('Thumbnail upload failed.');
+          }
+
+          const data = await response.json();
+          uploadedUrl = data.secure_url;
+        } catch (err) {
+          throw new Error('Failed to upload thumbnail to Cloudinary.');
+        }
+      }
+
       const backendStatus = status === 'published' ? 'pending' : 'draft';
-      const formData = buildCoursePayload(backendStatus);
+      const formData = buildCoursePayload(backendStatus, uploadedUrl);
       const method = editMode && editCourseId ? 'post' : 'post';
       const endpoint = editMode && editCourseId ? `${API_BASE}/courses/${editCourseId}` : `${API_BASE}/courses`;
 
@@ -397,7 +427,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
         <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-6 sm:p-8 mb-6">
           <h2 className="text-xl font-bold text-white mb-6">Course Details</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Total Course Time */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
@@ -428,6 +458,27 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="49.99"
+                  min="0"
+                  step="0.01"
+                  className="w-full pl-8 pr-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Old Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Old Price
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={oldPrice}
+                  onChange={(e) => setOldPrice(e.target.value)}
+                  placeholder="99.99"
                   min="0"
                   step="0.01"
                   className="w-full pl-8 pr-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
@@ -594,26 +645,41 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
         {/* Bottom Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
-          <button
-            onClick={() => {
-              void submitCourse('draft');
-            }}
-            disabled={isSaving}
-            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 text-gray-300 rounded-lg hover:border-[#A5C89E]/50 hover:text-[#A5C89E] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save as Draft'}
-          </button>
-          <button
-            onClick={() => {
-              void submitCourse('published');
-            }}
-            disabled={isPublishing}
-            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-[#A5C89E]/80 text-black rounded-lg hover:bg-[#A5C89E] transition-all font-medium hover:shadow-lg hover:shadow-[#A5C89E]/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send className="w-4 h-4 mr-2" />
-            {isPublishing ? 'Publishing...' : 'Publish Course'}
-          </button>
+          {editMode && courseStatus === 'published' ? (
+            <button
+              onClick={() => {
+                void submitCourse('published');
+              }}
+              disabled={isPublishing}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-12 py-3 bg-[#A5C89E]/80 text-black rounded-lg hover:bg-[#A5C89E] transition-all font-bold hover:shadow-lg hover:shadow-[#A5C89E]/20 disabled:opacity-50 disabled:cursor-not-allowed group uppercase tracking-widest text-xs"
+            >
+              <Save className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+              {isPublishing ? 'UPDATING...' : 'SAVE_CHANGES'}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  void submitCourse('draft');
+                }}
+                disabled={isSaving}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 text-gray-300 rounded-lg hover:border-[#A5C89E]/50 hover:text-[#A5C89E] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isSaving ? 'Saving...' : 'Save as Draft'}
+              </button>
+              <button
+                onClick={() => {
+                  void submitCourse('published');
+                }}
+                disabled={isPublishing}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-[#A5C89E]/80 text-black rounded-lg hover:bg-[#A5C89E] transition-all font-medium hover:shadow-lg hover:shadow-[#A5C89E]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {isPublishing ? 'Publishing...' : 'Publish Course'}
+              </button>
+            </>
+          )}
         </div>
 
         {/* Helper Tips */}

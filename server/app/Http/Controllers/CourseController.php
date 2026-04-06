@@ -24,6 +24,35 @@ class CourseController extends Controller
         ]);
     }
 
+    public function indexPublic(Request $request): JsonResponse
+    {
+        $courses = Course::query()
+            ->with('user:id,name,picture')
+            ->where('Status', 'published')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'courses' => $courses,
+        ]);
+    }
+
+    public function topPublished(Request $request): JsonResponse
+    {
+        $courses = Course::query()
+            ->with('user:id,name,picture')
+            ->withCount('enrollments')
+            ->where('Status', 'published')
+            ->orderByDesc('enrollments_count')
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get();
+
+        return response()->json([
+            'courses' => $courses,
+        ]);
+    }
+
     public function indexMyCourses(Request $request): JsonResponse
     {
         $courses = Course::query()
@@ -40,17 +69,8 @@ class CourseController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $course = Course::query()
-            ->with('contents')
+            ->with(['contents', 'user:id,name,picture'])
             ->findOrFail($id);
-
-        $isOwner = (int) $course->UserID === (int) $request->user()->id;
-        $isAdmin = (string) ($request->user()->role ?? '') === 'admin';
-
-        if (!$isOwner && !$isAdmin) {
-            return response()->json([
-                'message' => 'You are not allowed to view this course.',
-            ], 403);
-        }
 
         return response()->json([
             'course' => $course,
@@ -77,9 +97,10 @@ class CourseController extends Controller
         }
 
         $course = DB::transaction(function () use ($request, $validated, $contents) {
-            $thumbnailPath = null;
+            $thumbnailUrl = $validated['thumbnail'] ?? null;
             if ($request->hasFile('thumbnail')) {
                 $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
+                $thumbnailUrl = Storage::url($thumbnailPath);
             }
 
             $course = Course::create([
@@ -88,7 +109,7 @@ class CourseController extends Controller
                 'Category' => $validated['category_name'] ?? (string) $validated['category_id'],
                 'Description' => $validated['short_description'],
                 'Overview' => $validated['overview'],
-                'Thumbnail' => $thumbnailPath ? Storage::url($thumbnailPath) : null,
+                'Thumbnail' => $thumbnailUrl,
                 'Total_Hours' => $validated['duration'],
                 'Price' => $validated['price'],
                 'Old_Price' => $validated['old_price'] ?? null,
@@ -144,11 +165,21 @@ class CourseController extends Controller
         }
 
         $updatedCourse = DB::transaction(function () use ($request, $validated, $course, $contents) {
-            $thumbnailUrl = $course->thumbnail ?? $course->Thumbnail;
+            $thumbnailUrl = $course->Thumbnail;
+            
+            // If the thumbnail field exists and is a URL string
+            if (isset($validated['thumbnail']) && is_string($validated['thumbnail']) && str_starts_with($validated['thumbnail'], 'http')) {
+                $thumbnailUrl = $validated['thumbnail'];
+            }
 
             if ($request->hasFile('thumbnail')) {
                 $newPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
                 $thumbnailUrl = Storage::url($newPath);
+            }
+
+            $newStatus = $validated['status'] ?? 'draft';
+            if ($course->Status === 'published') {
+                $newStatus = 'published';
             }
 
             $course->update([
@@ -160,7 +191,7 @@ class CourseController extends Controller
                 'Total_Hours' => $validated['duration'],
                 'Price' => $validated['price'],
                 'Old_Price' => $validated['old_price'] ?? null,
-                'Status' => $validated['status'] ?? 'draft',
+                'Status' => $newStatus,
                 'category_id' => $validated['category_id'],
             ]);
 
@@ -237,7 +268,7 @@ class CourseController extends Controller
             'duration' => ['nullable', 'numeric', 'min:0'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'old_price' => ['nullable', 'numeric', 'min:0'],
-            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'thumbnail' => ['nullable', 'max:5120'],
             'status' => ['nullable', Rule::in(['draft', 'pending', 'published'])],
             'course_contents' => ['required'],
         ]);

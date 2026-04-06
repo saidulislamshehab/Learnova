@@ -1,0 +1,15 @@
+{
+  "name": "learnova-root",
+  "private": true,
+  "scripts": {
+    "start:frontend": "npm --prefix client run dev",
+    "start:backend": "cd server && php artisan serve --host=0.0.0.0",
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "build:frontend": "npm --prefix client run build",
+    "copy:frontend": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force -Path 'server/public/build' | Out-Null; Copy-Item -Path 'client/dist/*' -Destination 'server/public/build' -Recurse -Force\"",
+    "build:prod": "npm run build:frontend && npm run copy:frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -35,8 +35,6 @@ interface AdminPanelProps {
 type ActiveSection =
   | 'overview'
   | 'users'
-  | 'experts'
-  | 'instructors'
   | 'instructor-applications'
   | 'expert-applications'
   | 'articles-approval'
@@ -52,9 +50,7 @@ type DetailView =
   | { type: 'instructor-app'; id: string }
   | { type: 'expert-app'; id: string }
   | { type: 'article'; id: string }
-  | { type: 'course'; id: string }
-  | { type: 'instructor-profile'; id: string }
-  | { type: 'expert-profile'; id: string };
+  | { type: 'course'; id: string };
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const API_BASE = `http://${window.location.hostname}:8000/api`;
@@ -95,6 +91,14 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [adminCourseApprovals, setAdminCourseApprovals] = useState<any[]>([]);
   const [isLoadingCourseApprovals, setIsLoadingCourseApprovals] = useState(false);
   const [courseApprovalsError, setCourseApprovalsError] = useState<string | null>(null);
+  const [pendingArticles, setPendingArticles] = useState<any[]>([]);
+  const [isLoadingPendingArticles, setIsLoadingPendingArticles] = useState(false);
+  const [pendingArticlesError, setPendingArticlesError] = useState<string | null>(null);
+  const [adminReports, setAdminReports] = useState<any[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
+  const [reviewArticle, setReviewArticle] = useState<any | null>(null);
+  const [isLoadingReviewArticle, setIsLoadingReviewArticle] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -154,8 +158,6 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const menuItems = [
     { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'instructors', label: 'Instructors', icon: GraduationCap },
-    { id: 'experts', label: 'Experts', icon: Award },
     { id: 'instructor-applications', label: 'Instructor Applications', icon: UserPlus },
     { id: 'expert-applications', label: 'Expert Applications', icon: UserCheck },
     { id: 'articles-approval', label: 'Articles Approval', icon: FileText },
@@ -421,6 +423,88 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
+  const fetchPendingArticles = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setPendingArticles([]);
+      setPendingArticlesError('Please sign in as admin to view pending articles.');
+      return;
+    }
+
+    try {
+      setIsLoadingPendingArticles(true);
+      setPendingArticlesError(null);
+      const response = await axios.get(`${API_BASE}/admin/articles/pending`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawArticles = response.data?.articles ?? response.data?.data ?? [];
+      const list = (Array.isArray(rawArticles) ? rawArticles : []).map((item: any) => ({
+        id: String(item.id ?? item.Article_ID),
+        title: item.Title ?? item.title ?? 'Untitled Article',
+        author: item.user?.name ?? 'Unknown',
+        category: item.Category ?? item.category ?? 'General',
+        submittedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.Status ?? item.status ?? 'pending',
+        content: item.Content ?? item.content ?? '',
+      }));
+
+      setPendingArticles(list);
+    } catch (error: any) {
+      setPendingArticles([]);
+      setPendingArticlesError(error?.response?.data?.message || 'Failed to load pending articles.');
+    } finally {
+      setIsLoadingPendingArticles(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setAdminReports([]);
+      setReportsError('Please sign in as admin to view article reports.');
+      return;
+    }
+
+    try {
+      setIsLoadingReports(true);
+      setReportsError(null);
+      const response = await axios.get(`${API_BASE}/admin/reports`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawReports = response.data?.reports ?? response.data?.data ?? [];
+      const list = (Array.isArray(rawReports) ? rawReports : []).map((item: any) => ({
+        id: String(item.R_ID ?? item.id),
+        articleId: String(item.Article_ID ?? item.article_id ?? ''),
+        articleTitle: item.article?.Title ?? item.article?.title ?? 'Unknown Article',
+        reportType: item.Report_Type ?? item.report_type ?? 'Unknown',
+        description: item.Description ?? item.description ?? '',
+        reportedBy: item.user?.name ?? 'Unknown',
+        reportedAt: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status:
+          String(item.Status ?? item.status ?? 'pending') === 'under_review'
+            ? 'Under Review'
+            : String(item.Status ?? item.status ?? 'pending') === 'resolved'
+              ? 'Resolved'
+              : 'Pending',
+      }));
+
+      setAdminReports(list);
+    } catch (error: any) {
+      setAdminReports([]);
+      setReportsError(error?.response?.data?.message || 'Failed to load article reports.');
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
   const handleCreateUser = async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -483,38 +567,21 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     if (activeSection === 'courses-approval') {
       void fetchCourseApprovals();
     }
+
+    if (activeSection === 'articles-approval') {
+      void fetchPendingArticles();
+    }
+
+    if (activeSection === 'reports') {
+      void fetchReports();
+    }
   }, [activeSection]);
 
   useEffect(() => {
     setSearchQuery('');
   }, [activeSection]);
 
-  const pendingArticles = [
-    {
-      id: '1',
-      title: 'Introduction to React Hooks',
-      author: 'Sarah Williams',
-      category: 'Development',
-      submittedDate: '2026-01-20',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      title: 'Understanding Neural Networks',
-      author: 'Dr. Emily Wilson',
-      category: 'AI / ML',
-      submittedDate: '2026-01-19',
-      status: 'Pending',
-    },
-    {
-      id: '3',
-      title: 'Advanced Data Structures',
-      author: 'Prof. John Smith',
-      category: 'DSA',
-      submittedDate: '2026-01-18',
-      status: 'Pending',
-    },
-  ];
+  // pendingArticles are fetched from the backend when the Articles Approval section is active
 
   const pendingCourses = [
     {
@@ -535,51 +602,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     },
   ];
 
-  const instructors = [
-    {
-      id: '1',
-      name: 'Sarah Williams',
-      email: 'sarah.williams@email.com',
-      courses: 12,
-      students: 3420,
-      rating: 4.8,
-    },
-    {
-      id: '2',
-      name: 'James Brown',
-      email: 'james.brown@email.com',
-      courses: 8,
-      students: 2150,
-      rating: 4.6,
-    },
-    {
-      id: '3',
-      name: 'David Martinez',
-      email: 'david.m@email.com',
-      courses: 5,
-      students: 890,
-      rating: 4.9,
-    },
-  ];
 
-  const experts = [
-    {
-      id: '1',
-      name: 'Dr. Emily Wilson',
-      email: 'emily.w@email.com',
-      articles: 45,
-      followers: 12500,
-      rating: 4.9,
-    },
-    {
-      id: '2',
-      name: 'Prof. John Smith',
-      email: 'john.s@email.com',
-      articles: 38,
-      followers: 9800,
-      rating: 4.7,
-    },
-  ];
 
   const feedbackEntries = [
     {
@@ -608,88 +631,31 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     },
   ];
 
-  const articleReports = [
-    {
-      id: '1',
-      articleId: 'ART-001',
-      articleTitle: 'Getting Started with React Hooks',
-      reportType: 'Inappropriate Content',
-      description: 'This article contains misleading information about React Hooks lifecycle methods. The examples shown are outdated and could confuse beginners.',
-      reportedBy: 'Sarah Miller',
-      reportedAt: '2026-01-23',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      articleId: 'ART-002',
-      articleTitle: 'Understanding TypeScript Generics',
-      reportType: 'Technical Inaccuracy',
-      description: 'The code example in section 3 has syntax errors and doesn\'t compile. The generic constraints are incorrectly implemented.',
-      reportedBy: 'David Chen',
-      reportedAt: '2026-01-23',
-      status: 'Pending',
-    },
-    {
-      id: '3',
-      articleId: 'ART-004',
-      articleTitle: 'Building Scalable Node.js Applications',
-      reportType: 'Plagiarism',
-      description: 'Content appears to be copied from another source without proper attribution. Large sections match verbatim from a Medium article.',
-      reportedBy: 'Emily Rodriguez',
-      reportedAt: '2026-01-22',
-      status: 'Under Review',
-    },
-    {
-      id: '4',
-      articleId: 'ART-004',
-      articleTitle: 'Building Scalable Node.js Applications',
-      reportType: 'Outdated Information',
-      description: 'The article references deprecated Node.js APIs that are no longer supported in v18+. This could mislead developers.',
-      reportedBy: 'Michael Johnson',
-      reportedAt: '2026-01-22',
-      status: 'Pending',
-    },
-    {
-      id: '5',
-      articleId: 'ART-001',
-      articleTitle: 'Getting Started with React Hooks',
-      reportType: 'Spam',
-      description: 'Multiple promotional links without proper context. The article seems to be promoting a paid course rather than providing educational content.',
-      reportedBy: 'Jennifer Wang',
-      reportedAt: '2026-01-21',
-      status: 'Resolved',
-    },
-    {
-      id: '6',
-      articleId: 'ART-007',
-      articleTitle: 'CSS Grid Layout Mastery',
-      reportType: 'Broken Code Examples',
-      description: 'All code examples in the article are missing CSS properties and don\'t render correctly when tested.',
-      reportedBy: 'Alex Thompson',
-      reportedAt: '2026-01-21',
-      status: 'Under Review',
-    },
-    {
-      id: '7',
-      articleId: 'ART-009',
-      articleTitle: 'Advanced Python Decorators',
-      reportType: 'Misleading Title',
-      description: 'The article title promises advanced content but only covers basic decorator concepts. This is misleading for intermediate/advanced users.',
-      reportedBy: 'Lisa Anderson',
-      reportedAt: '2026-01-20',
-      status: 'Pending',
-    },
-    {
-      id: '8',
-      articleId: 'ART-002',
-      articleTitle: 'Understanding TypeScript Generics',
-      reportType: 'Inappropriate Content',
-      description: 'Contains offensive language in the comments section that hasn\'t been moderated.',
-      reportedBy: 'Robert Kim',
-      reportedAt: '2026-01-20',
-      status: 'Resolved',
-    },
-  ];
+  const articleReports = adminReports;
+
+  const updateReportStatus = async (id: string, status: 'pending' | 'under_review' | 'resolved') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API_BASE}/admin/reports/${id}`,
+        { status },
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      await fetchReports();
+    } catch (error: any) {
+      alert(error?.response?.data?.message || 'Failed to update report status.');
+    }
+  };
 
   const handleApprove = (type: string, id: string) => {
     if (type === 'course') {
@@ -772,6 +738,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         })
         .catch((error) => {
           alert(error?.response?.data?.message || 'Failed to approve application');
+        });
+      return;
+    }
+
+    if (type === 'article') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/articles/${id}`,
+          { status: 'published' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Approved ${type} #${id}`);
+          void fetchPendingArticles();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve article');
         });
       return;
     }
@@ -864,6 +858,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       return;
     }
 
+    if (type === 'article') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/articles/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Rejected ${type} #${id}`);
+          void fetchPendingArticles();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject article');
+        });
+      return;
+    }
+
     alert(`Rejected ${type} #${id}`);
   };
 
@@ -908,13 +930,59 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     setDetailView(view);
   };
 
+  const handleReviewReportedArticle = async (articleId: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    try {
+      setIsLoadingReviewArticle(true);
+      const existingArticle = pendingArticles.find((article) => article.id === articleId);
+      if (existingArticle) {
+        setReviewArticle(existingArticle);
+        handleViewDetails({ type: 'article', id: articleId });
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE}/articles/${articleId}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawArticle = response.data?.article ?? null;
+      if (rawArticle) {
+        setReviewArticle({
+          id: String(rawArticle.id ?? rawArticle.Article_ID ?? articleId),
+          title: rawArticle.Title ?? rawArticle.title ?? 'Untitled Article',
+          author: rawArticle.user?.name ?? 'Unknown',
+          category: rawArticle.Category ?? rawArticle.category ?? 'General',
+          submittedDate: rawArticle.created_at ? new Date(rawArticle.created_at).toLocaleDateString() : 'N/A',
+          status: rawArticle.Status ?? rawArticle.status ?? 'published',
+          content: rawArticle.Content ?? rawArticle.content ?? '',
+        });
+      } else {
+        setReviewArticle(null);
+      }
+      handleViewDetails({ type: 'article', id: articleId });
+    } catch (error: any) {
+      alert(error?.response?.data?.message || 'Failed to load article for review.');
+    } finally {
+      setIsLoadingReviewArticle(false);
+    }
+  };
+
   const handleBackToList = () => {
     setDetailView({ type: 'none' });
+    setReviewArticle(null);
   };
 
   // Render detail views
   if (detailView.type === 'article' && detailView.id) {
-    const article = pendingArticles.find((a) => a.id === detailView.id);
+    const article = pendingArticles.find((a) => a.id === detailView.id) || reviewArticle;
     if (article) {
       return (
         <div className="min-h-screen bg-[#0b0b0b] text-white">
@@ -958,6 +1026,11 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
             <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
+              {isLoadingReviewArticle ? (
+                <div className="mb-6 rounded-xl border border-[#A5C89E]/20 bg-[#0b0b0b]/70 p-4 text-sm text-gray-300">
+                  Loading article details...
+                </div>
+              ) : null}
               <div className="mb-6">
                 <h2 className="text-3xl font-bold mb-4">{article.title}</h2>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-400">
@@ -968,17 +1041,14 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               </div>
 
               <div className="prose prose-invert max-w-none mb-8">
-                <p className="text-gray-300 leading-relaxed">
-                  This is a comprehensive guide to React Hooks. In this article, we'll explore
-                  useState, useEffect, useContext, and other essential hooks. You'll learn how to
-                  manage state effectively, handle side effects, and build powerful React
-                  applications using modern patterns.
-                </p>
-                <p className="text-gray-300 leading-relaxed mt-4">
-                  React Hooks revolutionized the way we write React components. They allow us to
-                  use state and other React features without writing a class. This makes our code
-                  more readable and easier to maintain.
-                </p>
+                {article.content ? (
+                  <div
+                    className="text-gray-300 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: article.content }}
+                  />
+                ) : (
+                  <p className="text-gray-500">No content available for this article.</p>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-4">
@@ -1283,145 +1353,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   }
 
-  if (detailView.type === 'instructor-profile' && detailView.id) {
-    const instructor = instructors.find((i) => i.id === detailView.id);
-    if (instructor) {
-      return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
-          <BackgroundEffects />
 
-          <div className="border-b border-[#A5C89E]/20 bg-[#121212]/80 backdrop-blur-xl relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <button
-                onClick={handleBackToList}
-                className="text-[#A5C89E] hover:text-[#A5C89E]/80 text-sm mb-3 flex items-center gap-2 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back to Instructors
-              </button>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Instructor Profile</h1>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-            <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
-              <div className="flex items-center gap-6 mb-8">
-                <div className="w-24 h-24 bg-[#A5C89E]/20 border border-[#A5C89E]/50 rounded-2xl flex items-center justify-center">
-                  <GraduationCap className="w-12 h-12 text-[#A5C89E]" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">{instructor.name}</h2>
-                  <p className="text-gray-400">{instructor.email}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/20 p-6 rounded-xl">
-                  <p className="text-gray-500 text-sm mb-1">Courses</p>
-                  <p className="text-3xl font-bold text-[#A5C89E]">{instructor.courses}</p>
-                </div>
-                <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/20 p-6 rounded-xl">
-                  <p className="text-gray-500 text-sm mb-1">Students</p>
-                  <p className="text-3xl font-bold text-[#A5C89E]">
-                    {instructor.students.toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/20 p-6 rounded-xl">
-                  <p className="text-gray-500 text-sm mb-1">Rating</p>
-                  <p className="text-3xl font-bold text-[#A5C89E]">{instructor.rating} ★</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">Published Courses</h3>
-                <div className="space-y-3">
-                  <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/10 p-4 rounded-xl">
-                    <p className="text-gray-200">Full Stack Web Development</p>
-                  </div>
-                  <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/10 p-4 rounded-xl">
-                    <p className="text-gray-200">React Advanced Patterns</p>
-                  </div>
-                  <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/10 p-4 rounded-xl">
-                    <p className="text-gray-200">JavaScript ES6+</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
-
-  if (detailView.type === 'expert-profile' && detailView.id) {
-    const expert = experts.find((e) => e.id === detailView.id);
-    if (expert) {
-      return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
-          <BackgroundEffects />
-
-          <div className="border-b border-[#A5C89E]/20 bg-[#121212]/80 backdrop-blur-xl relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <button
-                onClick={handleBackToList}
-                className="text-[#A5C89E] hover:text-[#A5C89E]/80 text-sm mb-3 flex items-center gap-2 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back to Experts
-              </button>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Expert Profile</h1>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-            <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
-              <div className="flex items-center gap-6 mb-8">
-                <div className="w-24 h-24 bg-[#A5C89E]/20 border border-[#A5C89E]/50 rounded-2xl flex items-center justify-center">
-                  <Award className="w-12 h-12 text-[#A5C89E]" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">{expert.name}</h2>
-                  <p className="text-gray-400">{expert.email}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/20 p-6 rounded-xl">
-                  <p className="text-gray-500 text-sm mb-1">Articles</p>
-                  <p className="text-3xl font-bold text-[#A5C89E]">{expert.articles}</p>
-                </div>
-                <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/20 p-6 rounded-xl">
-                  <p className="text-gray-500 text-sm mb-1">Followers</p>
-                  <p className="text-3xl font-bold text-[#A5C89E]">
-                    {expert.followers.toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/20 p-6 rounded-xl">
-                  <p className="text-gray-500 text-sm mb-1">Rating</p>
-                  <p className="text-3xl font-bold text-[#A5C89E]">{expert.rating} ★</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">Recent Articles</h3>
-                <div className="space-y-3">
-                  <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/10 p-4 rounded-xl">
-                    <p className="text-gray-200">Understanding Neural Networks</p>
-                  </div>
-                  <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/10 p-4 rounded-xl">
-                    <p className="text-gray-200">Deep Learning Fundamentals</p>
-                  </div>
-                  <div className="bg-[#0b0b0b]/80 border border-[#A5C89E]/10 p-4 rounded-xl">
-                    <p className="text-gray-200">Machine Learning Best Practices</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
 
   // Main Dashboard Layout
   return (
@@ -2007,45 +1939,65 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {pendingArticles.map((article) => (
-                          <tr
-                            key={article.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {article.title}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {article.submittedDate}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleViewDetails({ type: 'article', id: article.id })
-                                  }
-                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                                >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => handleApprove('article', article.id)}
-                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject('article', article.id)}
-                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                >
-                                  Reject
-                                </button>
-                              </div>
+                        {isLoadingPendingArticles ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              Loading pending articles...
                             </td>
                           </tr>
-                        ))}
+                        ) : pendingArticlesError ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-red-500" colSpan={5}>
+                              {pendingArticlesError}
+                            </td>
+                          </tr>
+                        ) : pendingArticles.length === 0 ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              No pending articles found.
+                            </td>
+                          </tr>
+                        ) : (
+                          pendingArticles.map((article) => (
+                            <tr
+                              key={article.id}
+                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                {article.title}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
+                              <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                {article.submittedDate}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handleViewDetails({ type: 'article', id: article.id })
+                                    }
+                                    className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                                  >
+                                    View
+                                  </button>
+                                  <button
+                                    onClick={() => handleApprove('article', article.id)}
+                                    className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleReject('article', article.id)}
+                                    className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -2170,181 +2122,6 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
             )
           }
 
-          {/* Instructors */}
-          {
-            activeSection === 'instructors' && (
-              <div>
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructors</h2>
-                    <p className="text-gray-600 text-sm">
-                      Total instructors: {instructors.length}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search instructors..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Name
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Email
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Courses
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Students
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Rating
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {instructors.map((instructor) => (
-                          <tr
-                            key={instructor.id}
-                            className="border-b border-gray-100 hover:bg-blue-50/50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {instructor.name}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{instructor.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{instructor.courses}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {instructor.students.toLocaleString()}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-amber-600 font-medium">
-                              {instructor.rating} ★
-                            </td>
-                            <td className="px-6 py-4">
-                              <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'instructor-profile', id: instructor.id })
-                                }
-                                className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium"
-                              >
-                                View Profile
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          {/* Experts */}
-          {
-            activeSection === 'experts' && (
-              <div>
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Experts</h2>
-                    <p className="text-gray-600 text-sm">Total experts: {experts.length}</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search experts..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Name
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Email
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Articles
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Followers
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Rating
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {experts.map((expert) => (
-                          <tr
-                            key={expert.id}
-                            className="border-b border-gray-100 hover:bg-blue-50/50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {expert.name}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{expert.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{expert.articles}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {expert.followers.toLocaleString()}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-amber-600 font-medium">{expert.rating} ★</td>
-                            <td className="px-6 py-4">
-                              <button
-                                onClick={() =>
-                                  handleViewDetails({ type: 'expert-profile', id: expert.id })
-                                }
-                                className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium"
-                              >
-                                View Profile
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )
-          }
 
           {/* Article Reports */}
           {
@@ -2356,6 +2133,20 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     Total reports: {articleReports.length}
                   </p>
                 </div>
+
+                  {isLoadingReports ? (
+                    <div className="bg-white border border-gray-200 rounded-2xl p-6 text-sm text-gray-500">
+                      Loading article reports...
+                    </div>
+                  ) : reportsError ? (
+                    <div className="bg-white border border-red-200 rounded-2xl p-6 text-sm text-red-600">
+                      {reportsError}
+                    </div>
+                  ) : articleReports.length === 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-2xl p-6 text-sm text-gray-500">
+                      No article reports found.
+                    </div>
+                  ) : null}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {articleReports.map((report) => (
@@ -2413,13 +2204,24 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
 
                       {/* Actions */}
                       <div className="flex gap-2 flex-wrap">
-                        <button className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium">
+                        <button
+                          onClick={() => {
+                            void handleReviewReportedArticle(report.articleId);
+                          }}
+                          className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                        >
                           Review Article
                         </button>
-                        <button className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium">
+                        <button
+                          onClick={() => updateReportStatus(report.id, 'resolved')}
+                          className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                        >
                           Resolve
                         </button>
-                        <button className="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all text-xs font-medium">
+                        <button
+                          onClick={() => updateReportStatus(report.id, 'under_review')}
+                          className="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all text-xs font-medium"
+                        >
                           Take Action
                         </button>
                       </div>
