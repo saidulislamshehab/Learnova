@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, ChevronDown, BookOpen, ArrowRight, Clock, FileText } from 'lucide-react';
 
@@ -16,6 +17,7 @@ const categories = [
 const API_BASE = `http://${window.location.hostname}:8000/api`;
 
 export function Tutorials() {
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All Tutorials');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -135,6 +137,7 @@ export function Tutorials() {
                         {articles.map((article: any, index: number) => (
                             <div
                                 key={article.Article_ID || article.id}
+                                onClick={() => navigate(`/article/${article.Article_ID || article.id}`)}
                                 className="group relative bg-[#121212]/80 backdrop-blur-sm border border-[#A5C89E]/30 rounded-lg p-6 hover:border-[#A5C89E]/60 hover:shadow-lg hover:shadow-[#A5C89E]/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer"
                             >
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
