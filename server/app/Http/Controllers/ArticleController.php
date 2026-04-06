@@ -27,6 +27,7 @@ class ArticleController extends Controller
     public function myArticles(Request $request): JsonResponse
     {
         $articles = Article::query()
+            ->with(['reports'])
             ->where('UserID', $request->user()->id)
             ->orderByDesc('created_at')
             ->get();

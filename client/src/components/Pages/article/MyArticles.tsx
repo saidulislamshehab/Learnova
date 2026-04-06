@@ -13,58 +13,18 @@ export interface Article {
   category?: string;
   tags?: string;
   read_time?: string;
+  reports?: Array<{
+    R_ID: string;
+    Report_Type: string;
+    Description: string;
+    created_at: string;
+  }>;
 }
 
 interface MyArticlesProps {
   onWriteNew: () => void;
   onEditArticle: (article: Article) => void;
 }
-
-// Mock data for demonstration
-const mockArticles: Article[] = [
-  {
-    id: '1',
-    title: 'Getting Started with React Hooks',
-    content: '<h1>Getting Started with React Hooks</h1><p>React Hooks revolutionized the way we write React components...</p>',
-    excerpt: 'React Hooks revolutionized the way we write React components. Learn the fundamentals and best practices.',
-    status: 'published',
-    lastUpdated: '2 days ago',
-    views: 1243,
-  },
-  {
-    id: '2',
-    title: 'Understanding TypeScript Generics',
-    content: '<h1>Understanding TypeScript Generics</h1><p>Generics are a powerful feature in TypeScript...</p>',
-    excerpt: 'Generics are a powerful feature in TypeScript that allow you to write reusable and type-safe code.',
-    status: 'published',
-    lastUpdated: '5 days ago',
-    views: 892,
-  },
-  {
-    id: '3',
-    title: 'Advanced CSS Grid Techniques',
-    content: '<h1>Advanced CSS Grid Techniques</h1><p>CSS Grid is an incredibly powerful layout system...</p>',
-    excerpt: 'CSS Grid is an incredibly powerful layout system. Discover advanced techniques for complex layouts.',
-    status: 'draft',
-    lastUpdated: '1 week ago',
-  },
-  {
-    id: '4',
-    title: 'Building Scalable Node.js Applications',
-    content: '<h1>Building Scalable Node.js Applications</h1>',
-    excerpt: 'Learn how to architect and build Node.js applications that can scale to millions of users.',
-    status: 'pending',
-    lastUpdated: '3 days ago',
-  },
-  {
-    id: '5',
-    title: 'Introduction to Web Performance Optimization',
-    content: '<h1>Introduction to Web Performance Optimization</h1><p>Performance is crucial...</p>',
-    excerpt: 'Performance is crucial for user experience. Learn optimization strategies for modern web apps.',
-    status: 'draft',
-    lastUpdated: '4 days ago',
-  },
-];
 
 export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'draft' | 'published' | 'pending' | 'rejected'>('all');
@@ -103,6 +63,7 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
         category: art.Category,
         tags: art.Tags,
         read_time: art.Read_Time,
+        reports: art.reports || [],
       }));
 
       setArticles(mappedArticles);
@@ -124,60 +85,14 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [selectedArticleForReports, setSelectedArticleForReports] = useState<Article | null>(null);
 
-  // Mock reports data
-  const articleReports: Record<string, Array<{ id: string; type: string; description: string; reportedAt: string }>> = {
-    '1': [
-      {
-        id: 'r1',
-        type: 'Inappropriate Content',
-        description: 'This article contains misleading information about React Hooks lifecycle.',
-        reportedAt: '2 days ago',
-      },
-      {
-        id: 'r2',
-        type: 'Spam',
-        description: 'Multiple promotional links without proper context.',
-        reportedAt: '3 days ago',
-      },
-    ],
-    '2': [
-      {
-        id: 'r3',
-        type: 'Technical Inaccuracy',
-        description: 'The code example in section 3 has syntax errors and doesn\'t compile.',
-        reportedAt: '1 day ago',
-      },
-    ],
-    '4': [
-      {
-        id: 'r4',
-        type: 'Plagiarism',
-        description: 'Content appears to be copied from another source without attribution.',
-        reportedAt: '4 hours ago',
-      },
-      {
-        id: 'r5',
-        type: 'Outdated Information',
-        description: 'The article references deprecated Node.js APIs that are no longer supported.',
-        reportedAt: '1 day ago',
-      },
-      {
-        id: 'r6',
-        type: 'Inappropriate Content',
-        description: 'Contains offensive language in the comments section.',
-        reportedAt: '2 days ago',
-      },
-    ],
-  };
-
   const handleCheckReports = (e: React.MouseEvent, article: Article) => {
     e.stopPropagation();
     setSelectedArticleForReports(article);
     setShowReportsModal(true);
   };
 
-  const getReportCount = (articleId: string) => {
-    return articleReports[articleId]?.length || 0;
+  const getReportCount = (article: Article) => {
+    return article?.reports?.length || 0;
   };
 
   const getStatusBadge = (status: Article['status']) => {
@@ -363,13 +278,13 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
                   </div>
 
                   {/* Check Reports Button */}
-                  {article.status === 'published' && getReportCount(article.id) > 0 && (
+                  {article.status === 'published' && getReportCount(article) > 0 && (
                     <button
                       onClick={(e) => handleCheckReports(e, article)}
                       className="self-start flex items-center gap-2 px-3 py-1.5 bg-[#121212]/60 border border-gray-600 text-gray-300 rounded-lg hover:bg-[#121212]/80 hover:border-gray-500 hover:text-white transition-all font-medium text-xs"
                     >
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Reports ({getReportCount(article.id)})
+                      Reports ({getReportCount(article)})
                     </button>
                   )}
                 </div>
@@ -469,28 +384,28 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
 
               {/* Reports List */}
               <div className="flex-1 overflow-y-auto p-6">
-                {articleReports[selectedArticleForReports.id]?.length > 0 ? (
+                {(selectedArticleForReports.reports?.length || 0) > 0 ? (
                   <div className="space-y-4">
-                    {articleReports[selectedArticleForReports.id].map((report) => (
+                    {selectedArticleForReports.reports?.map((report) => (
                       <div
-                        key={report.id}
+                        key={report.R_ID}
                         className="bg-[#0b0b0b]/60 border border-gray-700 rounded-lg p-5 hover:border-gray-600 transition-all"
                       >
                         {/* Report Header */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center px-3 py-1 bg-gray-700/30 text-gray-300 border border-gray-600 rounded-full text-xs font-medium">
-                              {report.type}
+                              {report.Report_Type}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">{report.reportedAt}</span>
+                          <span className="text-xs text-gray-500">{new Date(report.created_at).toLocaleDateString()}</span>
                         </div>
 
                         {/* Report Description */}
                         <div>
                           <p className="text-sm font-medium text-gray-400 mb-1.5">Description:</p>
                           <p className="text-sm text-gray-300 leading-relaxed">
-                            {report.description}
+                            {report.Description}
                           </p>
                         </div>
                       </div>
@@ -508,7 +423,7 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
               <div className="p-6 pt-4 border-t border-[#A5C89E]/20">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500">
-                    Total Reports: {articleReports[selectedArticleForReports.id]?.length || 0}
+                    Total Reports: {selectedArticleForReports.reports?.length || 0}
                   </p>
                   <button
                     onClick={() => setShowReportsModal(false)}
