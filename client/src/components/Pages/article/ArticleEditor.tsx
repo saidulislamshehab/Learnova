@@ -48,8 +48,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [activeTagSuggestionIndex, setActiveTagSuggestionIndex] = useState(-1);
   const [customCategory, setCustomCategory] = useState('');
   const [categoryFeedback, setCategoryFeedback] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [activeCategorySuggestionIndex, setActiveCategorySuggestionIndex] = useState(-1);
   const editorRef = useRef<HTMLDivElement>(null);
 
   const predefinedCategories = [
@@ -103,7 +106,40 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
 
     setCategory(finalCategory);
     setCustomCategory('');
+    setShowCategoryDropdown(false);
   };
+
+  const handleCategorySelect = (selectedCategory: string) => {
+    setCategory(selectedCategory);
+    setCustomCategory(selectedCategory);
+    setShowCategoryDropdown(false);
+  };
+
+  const categorySearchWords = customCategory
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const filteredCategorySuggestions = availableCategories.filter((cat) => {
+    if (categorySearchWords.length === 0) return true;
+    const lowerCat = cat.toLowerCase();
+    return categorySearchWords.every((word) => lowerCat.includes(word));
+  });
+  const categorySuggestions = filteredCategorySuggestions.slice(0, 8);
+  const showAddCategoryOption = filteredCategorySuggestions.length === 0 && customCategory.trim();
+  const filteredTagSuggestions = predefinedCategories
+    .filter((cat) => !selectedTags.includes(cat))
+    .filter((cat) => cat.toLowerCase().includes(customTag.toLowerCase()));
+  const tagSuggestions = filteredTagSuggestions.slice(0, 8);
+
+  useEffect(() => {
+    setActiveCategorySuggestionIndex(-1);
+  }, [customCategory, showCategoryDropdown]);
+
+  useEffect(() => {
+    setActiveTagSuggestionIndex(-1);
+  }, [customTag, showTagDropdown]);
 
   // Load existing article content into editor
   useEffect(() => {
@@ -553,29 +589,110 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
           <label className="block text-sm font-medium text-gray-400 mb-2">
             Article Category <span className="text-[#A5C89E]">*</span>
           </label>
-          <div className="flex gap-2 mb-3">
-            <input
-              type="text"
-              value={customCategory}
-              onChange={(e) => setCustomCategory(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addCustomCategory();
-                }
-              }}
-              placeholder="Add new category"
-              className="flex-1 px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
-            />
-            <button
-              type="button"
-              onClick={addCustomCategory}
-              disabled={!customCategory.trim()}
-              className="px-5 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/40 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/30 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center"
-              title="Add category"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+          <div className="relative mb-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customCategory}
+                onChange={(e) => {
+                  setCustomCategory(e.target.value);
+                  setShowCategoryDropdown(true);
+                }}
+                onKeyDown={(e) => {
+                  if (!showCategoryDropdown) {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomCategory();
+                    }
+                    return;
+                  }
+
+                  const navigableItemsCount = categorySuggestions.length + (showAddCategoryOption ? 1 : 0);
+
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (navigableItemsCount > 0) {
+                      setActiveCategorySuggestionIndex((prev) => (prev + 1) % navigableItemsCount);
+                    }
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (navigableItemsCount > 0) {
+                      setActiveCategorySuggestionIndex((prev) =>
+                        prev <= 0 ? navigableItemsCount - 1 : prev - 1
+                      );
+                    }
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeCategorySuggestionIndex >= 0) {
+                      if (activeCategorySuggestionIndex < categorySuggestions.length) {
+                        handleCategorySelect(categorySuggestions[activeCategorySuggestionIndex]);
+                      } else if (showAddCategoryOption) {
+                        addCustomCategory();
+                      }
+                    } else {
+                      addCustomCategory();
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowCategoryDropdown(false);
+                  }
+                }}
+                onFocus={() => {
+                  setShowCategoryDropdown(true);
+                  setActiveCategorySuggestionIndex(-1);
+                }}
+                onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 200)}
+                placeholder="Add new category"
+                className="flex-1 px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+              />
+              <button
+                type="button"
+                onClick={addCustomCategory}
+                disabled={!customCategory.trim()}
+                className="px-5 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/40 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/30 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center"
+                title="Add category"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+
+            {showCategoryDropdown && (
+              <div className="absolute z-10 mt-2 w-[calc(100%-56px)] bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+                <div className="p-2">
+                  <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">
+                    CATEGORY SUGGESTIONS
+                  </p>
+                  {categorySuggestions.map((cat, index) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`w-full text-left px-3 py-2 rounded transition-all text-sm font-medium flex items-center ${
+                        activeCategorySuggestionIndex === index
+                          ? 'text-[#A5C89E] bg-[#A5C89E]/10'
+                          : 'text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10'
+                      }`}
+                      onClick={() => handleCategorySelect(cat)}
+                    >
+                      <Tag className="w-4 h-4 mr-2 opacity-60" />
+                      {cat}
+                    </button>
+                  ))}
+                  {showAddCategoryOption && (
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 rounded transition-all text-sm font-medium flex items-center ${
+                        activeCategorySuggestionIndex === categorySuggestions.length
+                          ? 'text-[#A5C89E] bg-[#A5C89E]/10'
+                          : 'text-[#A5C89E] hover:bg-[#A5C89E]/10'
+                      }`}
+                      onClick={addCustomCategory}
+                    >
+                      <Plus className="w-4 h-4 mr-2 opacity-80" />
+                      Add "{customCategory.trim()}"
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <div className="relative">
             <select
@@ -630,16 +747,48 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
                 <input
                   type="text"
                   value={customTag}
-                  onChange={(e) => setCustomTag(e.target.value)}
+                  onChange={(e) => {
+                    setCustomTag(e.target.value);
+                    setShowTagDropdown(true);
+                  }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (!showTagDropdown) {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomTag();
+                      }
+                      return;
+                    }
+
+                    if (e.key === 'ArrowDown') {
                       e.preventDefault();
-                      addCustomTag();
+                      if (tagSuggestions.length > 0) {
+                        setActiveTagSuggestionIndex((prev) => (prev + 1) % tagSuggestions.length);
+                      }
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      if (tagSuggestions.length > 0) {
+                        setActiveTagSuggestionIndex((prev) =>
+                          prev <= 0 ? tagSuggestions.length - 1 : prev - 1
+                        );
+                      }
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (activeTagSuggestionIndex >= 0 && activeTagSuggestionIndex < tagSuggestions.length) {
+                        addTag(tagSuggestions[activeTagSuggestionIndex]);
+                      } else {
+                        addCustomTag();
+                      }
+                    } else if (e.key === 'Escape') {
+                      setShowTagDropdown(false);
                     }
                   }}
                   placeholder="Type to add custom tag or select from dropdown"
                   className="w-full px-4 py-3 bg-[#121212]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
-                  onFocus={() => setShowTagDropdown(true)}
+                  onFocus={() => {
+                    setShowTagDropdown(true);
+                    setActiveTagSuggestionIndex(-1);
+                  }}
                   onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
                 />
                 
@@ -650,13 +799,14 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
                       <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">
                         PREDEFINED CATEGORIES
                       </p>
-                      {predefinedCategories
-                        .filter(cat => !selectedTags.includes(cat))
-                        .filter(cat => cat.toLowerCase().includes(customTag.toLowerCase()))
-                        .map(category => (
+                      {tagSuggestions.map((category, index) => (
                           <button
                             key={category}
-                            className="w-full text-left px-3 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center"
+                            className={`w-full text-left px-3 py-2 rounded transition-all text-sm font-medium flex items-center ${
+                              activeTagSuggestionIndex === index
+                                ? 'text-[#A5C89E] bg-[#A5C89E]/10'
+                                : 'text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10'
+                            }`}
                             onClick={() => addTag(category)}
                           >
                             <Tag className="w-4 h-4 mr-2 opacity-60" />
