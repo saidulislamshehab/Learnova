@@ -4,6 +4,7 @@ import {
   Code2,
   Database,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { TypewriterText } from "../Common/TypewriterText";
 import { TerminalTypewriter } from "../Common/TerminalTypewriter";
 
@@ -25,6 +26,57 @@ export function Hero({
   onExploreCourses,
   onViewDocs,
 }: HeroProps) {
+  const [stats, setStats] = useState({
+    courses: 0,
+    users: 0,
+    articles: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/stats/homepage`, {
+          headers: { Accept: "application/json" },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        setStats({
+          courses: Number(data?.courses ?? 0),
+          users: Number(data?.users ?? 0),
+          articles: Number(data?.articles ?? 0),
+        });
+      } catch {
+        // Keep zeroed defaults if stats API fails.
+      }
+    };
+
+    void fetchStats();
+  }, []);
+
+  const displayStats = useMemo(() => {
+    const formatCompact = (value: number) => {
+      if (value >= 1_000_000) {
+        const compact = value / 1_000_000;
+        return `${Number.isInteger(compact) ? compact.toFixed(0) : compact.toFixed(1)}M+`;
+      }
+      if (value >= 1_000) {
+        const compact = value / 1_000;
+        return `${Number.isInteger(compact) ? compact.toFixed(0) : compact.toFixed(1)}K+`;
+      }
+      return `${value}+`;
+    };
+
+    return {
+      courses: formatCompact(stats.courses),
+      users: formatCompact(stats.users),
+      articles: formatCompact(stats.articles),
+    };
+  }, [stats]);
+
   return (
     <>
       {/* Inline styles for specific button hover effects and animations */}
@@ -144,15 +196,15 @@ export function Hero({
               <div className="grid grid-cols-3 gap-6 max-w-md">
                 <div className="border-l-2 border-[#A5C89E]/80 pl-4">
                   <div className="text-3xl font-bold text-white mb-1">
-                    500+
+                    {displayStats.courses}
                   </div>
                   <div className="text-xs text-gray-500 font-mono tracking-wider">
-                    MODULES
+                    COURSES
                   </div>
                 </div>
                 <div className="border-l-2 border-[#A5C89E]/60 pl-4">
                   <div className="text-3xl font-bold text-white mb-1">
-                    50K+
+                    {displayStats.users}
                   </div>
                   <div className="text-xs text-gray-500 font-mono tracking-wider">
                     USERS
@@ -160,7 +212,7 @@ export function Hero({
                 </div>
                 <div className="border-l-2 border-[#A5C89E]/40 pl-4">
                   <div className="text-3xl font-bold text-white mb-1">
-                    1K+
+                    {displayStats.articles}
                   </div>
                   <div className="text-xs text-gray-500 font-mono tracking-wider">
                     ARTICLES

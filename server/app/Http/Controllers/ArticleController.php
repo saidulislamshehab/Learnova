@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\Comment;
+use App\Models\Report;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,6 +78,29 @@ class ArticleController extends Controller
         return response()->json([
             'message' => 'Comment created successfully.',
             'comment' => $comment,
+        ], 201);
+    }
+
+    public function storeReport(Request $request, int $id): JsonResponse
+    {
+        $article = Article::findOrFail($id);
+
+        $validated = $request->validate([
+            'report_type' => ['required', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $report = Report::create([
+            'UserID' => $request->user()->id,
+            'Article_ID' => $article->Article_ID,
+            'Report_Type' => $validated['report_type'],
+            'Description' => $validated['description'] ?? null,
+            'Status' => 'pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Article reported successfully.',
+            'report' => $report,
         ], 201);
     }
 
