@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { getAuthToken } from '../../../utils/authStorage';
+import { getAuthToken, clearAuthSession } from '../../../utils/authStorage';
 
 import {
   User,
@@ -52,6 +52,9 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
 
   // Delete account confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const menuItems = [
     { id: 'profile' as SettingsSection, label: 'Edit Profile', icon: User },
@@ -68,6 +71,9 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
     // Clear alerts on section change
     setPasswordSuccess(null);
     setPasswordError(null);
+    setDeleteError(null);
+    setDeleteConfirmInput('');
+    setShowDeleteConfirm(false);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -118,10 +124,32 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
     }
   };
 
-  const handleDeleteAccount = () => {
-    // Handle account deletion logic
-    console.log('Account deletion confirmed');
-    setShowDeleteConfirm(false);
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmInput !== 'DELETE') {
+      setDeleteError('Please type DELETE to confirm.');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const token = getAuthToken();
+      await axios.delete(`${API_BASE}/delete-account`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      // Clear local auth and redirect
+      clearAuthSession();
+      window.location.href = '/';
+    } catch (err: any) {
+      console.error('Account deletion error:', err);
+      setDeleteError(err.response?.data?.message || 'Failed to delete account. Please try again.');
+      setIsDeleting(false);
+    }
   };
 
   // Standard background component
@@ -591,17 +619,43 @@ export function Settings({ onBack, onEditProfile }: SettingsProps) {
                     <p className="text-gray-300 font-medium">
                       To confirm, type <span className="text-white font-mono bg-white/10 px-1.5 py-0.5 rounded border border-white/10">DELETE</span> below:
                     </p>
-                    {/* Simplified for demo - in real app would verify input */}
+                    <input
+                      type="text"
+                      value={deleteConfirmInput}
+                      onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                      placeholder="Type DELETE"
+                      className="w-full max-w-xs px-4 py-3 bg-[#0b0b0b] border border-red-500/20 rounded-xl text-white focus:outline-none focus:border-red-500/50 transition-all font-mono"
+                      disabled={isDeleting}
+                    />
+                    {deleteError && (
+                      <p className="text-red-400 text-sm mt-2 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        {deleteError}
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <button
                       onClick={handleDeleteAccount}
-                      className="inline-flex items-center justify-center px-8 py-4 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-bold shadow-lg shadow-red-600/20"
+                      disabled={isDeleting || deleteConfirmInput !== 'DELETE'}
+                      className="inline-flex items-center justify-center px-8 py-4 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-bold shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Yes, Delete My Account
+                      {isDeleting ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3" />
+                          DELETING...
+                        </>
+                      ) : (
+                        'Yes, Delete My Account'
+                      )}
                     </button>
                     <button
-                      onClick={() => setShowDeleteConfirm(false)}
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteConfirmInput('');
+                        setDeleteError(null);
+                      }}
+                      disabled={isDeleting}
                       className="inline-flex items-center justify-center px-8 py-4 bg-transparent border border-gray-600 text-gray-300 rounded-xl hover:bg-white/5 transition-all font-medium"
                     >
                       Cancel

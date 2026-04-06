@@ -32,6 +32,7 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/profile/picture', [AuthController::class, 'updateProfilePicture']);
     Route::put('/change-password', [AuthController::class, 'changePassword']);
+    Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
 
     Route::post('/expert-applications', [ExpertApplicationController::class, 'store']);
     Route::get('/expert-applications/my-status', [ExpertApplicationController::class, 'myStatus']);
