@@ -13,7 +13,9 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/courses', [CourseController::class, 'indexPublic']);
 Route::get('/articles', [ArticleController::class, 'index']);
-Route::get('/articles/{id}', [ArticleController::class, 'show']);
+// Constrain {id} so it doesn't capture fixed routes like /articles/my
+Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('id');
+Route::get('/articles/{id}/comments', [ArticleController::class, 'comments'])->whereNumber('id');
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -39,6 +41,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/articles/my', [ArticleController::class, 'myArticles']);
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::post('/articles/{id}/comments', [ArticleController::class, 'storeComment'])->whereNumber('id');
     
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/courses/pending', [CourseController::class, 'indexPending']);

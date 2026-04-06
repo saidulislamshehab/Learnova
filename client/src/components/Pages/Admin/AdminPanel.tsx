@@ -95,6 +95,9 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [adminCourseApprovals, setAdminCourseApprovals] = useState<any[]>([]);
   const [isLoadingCourseApprovals, setIsLoadingCourseApprovals] = useState(false);
   const [courseApprovalsError, setCourseApprovalsError] = useState<string | null>(null);
+  const [pendingArticles, setPendingArticles] = useState<any[]>([]);
+  const [isLoadingPendingArticles, setIsLoadingPendingArticles] = useState(false);
+  const [pendingArticlesError, setPendingArticlesError] = useState<string | null>(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -421,6 +424,44 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
+  const fetchPendingArticles = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setPendingArticles([]);
+      setPendingArticlesError('Please sign in as admin to view pending articles.');
+      return;
+    }
+
+    try {
+      setIsLoadingPendingArticles(true);
+      setPendingArticlesError(null);
+      const response = await axios.get(`${API_BASE}/admin/articles/pending`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawArticles = response.data?.articles ?? response.data?.data ?? [];
+      const list = (Array.isArray(rawArticles) ? rawArticles : []).map((item: any) => ({
+        id: String(item.id ?? item.Article_ID),
+        title: item.Title ?? item.title ?? 'Untitled Article',
+        author: item.user?.name ?? 'Unknown',
+        category: item.Category ?? item.category ?? 'General',
+        submittedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.Status ?? item.status ?? 'pending',
+        content: item.Content ?? item.content ?? '',
+      }));
+
+      setPendingArticles(list);
+    } catch (error: any) {
+      setPendingArticles([]);
+      setPendingArticlesError(error?.response?.data?.message || 'Failed to load pending articles.');
+    } finally {
+      setIsLoadingPendingArticles(false);
+    }
+  };
+
   const handleCreateUser = async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -483,38 +524,17 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     if (activeSection === 'courses-approval') {
       void fetchCourseApprovals();
     }
+
+    if (activeSection === 'articles-approval') {
+      void fetchPendingArticles();
+    }
   }, [activeSection]);
 
   useEffect(() => {
     setSearchQuery('');
   }, [activeSection]);
 
-  const pendingArticles = [
-    {
-      id: '1',
-      title: 'Introduction to React Hooks',
-      author: 'Sarah Williams',
-      category: 'Development',
-      submittedDate: '2026-01-20',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      title: 'Understanding Neural Networks',
-      author: 'Dr. Emily Wilson',
-      category: 'AI / ML',
-      submittedDate: '2026-01-19',
-      status: 'Pending',
-    },
-    {
-      id: '3',
-      title: 'Advanced Data Structures',
-      author: 'Prof. John Smith',
-      category: 'DSA',
-      submittedDate: '2026-01-18',
-      status: 'Pending',
-    },
-  ];
+  // pendingArticles are fetched from the backend when the Articles Approval section is active
 
   const pendingCourses = [
     {
@@ -776,6 +796,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       return;
     }
 
+    if (type === 'article') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/articles/${id}`,
+          { status: 'published' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Approved ${type} #${id}`);
+          void fetchPendingArticles();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve article');
+        });
+      return;
+    }
+
     alert(`Approved ${type} #${id}`);
   };
 
@@ -860,6 +908,34 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         })
         .catch((error) => {
           alert(error?.response?.data?.message || 'Failed to reject application');
+        });
+      return;
+    }
+
+    if (type === 'article') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('Please sign in as admin.');
+        return;
+      }
+
+      void axios
+        .put(
+          `${API_BASE}/admin/articles/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          alert(`Rejected ${type} #${id}`);
+          void fetchPendingArticles();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject article');
         });
       return;
     }
@@ -968,17 +1044,14 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               </div>
 
               <div className="prose prose-invert max-w-none mb-8">
-                <p className="text-gray-300 leading-relaxed">
-                  This is a comprehensive guide to React Hooks. In this article, we'll explore
-                  useState, useEffect, useContext, and other essential hooks. You'll learn how to
-                  manage state effectively, handle side effects, and build powerful React
-                  applications using modern patterns.
-                </p>
-                <p className="text-gray-300 leading-relaxed mt-4">
-                  React Hooks revolutionized the way we write React components. They allow us to
-                  use state and other React features without writing a class. This makes our code
-                  more readable and easier to maintain.
-                </p>
+                {article.content ? (
+                  <div
+                    className="text-gray-300 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: article.content }}
+                  />
+                ) : (
+                  <p className="text-gray-500">No content available for this article.</p>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-4">
@@ -2007,45 +2080,65 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {pendingArticles.map((article) => (
-                          <tr
-                            key={article.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {article.title}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {article.submittedDate}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleViewDetails({ type: 'article', id: article.id })
-                                  }
-                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                                >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => handleApprove('article', article.id)}
-                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject('article', article.id)}
-                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                >
-                                  Reject
-                                </button>
-                              </div>
+                        {isLoadingPendingArticles ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              Loading pending articles...
                             </td>
                           </tr>
-                        ))}
+                        ) : pendingArticlesError ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-red-500" colSpan={5}>
+                              {pendingArticlesError}
+                            </td>
+                          </tr>
+                        ) : pendingArticles.length === 0 ? (
+                          <tr>
+                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
+                              No pending articles found.
+                            </td>
+                          </tr>
+                        ) : (
+                          pendingArticles.map((article) => (
+                            <tr
+                              key={article.id}
+                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                {article.title}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
+                              <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                {article.submittedDate}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handleViewDetails({ type: 'article', id: article.id })
+                                    }
+                                    className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
+                                  >
+                                    View
+                                  </button>
+                                  <button
+                                    onClick={() => handleApprove('article', article.id)}
+                                    className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleReject('article', article.id)}
+                                    className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

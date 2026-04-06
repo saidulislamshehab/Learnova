@@ -1,139 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronDown, BookOpen, Clock, ArrowRight } from 'lucide-react';
 import { Pagination } from '../Common/Pagination';
+import axios from 'axios';
 interface ArticlesProps {
   onArticleClick: (articleId: number) => void;
 }
-
-// Mock data for articles listing
-const allArticles = [
-  {
-    id: 1,
-    title: 'Complete Guide to Binary Search Trees',
-    description: 'Master the fundamentals of BST operations, traversals, and implementation strategies with practical examples.',
-    category: 'DSA',
-    readTime: '12 min read',
-  },
-  {
-    id: 2,
-    title: 'Advanced Dynamic Programming Patterns',
-    description: 'Explore complex DP patterns including state machines, digit DP, and optimization techniques.',
-    category: 'DSA',
-    readTime: '18 min read',
-  },
-  {
-    id: 3,
-    title: 'Graph Algorithms: From Basics to Advanced',
-    description: 'Comprehensive guide covering DFS, BFS, shortest paths, and minimum spanning trees.',
-    category: 'DSA',
-    readTime: '20 min read',
-  },
-  {
-    id: 4,
-    title: 'Mastering Python Decorators',
-    description: 'Deep dive into Python decorators, closures, and advanced function manipulation techniques.',
-    category: 'Programming Languages',
-    readTime: '10 min read',
-  },
-  {
-    id: 5,
-    title: 'JavaScript ES2024: New Features',
-    description: 'Explore the latest JavaScript features including pipeline operator, pattern matching, and more.',
-    category: 'Programming Languages',
-    readTime: '8 min read',
-  },
-  {
-    id: 6,
-    title: 'Rust Memory Safety Explained',
-    description: 'Understanding ownership, borrowing, and lifetimes in Rust with practical examples.',
-    category: 'Programming Languages',
-    readTime: '15 min read',
-  },
-  {
-    id: 7,
-    title: 'Building Scalable React Applications',
-    description: 'Best practices for component architecture, state management, and performance optimization.',
-    category: 'Web Development',
-    readTime: '14 min read',
-  },
-  {
-    id: 8,
-    title: 'Next.js 14: Server Components Deep Dive',
-    description: 'Learn how to leverage React Server Components in Next.js 14 for optimal performance.',
-    category: 'Web Development',
-    readTime: '16 min read',
-  },
-  {
-    id: 9,
-    title: 'RESTful API Design Best Practices',
-    description: 'Design principles, versioning strategies, and authentication patterns for modern APIs.',
-    category: 'Web Development',
-    readTime: '11 min read',
-  },
-  {
-    id: 10,
-    title: 'PostgreSQL Query Optimization',
-    description: 'Advanced techniques for indexing, query planning, and performance tuning in PostgreSQL.',
-    category: 'Databases',
-    readTime: '13 min read',
-  },
-  {
-    id: 11,
-    title: 'MongoDB Aggregation Pipeline Guide',
-    description: 'Master complex data transformations using MongoDB aggregation framework.',
-    category: 'Databases',
-    readTime: '10 min read',
-  },
-  {
-    id: 12,
-    title: 'Database Sharding Strategies',
-    description: 'Horizontal scaling techniques and sharding patterns for distributed databases.',
-    category: 'Databases',
-    readTime: '17 min read',
-  },
-  {
-    id: 13,
-    title: 'Introduction to Transformer Architecture',
-    description: 'Understanding attention mechanisms and transformer models in modern AI applications.',
-    category: 'AI & ML',
-    readTime: '22 min read',
-  },
-  {
-    id: 14,
-    title: 'Fine-tuning Large Language Models',
-    description: 'Practical guide to fine-tuning LLMs using LoRA, QLoRA, and full fine-tuning approaches.',
-    category: 'AI & ML',
-    readTime: '19 min read',
-  },
-  {
-    id: 15,
-    title: 'Computer Vision with PyTorch',
-    description: 'Build and train CNN models for image classification, object detection, and segmentation.',
-    category: 'AI & ML',
-    readTime: '16 min read',
-  },
-  {
-    id: 16,
-    title: 'Microservices Architecture Patterns',
-    description: 'Design patterns for building resilient, scalable microservices systems.',
-    category: 'System Design',
-    readTime: '15 min read',
-  },
-  {
-    id: 17,
-    title: 'Designing Rate Limiters',
-    description: 'Algorithms and strategies for implementing distributed rate limiting systems.',
-    category: 'System Design',
-    readTime: '12 min read',
-  },
-  {
-    id: 18,
-    title: 'Caching Strategies at Scale',
-    description: 'Redis, Memcached, and CDN caching patterns for high-performance applications.',
-    category: 'System Design',
-    readTime: '14 min read',
-  },
-];
 
 const categories = [
   'All Categories',
@@ -150,6 +21,14 @@ const categories = [
  * Displays a paginated list of articles with search and category filtering capabilities.
  */
 export function Articles({ onArticleClick }: ArticlesProps) {
+  const API_BASE = `http://${window.location.hostname}:8000/api`;
+
+  const [allArticles, setAllArticles] = useState<
+    Array<{ id: number; title: string; description: string; category: string; readTime: string }>
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // State for search query
   const [searchQuery, setSearchQuery] = useState('');
   // State for selected category filter
@@ -159,15 +38,56 @@ export function Articles({ onArticleClick }: ArticlesProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const articlesPerPage = 15;
 
+  useEffect(() => {
+    const fetchPublishedArticles = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(`${API_BASE}/articles`, {
+          headers: { Accept: 'application/json' },
+        });
+
+        const raw = response.data?.articles ?? [];
+        const list = (Array.isArray(raw) ? raw : []).map((art: any) => {
+          const id = Number(art.id ?? art.Article_ID);
+          const title = String(art.Title ?? art.title ?? 'Untitled Article');
+          const content = String(art.Content ?? art.content ?? '');
+          const category = String(art.Category ?? art.category ?? 'General');
+          const readTime = String(art.Read_Time ?? art.read_time ?? '0 min read');
+          const excerpt =
+            String(art.Excerpt ?? '').trim() ||
+            (content
+              ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) +
+                (content.length > 120 ? '...' : '')
+              : 'No description available.');
+
+          return { id, title, description: excerpt, category, readTime };
+        });
+
+        setAllArticles(list.filter((a) => Number.isFinite(a.id)));
+      } catch (err: any) {
+        console.error(err);
+        setAllArticles([]);
+        setError('Failed to load published articles.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchPublishedArticles();
+  }, [API_BASE]);
+
   // Filter articles based on search query and selected category
-  const filteredArticles = allArticles.filter((article) => {
-    const matchesSearch =
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === 'All Categories' || article.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredArticles = useMemo(() => {
+    return allArticles.filter((article) => {
+      const matchesSearch =
+        article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        selectedCategory === 'All Categories' || article.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [allArticles, searchQuery, selectedCategory]);
 
   // Reset to page 1 when search or category changes
   const handleSearchChange = (value: string) => {
@@ -258,7 +178,26 @@ export function Articles({ onArticleClick }: ArticlesProps) {
         </div>
 
         {/* Articles Grid */}
-        {filteredArticles.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-[#A5C89E]/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-[#A5C89E] font-medium animate-pulse">Fetching published articles...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
+            <BookOpen className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-400 font-medium">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-2 bg-red-500/20 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500/30 transition-all font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filteredArticles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentArticles.map((article) => (
               <div

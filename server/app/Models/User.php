@@ -112,4 +112,9 @@ class User extends Authenticatable implements \PHPOpenSourceSaver\JWTAuth\Contra
     {
         return $this->hasMany(ExpertApply::class, 'UserID', 'id');
     }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'UserID', 'id');
+    }
 }
