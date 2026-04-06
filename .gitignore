@@ -1,0 +1,63 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+.github/prompts/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+server/vendor/
+
+# Build output
+dist/
+build/
+coverage/
+client/dist/
+server/public/build/
+
+# Vite / TypeScript
+vite.config.ts.timestamp-*
+*.tsbuildinfo
+
+# Laravel caches and generated files
+server/bootstrap/cache/*.php
+server/public/hot
+server/storage/*.key
+server/storage/logs/*.log
+server/storage/framework/cache/data/*
+server/storage/framework/sessions/*
+server/storage/framework/testing/*
+server/storage/framework/views/*
+
+# Uploaded / generated storage content
+server/storage/app/public/*
+server/storage/app/private/*
+!server/storage/app/public/.gitignore
+!server/storage/app/private/.gitignore
+
+# Database / local runtime files
+*.sqlite
+*.sqlite3
+server/database/*.sqlite
+
+# Testing / tooling
+.phpunit.result.cache
