@@ -1,256 +1,102 @@
-import { useState } from 'react';
-import { Search, Clock, Users, ArrowUpRight, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Search, Clock, Users, ChevronDown } from 'lucide-react';
 import { Pagination } from '../Common/Pagination';
 
-const allCourses = [
-  {
-    id: 'PY-001',
-    title: 'COMPLETE PYTHON BOOTCAMP',
-    instructor: 'Dr. Sarah Johnson',
-    description: 'Comprehensive Python training from fundamentals to advanced concepts including web development and data science applications.',
-    duration: '40h',
-    students: '15.2K',
-    rating: 4.8,
-    status: 'ACTIVE',
-    category: 'Programming Languages',
-    price: '$49.99',
-  },
-  {
-    id: 'FS-002',
-    title: 'FULL STACK DEVELOPMENT',
-    instructor: 'Mark Thompson',
-    description: 'Production-grade web applications using React, Node.js, and MongoDB with industry best practices.',
-    duration: '60h',
-    students: '12.8K',
-    rating: 4.9,
-    status: 'ACTIVE',
-    category: 'Development',
-    price: '$79.99',
-  },
-  {
-    id: 'DS-003',
-    title: 'DATA STRUCTURES & ALGORITHMS',
-    instructor: 'Prof. Michael Chen',
-    description: 'Advanced DSA concepts with coding interview preparation and competitive programming techniques.',
-    duration: '50h',
-    students: '18.4K',
-    rating: 4.7,
-    status: 'ACTIVE',
-    category: 'DSA / Placements',
-    price: '$59.99',
-  },
-  {
-    id: 'ML-004',
-    title: 'MACHINE LEARNING A-Z',
-    instructor: 'Dr. Emily Rodriguez',
-    description: 'Complete ML pipeline from theory to deployment including supervised and unsupervised learning.',
-    duration: '45h',
-    students: '10.2K',
-    rating: 4.9,
-    status: 'BETA',
-    category: 'ML & Data Science',
-    price: '$89.99',
-  },
-  {
-    id: 'JS-005',
-    title: 'ADVANCED JAVASCRIPT',
-    instructor: 'Alex Martinez',
-    description: 'Deep dive into async programming, closures, prototypes, and modern JavaScript frameworks.',
-    duration: '35h',
-    students: '14.5K',
-    rating: 4.8,
-    status: 'ACTIVE',
-    category: 'Programming Languages',
-    price: '$44.99',
-  },
-  {
-    id: 'CL-006',
-    title: 'CLOUD COMPUTING AWS',
-    instructor: 'Rachel Green',
-    description: 'AWS services, cloud architecture patterns, deployment strategies, and DevOps workflows.',
-    duration: '55h',
-    students: '9.8K',
-    rating: 4.6,
-    status: 'ACTIVE',
-    category: 'Cloud / DevOps',
-    price: '$69.99',
-  },
-  {
-    id: 'RE-007',
-    title: 'REACT MASTERY',
-    instructor: 'John Davidson',
-    description: 'Master React hooks, context API, Redux, and performance optimization techniques.',
-    duration: '42h',
-    students: '16.3K',
-    rating: 4.9,
-    status: 'ACTIVE',
-    category: 'Development',
-    price: '$54.99',
-  },
-  {
-    id: 'JV-008',
-    title: 'JAVA COMPLETE GUIDE',
-    instructor: 'Dr. Andrew Wilson',
-    description: 'From Java basics to Spring Boot, microservices, and enterprise application development.',
-    duration: '65h',
-    students: '13.5K',
-    rating: 4.7,
-    status: 'ACTIVE',
-    category: 'Programming Languages',
-    price: '$64.99',
-  },
-  {
-    id: 'DL-009',
-    title: 'DEEP LEARNING SPECIALIZATION',
-    instructor: 'Dr. Lisa Wang',
-    description: 'Neural networks, CNNs, RNNs, and transformers with PyTorch and TensorFlow.',
-    duration: '58h',
-    students: '8.7K',
-    rating: 4.8,
-    status: 'BETA',
-    category: 'ML & Data Science',
-    price: '$99.99',
-  },
-  {
-    id: 'DO-010',
-    title: 'DOCKER & KUBERNETES',
-    instructor: 'Michael Stevens',
-    description: 'Container orchestration, CI/CD pipelines, and cloud-native application deployment.',
-    duration: '38h',
-    students: '11.2K',
-    rating: 4.6,
-    status: 'ACTIVE',
-    category: 'Cloud / DevOps',
-    price: '$59.99',
-  },
-  {
-    id: 'CP-011',
-    title: 'C++ FOR COMPETITIVE PROGRAMMING',
-    instructor: 'Prof. Robert Lee',
-    description: 'STL, algorithms, data structures, and problem-solving techniques for coding competitions.',
-    duration: '48h',
-    students: '9.5K',
-    rating: 4.7,
-    status: 'ACTIVE',
-    category: 'DSA / Placements',
-    price: '$49.99',
-  },
-  {
-    id: 'TS-012',
-    title: 'TYPESCRIPT FUNDAMENTALS',
-    instructor: 'Emma Clarke',
-    description: 'Type-safe JavaScript development with advanced TypeScript features and patterns.',
-    duration: '32h',
-    students: '10.8K',
-    rating: 4.8,
-    status: 'ACTIVE',
-    category: 'Programming Languages',
-    price: '$39.99',
-  },
-  {
-    id: 'DA-013',
-    title: 'DATA ANALYTICS WITH PYTHON',
-    instructor: 'Dr. James Anderson',
-    description: 'Data manipulation, visualization, and statistical analysis using Pandas and NumPy.',
-    duration: '44h',
-    students: '12.1K',
-    rating: 4.7,
-    status: 'ACTIVE',
-    category: 'ML & Data Science',
-    price: '$79.99',
-  },
-  {
-    id: 'IP-014',
-    title: 'INTERVIEW PREPARATION BOOTCAMP',
-    instructor: 'Sarah Mitchell',
-    description: 'System design, behavioral interviews, and coding challenges for top tech companies.',
-    duration: '52h',
-    students: '17.6K',
-    rating: 4.9,
-    status: 'ACTIVE',
-    category: 'DSA / Placements',
-    price: '$69.99',
-  },
-  {
-    id: 'NG-015',
-    title: 'ANGULAR COMPLETE COURSE',
-    instructor: 'David Brown',
-    description: 'Build scalable single-page applications with Angular, RxJS, and NgRx.',
-    duration: '46h',
-    students: '8.9K',
-    rating: 4.6,
-    status: 'ACTIVE',
-    category: 'Development',
-    price: '$59.99',
-  },
-  {
-    id: 'GO-016',
-    title: 'GOLANG BACKEND DEVELOPMENT',
-    instructor: 'Kevin Parker',
-    description: 'High-performance backend services with Go, gRPC, and microservices architecture.',
-    duration: '50h',
-    students: '7.4K',
-    rating: 4.8,
-    status: 'BETA',
-    category: 'Development',
-    price: '$79.99',
-  },
-  {
-    id: 'TF-017',
-    title: 'TERRAFORM & INFRASTRUCTURE',
-    instructor: 'Laura Adams',
-    description: 'Infrastructure as Code with Terraform, AWS, and automated deployment strategies.',
-    duration: '36h',
-    students: '6.8K',
-    rating: 4.7,
-    status: 'ACTIVE',
-    category: 'Cloud / DevOps',
-    price: '$49.99',
-  },
-  {
-    id: 'NL-018',
-    title: 'NATURAL LANGUAGE PROCESSING',
-    instructor: 'Dr. Nina Patel',
-    description: 'Text processing, sentiment analysis, and language models with BERT and GPT.',
-    duration: '54h',
-    students: '5.9K',
-    rating: 4.8,
-    status: 'BETA',
-    category: 'ML & Data Science',
-    price: '$89.99',
-  },
-];
+interface Course {
+  CourseID: number;
+  Title: string;
+  Category: string;
+  Description: string | null;
+  Price: string | number;
+  Old_Price?: string | number | null;
+  Thumbnail: string | null;
+  Total_Hours: string | number | null;
+  Status: string;
+  Students_Count?: number;
+  Rating?: number;
+  Course_Code?: string;
+  created_at: string;
+  user?: {
+    id: number;
+    name: string;
+    picture: string | null;
+  };
+}
 
 const categories = [
   'All Categories',
-  'DSA / Placements',
-  'Development',
-  'ML & Data Science',
-  'Cloud / DevOps',
-  'Programming Languages',
+  'Web Development',
+  'Mobile Development',
+  'Data Science',
+  'Machine Learning',
+  'Artificial Intelligence',
+  'Cloud Computing',
+  'Cybersecurity',
+  'DevOps',
+  'Blockchain',
+  'Game Development',
+  'UI/UX Design',
+  'Database Management',
 ];
+
+function formatTimeAgo(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 31) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.floor(months / 12);
+  return `${years}y ago`;
+}
 
 interface AllCoursesProps {
   category?: string;
-  onCourseClick?: (courseId: string) => void;
+  onCourseClick?: (courseId: string | number) => void;
 }
 
 export function AllCourses({ category = 'All Categories', onCourseClick }: AllCoursesProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(category);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage] = useState(15);
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses`);
+        setCourses(response.data.courses || []);
+      } catch (err) {
+        setError('Failed to fetch courses. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   // Filter courses based on search and category
-  const filteredCourses = allCourses.filter((course) => {
+  const filteredCourses = courses.filter((course) => {
     const matchesSearch =
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase());
+      course.Title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (course.user?.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (course.Description ?? '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory =
-      selectedCategory === 'All Categories' || course.category === selectedCategory;
+      selectedCategory === 'All Categories' || course.Category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -350,68 +196,113 @@ export function AllCourses({ category = 'All Categories', onCourseClick }: AllCo
           </p>
         </div>
 
-        {/* Courses Grid */}
-        {filteredCourses.length > 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="w-12 h-12 border-4 border-[#A5C89E]/20 border-t-[#A5C89E] rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-400 font-mono text-sm tracking-widest">LOADING_COURSES...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <p className="text-red-400 font-mono text-sm mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-[#A5C89E]/10 border border-[#A5C89E]/30 text-[#A5C89E] rounded-lg hover:bg-[#A5C89E]/20 transition-all font-mono text-xs"
+            >
+              RETRY_FETCH
+            </button>
+          </div>
+        ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentCourses.map((course, index) => (
               <div
-                key={course.id}
+                key={course.CourseID}
                 className="group relative bg-[#121212]/60 backdrop-blur-sm border border-[#A5C89E]/20 rounded-xl overflow-hidden hover:border-[#A5C89E] transition-all duration-300 hover:-translate-y-1"
-                onClick={() => onCourseClick?.(course.id)}
               >
                 {/* Course Header */}
-                <div className="relative h-40 bg-gradient-to-br from-[#A5C89E]/10 to-transparent border-b border-[#A5C89E]/20 p-6">
-                  <div className="flex items-start justify-between">
+                <div className="relative h-40 bg-gradient-to-br from-[#A5C89E]/15 to-transparent border-b border-[#A5C89E]/20 p-6 overflow-hidden">
+                  <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-500">
+                    <img 
+                      src={course.Thumbnail || 'https://res.cloudinary.com/dp1li5tkd/image/upload/v1775459948/eg8mybzg20bdnsau78vs.jpg'} 
+                      alt="" 
+                      className="w-full h-full object-cover grayscale" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#000]/60 to-[#121212]/95 mix-blend-multiply"></div>
+                  </div>
+                  <div className="relative z-10 flex items-start justify-between">
                     <div className="text-xs font-mono text-[#A5C89E] bg-[#A5C89E]/10 px-2 py-1 rounded border border-[#A5C89E]/30">
-                      {course.id}
+                      {course.Course_Code || `ID-${course.CourseID}`}
                     </div>
                     <div className="flex items-center space-x-1">
                       <div
                         className={`w-1.5 h-1.5 rounded-full ${
-                          course.status === 'BETA' ? 'bg-yellow-500' : 'bg-green-500'
+                          course.Status?.toLowerCase() === 'beta' ? 'bg-yellow-500' : 'bg-green-500'
                         } animate-pulse`}
                       ></div>
-                      <span className="text-[10px] text-gray-500 font-mono">{course.status}</span>
+                      <span className="text-[10px] text-gray-500 font-mono uppercase">{course.Status}</span>
                     </div>
                   </div>
-                  <div className="absolute bottom-6 left-6 text-2xl font-bold text-white/10">
+                  <div className="absolute bottom-4 right-6 text-2xl font-bold text-white/5 font-mono z-10">
                     {String(index + 1).padStart(2, '0')}
                   </div>
                 </div>
 
                 {/* Course Content */}
                 <div className="p-6">
-                  <h3 className="text-lg font-bold text-white mb-2 tracking-wide group-hover:text-[#A5C89E] transition-colors">
-                    {course.title}
-                  </h3>
-                  <p className="text-xs text-[#A5C89E]/80 mb-3 font-mono">{course.instructor}</p>
-                  <p className="text-gray-400 text-sm mb-4 leading-relaxed line-clamp-2">
-                    {course.description}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="text-lg font-bold text-white tracking-wide group-hover:text-[#A5C89E] transition-colors line-clamp-1">
+                      {course.Title}
+                    </h3>
+                    <div className="text-[9px] text-[#A5C89E]/60 font-mono uppercase tracking-widest whitespace-nowrap bg-[#A5C89E]/5 px-2 py-0.5 rounded border border-[#A5C89E]/10">
+                      {formatTimeAgo(course.created_at)}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <div className="w-5 h-5 rounded-full border border-[#A5C89E]/30 overflow-hidden bg-gray-900">
+                      <img 
+                        src={course.user?.picture || '/default-avatar.png'} 
+                        alt="" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.currentTarget.src = '/default-avatar.png')}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono">{course.user?.name || 'Academic Expert'}</p>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed line-clamp-2 min-h-[40px]">
+                    {course.Description || 'Explore the fundamentals and advanced concepts in this comprehensive course.'}
                   </p>
 
                   {/* Price */}
-                  <div className="mb-4">
-                    <span className="text-2xl font-bold text-[#A5C89E]">{course.price}</span>
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="text-2xl font-bold text-[#A5C89E] tracking-tighter">${course.Price}</span>
+                    {course.Old_Price && (
+                      <span className="text-sm text-gray-600 line-through tracking-tighter">${course.Old_Price}</span>
+                    )}
                   </div>
 
                   {/* Course Meta */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4 font-mono">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-6 font-mono border-t border-white/5 pt-4">
                     <div className="flex items-center space-x-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{course.duration}</span>
+                      <Clock className="w-3 h-3 text-[#A5C89E]/60" />
+                      <span>{course.Total_Hours ? `${course.Total_Hours}h` : 'TBD'}</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Users className="w-3 h-3" />
-                      <span>{course.students}</span>
+                      <Users className="w-3 h-3 text-[#A5C89E]/60" />
+                      <span>{course.Students_Count || 0}</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <span>⭐</span>
-                      <span>{course.rating}</span>
+                      <span className="text-[#A5C89E]/80">★</span>
+                      <span>{course.Rating || 'N/A'}</span>
                     </div>
                   </div>
 
                   {/* Enroll Button */}
-                  <button className="w-full py-3 bg-transparent border border-[#A5C89E]/60 text-[#A5C89E]/90 rounded-lg hover:bg-[#A5C89E]/80 hover:text-black transition-all font-medium text-sm tracking-wide">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCourseClick?.(course.CourseID);
+                    }}
+                    className="w-full py-3 bg-transparent border border-[#A5C89E]/60 text-[#A5C89E]/90 rounded-lg hover:bg-[#A5C89E]/80 hover:text-black hover:shadow-[0_0_15px_rgba(165,200,158,0.3)] transition-all duration-300 font-bold text-sm tracking-wide uppercase"
+                  >
                     ENROLL_NOW
                   </button>
                 </div>
@@ -420,6 +311,7 @@ export function AllCourses({ category = 'All Categories', onCourseClick }: AllCo
                 <div className="absolute top-0 right-0 w-0 h-0.5 bg-[#A5C89E]/80 group-hover:w-full transition-all duration-300"></div>
               </div>
             ))}
+
           </div>
         ) : (
           /* Empty State */
