@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\PublicStatsController;
+use App\Http\Controllers\TutorialController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -85,6 +86,12 @@ Route::middleware('auth:api')->group(function () {
         // Feedback Management
         Route::get('/admin/feedbacks', [FeedbackController::class, 'index']);
         Route::put('/admin/feedbacks/{id}', [FeedbackController::class, 'updateStatus']);
+
+        // Tutorial Management
+        Route::get('/admin/tutorials', [TutorialController::class, 'index']);
+        Route::post('/admin/tutorials', [TutorialController::class, 'store']);
+        Route::get('/admin/tutorials/search-articles', [TutorialController::class, 'searchArticles']);
+        Route::get('/admin/tutorials/{id}', [TutorialController::class, 'show']);
     });
 });
 
