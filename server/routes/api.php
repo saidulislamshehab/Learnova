@@ -7,11 +7,15 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\ExpertApplicationController;
 use App\Http\Controllers\InstructorApplicationController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PublicStatsController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/stats/homepage', [PublicStatsController::class, 'homepage']);
 Route::get('/courses', [CourseController::class, 'indexPublic']);
+Route::get('/courses/top', [CourseController::class, 'topPublished']);
 Route::get('/articles', [ArticleController::class, 'index']);
 // Constrain {id} so it doesn't capture fixed routes like /articles/my
 Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('id');
@@ -42,6 +46,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
     Route::post('/articles/{id}/comments', [ArticleController::class, 'storeComment'])->whereNumber('id');
+    Route::post('/articles/{id}/report', [ArticleController::class, 'storeReport'])->whereNumber('id');
     
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/courses/pending', [CourseController::class, 'indexPending']);
@@ -58,6 +63,10 @@ Route::middleware('auth:api')->group(function () {
         // Article Moderation
         Route::get('/admin/articles/pending', [ArticleController::class, 'indexPending']);
         Route::put('/admin/articles/{id}', [ArticleController::class, 'moderate']);
+
+        // Article Reports
+        Route::get('/admin/reports', [ReportController::class, 'index']);
+        Route::put('/admin/reports/{id}', [ReportController::class, 'update']);
     });
 });
 

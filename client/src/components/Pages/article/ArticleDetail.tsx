@@ -471,11 +471,36 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
   };
 
   const handleReportSubmit = () => {
-    // Submit report logic here
-    setReportStep('success');
-    setTimeout(() => {
-      handleCloseReport();
-    }, 2000);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setIsSignedIn(false);
+      alert('Please sign in to report an article.');
+      return;
+    }
+
+    if (!selectedReportType) {
+      return;
+    }
+
+    void axios
+      .post(
+        `${API_BASE}/articles/${articleId}/report`,
+        {
+          report_type: selectedReportType,
+          description: reportReason.trim() || null,
+        },
+        { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } }
+      )
+      .then(() => {
+        setReportStep('success');
+        setTimeout(() => {
+          handleCloseReport();
+        }, 2000);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err?.response?.data?.message || 'Failed to submit report.');
+      });
   };
 
   const handleShare = () => {

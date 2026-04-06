@@ -48,6 +48,11 @@ class Article extends Model
         return $this->hasMany(Comment::class, 'Article_ID', 'Article_ID');
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'Article_ID', 'Article_ID');
+    }
+
     public function toArray()
     {
         $array = parent::toArray();

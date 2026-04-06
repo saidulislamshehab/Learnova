@@ -37,6 +37,22 @@ class CourseController extends Controller
         ]);
     }
 
+    public function topPublished(Request $request): JsonResponse
+    {
+        $courses = Course::query()
+            ->with('user:id,name,picture')
+            ->withCount('enrollments')
+            ->where('Status', 'published')
+            ->orderByDesc('enrollments_count')
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get();
+
+        return response()->json([
+            'courses' => $courses,
+        ]);
+    }
+
     public function indexMyCourses(Request $request): JsonResponse
     {
         $courses = Course::query()
