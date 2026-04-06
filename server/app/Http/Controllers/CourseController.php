@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\Notification;
+use App\Models\User;
 
 class CourseController extends Controller
 {
@@ -97,6 +99,32 @@ class CourseController extends Controller
             ], 422);
         }
 
+        // Admin-specific validation: Minimum one title and YouTube URL for each title
+        $creatorRole = strtolower((string) ($request->user()->role ?? ''));
+        if ($creatorRole === 'admin') {
+            if (empty($contents)) {
+                return response()->json([
+                    'message' => 'Admins must add at least one title (course content) to the article.',
+                ], 422);
+            }
+
+            foreach ($contents as $item) {
+                if (empty($item['youtube_url'])) {
+                    return response()->json([
+                        'message' => 'Every title must have a valid YouTube link.',
+                    ], 422);
+                }
+                
+                // Generic youtube URL validation (at least check if it's a URL)
+                if (!filter_var($item['youtube_url'], FILTER_VALIDATE_URL) || 
+                    !(str_contains($item['youtube_url'], 'youtube.com') || str_contains($item['youtube_url'], 'youtu.be'))) {
+                    return response()->json([
+                        'message' => "The YouTube link for \"{$item['title']}\" is invalid.",
+                    ], 422);
+                }
+            }
+        }
+
         $course = DB::transaction(function () use ($request, $validated, $contents) {
             $thumbnailUrl = $validated['thumbnail'] ?? null;
             if ($request->hasFile('thumbnail')) {
@@ -139,6 +167,20 @@ class CourseController extends Controller
             return $course->load('contents');
         });
 
+        // Notify all users about new course if it's published
+        if ($course->Status === 'published') {
+            $users = User::where('id', '!=', $request->user()->id)->get();
+            foreach ($users as $recipient) {
+                Notification::create([
+                    'user_id' => $recipient->id,
+                    'type' => 'course_posted',
+                    'message' => "published a new course: \"{$course->Title}\"",
+                    'author_name' => $request->user()->name,
+                    'resource_id' => $course->CourseID,
+                ]);
+            }
+        }
+
         return response()->json([
             'message' => 'Course created successfully.',
             'course' => $course,
@@ -164,6 +206,31 @@ class CourseController extends Controller
             return response()->json([
                 'message' => 'Invalid course_contents payload. Send a valid JSON array or array.',
             ], 422);
+        }
+
+        // Admin-specific validation: Minimum one title and YouTube URL for each title
+        $creatorRole = strtolower((string) ($request->user()->role ?? ''));
+        if ($creatorRole === 'admin') {
+            if (empty($contents)) {
+                return response()->json([
+                    'message' => 'Admins must add at least one title (course content) to the article.',
+                ], 422);
+            }
+
+            foreach ($contents as $item) {
+                if (empty($item['youtube_url'])) {
+                    return response()->json([
+                        'message' => 'Every title must have a valid YouTube link.',
+                    ], 422);
+                }
+                
+                if (!filter_var($item['youtube_url'], FILTER_VALIDATE_URL) || 
+                    !(str_contains($item['youtube_url'], 'youtube.com') || str_contains($item['youtube_url'], 'youtu.be'))) {
+                    return response()->json([
+                        'message' => "The YouTube link for \"{$item['title']}\" is invalid.",
+                    ], 422);
+                }
+            }
         }
 
         $updatedCourse = DB::transaction(function () use ($request, $validated, $course, $contents) {

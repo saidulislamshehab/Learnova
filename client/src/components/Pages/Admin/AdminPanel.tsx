@@ -1,31 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  BookOpen,
+  Check,
+  ChevronLeft,
+  FileText,
+  GraduationCap,
   LayoutDashboard,
-  Users,
+  Menu,
+  MessageSquare,
+  Plus,
+  RefreshCw,
+  Save,
+  ShieldCheck,
+  Trash2,
   UserCheck,
   UserPlus,
-  FileText,
-  BookOpen,
-  GraduationCap,
-  Award,
-  MessageSquare,
-  Menu,
+  Users,
   X,
-  Eye,
-  Trash2,
-  Check,
   XCircle,
-  TrendingUp,
-  Search,
-  Filter,
-  ChevronLeft,
-  AlertTriangle,
-  Plus,
-  Edit,
-  Save,
-  ArrowUp,
-  ArrowDown,
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -43,73 +39,102 @@ type ActiveSection =
   | 'reports'
   | 'feedback';
 
-
 type DetailView =
   | { type: 'none' }
-  | { type: 'user'; id: string }
   | { type: 'instructor-app'; id: string }
   | { type: 'expert-app'; id: string }
   | { type: 'article'; id: string }
   | { type: 'course'; id: string };
 
+type StatusTone = 'pending' | 'approved' | 'rejected' | 'info' | 'resolved' | 'in_progress';
+
+const STATUS_CLASS: Record<StatusTone, string> = {
+  pending: 'admin-status admin-status-pending',
+  approved: 'admin-status admin-status-approved',
+  rejected: 'admin-status admin-status-rejected',
+  info: 'admin-status admin-status-info',
+  resolved: 'admin-status admin-status-approved',
+  in_progress: 'admin-status admin-status-info',
+};
+
+const MENU_ITEMS: Array<{ id: ActiveSection; label: string; icon: any }> = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'users', label: 'Users', icon: Users },
+  { id: 'instructor-applications', label: 'Instructor Apps', icon: UserPlus },
+  { id: 'expert-applications', label: 'Expert Apps', icon: UserCheck },
+  { id: 'articles-approval', label: 'Articles Review', icon: FileText },
+  { id: 'courses-approval', label: 'Courses Review', icon: BookOpen },
+  { id: 'tutorials', label: 'Tutorials', icon: GraduationCap },
+  { id: 'reports', label: 'Reports', icon: AlertTriangle },
+  { id: 'feedback', label: 'Feedback', icon: MessageSquare },
+];
+
+const EMPTY_NEW_USER_FORM = {
+  name: '',
+  email: '',
+  password: '',
+  role: '',
+};
+
+const getStatusTone = (value: string): StatusTone => {
+  const normalized = String(value || '').toLowerCase();
+  if (normalized === 'approved' || normalized === 'published') {
+    return 'approved';
+  }
+  if (normalized === 'rejected' || normalized === 'draft') {
+    return 'rejected';
+  }
+  if (normalized === 'resolved') {
+    return 'resolved';
+  }
+  if (normalized === 'in_progress' || normalized === 'under review' || normalized === 'under_review') {
+    return 'in_progress';
+  }
+  return 'pending';
+};
+
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const API_BASE = `http://${window.location.hostname}:8000/api`;
-  const EMPTY_NEW_USER_FORM = {
-    name: '',
-    email: '',
-    password: '',
-    role: '',
-  };
+
   const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Prevent scrolling when mobile sidebar is open
-  // Prevent scrolling when mobile sidebar is open
-  useEffect(() => {
-    if (isSidebarOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
-    };
-  }, [isSidebarOpen]);
   const [detailView, setDetailView] = useState<DetailView>({ type: 'none' });
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+
   const [instructorApplications, setInstructorApplications] = useState<any[]>([]);
   const [isLoadingInstructorApplications, setIsLoadingInstructorApplications] = useState(false);
+
   const [expertApplications, setExpertApplications] = useState<any[]>([]);
   const [isLoadingExpertApplications, setIsLoadingExpertApplications] = useState(false);
+
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
+
   const [adminCourseApprovals, setAdminCourseApprovals] = useState<any[]>([]);
   const [isLoadingCourseApprovals, setIsLoadingCourseApprovals] = useState(false);
   const [courseApprovalsError, setCourseApprovalsError] = useState<string | null>(null);
+
   const [pendingArticles, setPendingArticles] = useState<any[]>([]);
   const [isLoadingPendingArticles, setIsLoadingPendingArticles] = useState(false);
   const [pendingArticlesError, setPendingArticlesError] = useState<string | null>(null);
+
   const [adminReports, setAdminReports] = useState<any[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
-  const [reviewArticle, setReviewArticle] = useState<any | null>(null);
+
   const [isLoadingReviewArticle, setIsLoadingReviewArticle] = useState(false);
+  const [reviewArticle, setReviewArticle] = useState<any | null>(null);
+
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [newUserForm, setNewUserForm] = useState(EMPTY_NEW_USER_FORM);
 
-  // Feedback state
   const [feedbackEntries, setFeedbackEntries] = useState<any[]>([]);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
-  // Tutorial Management State
   const [tutorials, setTutorials] = useState<any[]>([]);
   const [isLoadingTutorials, setIsLoadingTutorials] = useState(false);
   const [tutorialsError, setTutorialsError] = useState<string | null>(null);
@@ -118,157 +143,25 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearchingArticles, setIsSearchingArticles] = useState(false);
 
-  // Removed allDatabaseArticles mock
+  useEffect(() => {
+    document.body.classList.add('admin-theme');
+    return () => {
+      document.body.classList.remove('admin-theme');
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, []);
 
-  // Standard background component
-  const BackgroundEffects = () => (
-    <>
-      {/* Grid Background - Same as Homepage */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(128, 128, 128, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(128, 128, 128, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '80px 80px',
-        }}
-      />
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      return;
+    }
 
-      {/* Noise Texture */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' /%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Glowing Dots */}
-      <div className="fixed top-1/4 left-1/4 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-40 animate-pulse pointer-events-none z-0"></div>
-      <div className="fixed top-1/3 right-1/3 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-30 animate-pulse pointer-events-none z-0"></div>
-      <div className="fixed top-2/3 left-1/2 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-50 animate-pulse pointer-events-none z-0"></div>
-    </>
-  );
-
-  const menuItems = [
-    { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'instructor-applications', label: 'Instructor Applications', icon: UserPlus },
-    { id: 'expert-applications', label: 'Expert Applications', icon: UserCheck },
-    { id: 'articles-approval', label: 'Articles Approval', icon: FileText },
-    { id: 'courses-approval', label: 'Courses Approval', icon: BookOpen },
-    { id: 'tutorials', label: 'Tutorials', icon: BookOpen },
-    { id: 'reports', label: 'Article Reports', icon: AlertTriangle },
-    { id: 'feedback', label: 'Feedback', icon: MessageSquare },
-  ] as const;
-
-  // Mock data
-  const stats = [
-    { label: 'Total Users', value: '12,847', icon: Users, trend: '+12.5%', color: '#A5C89E' },
-    {
-      label: 'Total Instructors',
-      value: '324',
-      icon: GraduationCap,
-      trend: '+8.2%',
-      color: '#A5C89E',
-    },
-    { label: 'Total Experts', value: '156', icon: Award, trend: '+5.1%', color: '#A5C89E' },
-    { label: 'Total Articles', value: '2,891', icon: FileText, trend: '+15.3%', color: '#A5C89E' },
-    { label: 'Total Courses', value: '478', icon: BookOpen, trend: '+10.7%', color: '#A5C89E' },
-  ];
-
-  const users = [
-    {
-      id: '1',
-      name: 'Alex Johnson',
-      email: 'alex.johnson@email.com',
-      role: 'Student',
-      status: 'Active',
-      joinDate: '2025-12-10',
-      lastLogin: '2026-01-25',
-    },
-    {
-      id: '2',
-      name: 'Sarah Williams',
-      email: 'sarah.williams@email.com',
-      role: 'Instructor',
-      status: 'Active',
-      joinDate: '2025-11-20',
-      lastLogin: '2026-01-24',
-    },
-    {
-      id: '3',
-      name: 'Mike Chen',
-      email: 'mike.chen@email.com',
-      role: 'Expert',
-      status: 'Active',
-      joinDate: '2025-10-15',
-      lastLogin: '2026-01-22',
-    },
-    {
-      id: '4',
-      name: 'Emma Davis',
-      email: 'emma.davis@email.com',
-      role: 'Student',
-      status: 'Inactive',
-      joinDate: '2026-01-05',
-      lastLogin: '2026-01-20',
-    },
-    {
-      id: '5',
-      name: 'James Brown',
-      email: 'james.brown@email.com',
-      role: 'Instructor',
-      status: 'Active',
-      joinDate: '2025-09-30',
-      lastLogin: '2026-01-21',
-    },
-    {
-      id: '6',
-      name: 'Linda Wilson',
-      email: 'linda.wilson@email.com',
-      role: 'Student',
-      status: 'Active',
-      joinDate: '2026-01-12',
-      lastLogin: '2026-01-26',
-    },
-    {
-      id: '7',
-      name: 'Robert Miller',
-      email: 'robert.miller@email.com',
-      role: 'Expert',
-      status: 'Active',
-      joinDate: '2025-12-01',
-      lastLogin: '2026-01-25',
-    },
-    {
-      id: '8',
-      name: 'William Taylor',
-      email: 'william.taylor@email.com',
-      role: 'Student',
-      status: 'Suspended',
-      joinDate: '2025-12-15',
-      lastLogin: '2026-01-10',
-    },
-    {
-      id: '9',
-      name: 'David Anderson',
-      email: 'david.anderson@email.com',
-      role: 'Instructor',
-      status: 'Active',
-      joinDate: '2025-11-05',
-      lastLogin: '2026-01-23',
-    },
-    {
-      id: '10',
-      name: 'Jennifer Thomas',
-      email: 'jennifer.thomas@email.com',
-      role: 'Student',
-      status: 'Active',
-      joinDate: '2026-01-18',
-      lastLogin: '2026-01-26',
-    },
-  ];
+    document.body.style.overflow = 'unset';
+    document.documentElement.style.overflow = 'unset';
+  }, [isSidebarOpen]);
 
   const fetchInstructorApplications = async () => {
     const token = localStorage.getItem('auth_token');
@@ -292,7 +185,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         email: item.user?.email ?? 'N/A',
         expertise: item.expertise || item.user?.bio || 'Not provided',
         appliedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
-        status: item.status ? String(item.status).charAt(0).toUpperCase() + String(item.status).slice(1) : 'Pending',
+        status: item.status ? String(item.status) : 'pending',
       }));
 
       setInstructorApplications(list);
@@ -325,7 +218,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         email: item.user?.email ?? 'N/A',
         expertise: item.expertise || item.user?.bio || 'Not provided',
         appliedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
-        status: item.status ? String(item.status).charAt(0).toUpperCase() + String(item.status).slice(1) : 'Pending',
+        status: item.status ? String(item.status) : 'pending',
       }));
 
       setExpertApplications(list);
@@ -359,19 +252,18 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         id: String(item.id),
         name: item.name ?? 'Unknown',
         email: item.email ?? 'N/A',
-        role: item.role ? String(item.role).charAt(0).toUpperCase() + String(item.role).slice(1) : 'Student',
-        status: 'Active',
+        role: item.role ? String(item.role).toUpperCase() : 'STUDENT',
+        status: 'active',
         joinDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
-        lastLogin: item.updated_at ? new Date(item.updated_at).toLocaleDateString() : 'N/A',
       }));
 
       setAdminUsers(list);
     } catch (error: any) {
       setAdminUsers([]);
       if (error?.response?.status === 403) {
-        setUsersError('You do not have permission to view users. Sign in with an admin account.');
+        setUsersError('You do not have permission to view users.');
       } else if (error?.response?.status === 401) {
-        setUsersError('Your session expired. Please sign in again.');
+        setUsersError('Session expired. Please sign in again.');
       } else {
         setUsersError(error?.response?.data?.message || 'Failed to load users.');
       }
@@ -402,11 +294,11 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       const list = (Array.isArray(rawCourses) ? rawCourses : []).map((item: any) => ({
         id: String(item.CourseID ?? item.id),
         title: item.Title ?? item.title ?? 'Untitled Course',
-        instructor: item.user?.name ?? item.instructor_name ?? 'Unknown Instructor',
-        category: item.category_name ?? item.Category ?? (item.category_id ? `Category ${item.category_id}` : 'Uncategorized'),
-        description: item.short_description ?? item.Description ?? '',
+        instructor: item.user?.name ?? item.instructor_name ?? 'Unknown',
+        category: item.category_name ?? item.Category ?? 'Uncategorized',
+        description: item.short_description ?? item.Description ?? 'No description provided.',
         submittedDate: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
-        status: item.status ? String(item.status).charAt(0).toUpperCase() + String(item.status).slice(1) : 'Pending',
+        status: item.status ? String(item.status) : 'pending',
       }));
 
       setAdminCourseApprovals(list);
@@ -483,12 +375,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         description: item.Description ?? item.description ?? '',
         reportedBy: item.user?.name ?? 'Unknown',
         reportedAt: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
-        status:
-          String(item.Status ?? item.status ?? 'pending') === 'under_review'
-            ? 'Under Review'
-            : String(item.Status ?? item.status ?? 'pending') === 'resolved'
-              ? 'Resolved'
-              : 'Pending',
+        status: String(item.Status ?? item.status ?? 'pending'),
       }));
 
       setAdminReports(list);
@@ -499,6 +386,139 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       setIsLoadingReports(false);
     }
   };
+
+  const fetchFeedbacks = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setFeedbackEntries([]);
+      setFeedbackError('Please sign in as admin to view feedback.');
+      return;
+    }
+
+    try {
+      setIsLoadingFeedback(true);
+      setFeedbackError(null);
+      const response = await axios.get(`${API_BASE}/admin/feedbacks`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawFeedbacks = response.data?.feedbacks ?? [];
+      const list = (Array.isArray(rawFeedbacks) ? rawFeedbacks : []).map((item: any) => ({
+        id: String(item.F_ID ?? item.id),
+        user: item.user?.name ?? 'Unknown',
+        email: item.user?.email ?? '',
+        subject: item.Subject ?? item.subject ?? 'No subject',
+        type: item.Type ?? item.type ?? 'general',
+        message: item.Description ?? item.description ?? '',
+        date: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.Status ?? item.status ?? 'pending',
+      }));
+
+      setFeedbackEntries(list);
+    } catch (error: any) {
+      setFeedbackEntries([]);
+      setFeedbackError(error?.response?.data?.message || 'Failed to load feedback.');
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
+
+  const fetchTutorials = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setTutorials([]);
+      return;
+    }
+
+    setIsLoadingTutorials(true);
+    setTutorialsError(null);
+    try {
+      const response = await axios.get(`${API_BASE}/admin/tutorials`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setTutorials(response.data.tutorials || []);
+    } catch (err: any) {
+      setTutorialsError(err.response?.data?.message || 'Failed to fetch tutorials');
+    } finally {
+      setIsLoadingTutorials(false);
+    }
+  };
+
+  const searchArticlesForTutorial = async (query: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token || !query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearchingArticles(true);
+    try {
+      const response = await axios.get(`${API_BASE}/admin/tutorials/search-articles`, {
+        params: { query },
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setSearchResults(response.data.articles || []);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setIsSearchingArticles(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchInstructorApplications();
+    void fetchExpertApplications();
+    void fetchUsers();
+    void fetchCourseApprovals();
+    void fetchPendingArticles();
+    void fetchReports();
+  }, []);
+
+  useEffect(() => {
+    setSearchQuery('');
+
+    if (activeSection === 'users') {
+      void fetchUsers();
+    }
+    if (activeSection === 'instructor-applications') {
+      void fetchInstructorApplications();
+    }
+    if (activeSection === 'expert-applications') {
+      void fetchExpertApplications();
+    }
+    if (activeSection === 'courses-approval') {
+      void fetchCourseApprovals();
+    }
+    if (activeSection === 'articles-approval') {
+      void fetchPendingArticles();
+    }
+    if (activeSection === 'reports') {
+      void fetchReports();
+    }
+    if (activeSection === 'feedback') {
+      void fetchFeedbacks();
+    }
+    if (activeSection === 'tutorials') {
+      void fetchTutorials();
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      void searchArticlesForTutorial(articleSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [articleSearchQuery]);
 
   const handleCreateUser = async () => {
     const token = localStorage.getItem('auth_token');
@@ -533,7 +553,6 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       setIsAddUserModalOpen(false);
       setNewUserForm(EMPTY_NEW_USER_FORM);
       await fetchUsers();
-      alert('User added successfully.');
     } catch (error: any) {
       const apiMessage = error?.response?.data?.message;
       const firstValidationError = error?.response?.data?.errors
@@ -546,103 +565,243 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
-  useEffect(() => {
-    if (activeSection === 'instructor-applications') {
-      void fetchInstructorApplications();
+  const handleDelete = async (type: string, id: string) => {
+    if (!window.confirm(`Are you sure you want to delete this ${type}?`)) {
+      return;
     }
 
-    if (activeSection === 'expert-applications') {
-      void fetchExpertApplications();
+    if (type !== 'user') {
+      return;
     }
 
-    if (activeSection === 'users') {
-      void fetchUsers();
-    }
-
-    if (activeSection === 'courses-approval') {
-      void fetchCourseApprovals();
-    }
-
-    if (activeSection === 'articles-approval') {
-      void fetchPendingArticles();
-    }
-
-    if (activeSection === 'reports') {
-      void fetchReports();
-    }
-
-    if (activeSection === 'feedback') {
-      void fetchFeedbacks();
-    }
-  }, [activeSection]);
-
-  useEffect(() => {
-    setSearchQuery('');
-  }, [activeSection]);
-
-  // pendingArticles are fetched from the backend when the Articles Approval section is active
-
-  const pendingCourses = [
-    {
-      id: '1',
-      title: 'Full Stack Web Development Bootcamp',
-      instructor: 'David Martinez',
-      category: 'Development',
-      submittedDate: '2026-01-17',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      title: 'Machine Learning A-Z',
-      instructor: 'Lisa Anderson',
-      category: 'ML & Data Science',
-      submittedDate: '2026-01-16',
-      status: 'Pending',
-    },
-  ];
-
-
-
-  const fetchFeedbacks = async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      setFeedbackEntries([]);
-      setFeedbackError('Please sign in as admin to view feedback.');
+      alert('Please sign in as admin.');
       return;
     }
 
     try {
-      setIsLoadingFeedback(true);
-      setFeedbackError(null);
-      const response = await axios.get(`${API_BASE}/admin/feedbacks`, {
+      setDeletingUserId(id);
+      await axios.delete(`${API_BASE}/admin/users/${id}`, {
         headers: {
           Accept: 'application/json',
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const rawFeedbacks = response.data?.feedbacks ?? [];
-      const list = (Array.isArray(rawFeedbacks) ? rawFeedbacks : []).map((item: any) => ({
-        id: String(item.F_ID ?? item.id),
-        user: item.user?.name ?? 'Unknown',
-        email: item.user?.email ?? '',
-        subject: item.Subject ?? item.subject ?? '',
-        type: item.Type ?? item.type ?? '',
-        message: item.Description ?? item.description ?? '',
-        date: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
-        status: item.Status ?? item.status ?? 'pending',
-      }));
-
-      setFeedbackEntries(list);
+      setAdminUsers((prev) => prev.filter((user) => user.id !== id));
     } catch (error: any) {
-      setFeedbackEntries([]);
-      if (error?.response?.status === 403) {
-        setFeedbackError('You do not have permission to view feedback.');
-      } else {
-        setFeedbackError(error?.response?.data?.message || 'Failed to load feedback.');
-      }
+      alert(error?.response?.data?.message || 'Failed to delete user.');
     } finally {
-      setIsLoadingFeedback(false);
+      setDeletingUserId(null);
+    }
+  };
+
+  const handleApprove = (type: string, id: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    if (type === 'course') {
+      void axios
+        .put(
+          `${API_BASE}/admin/courses/${id}`,
+          { status: 'published' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchCourseApprovals();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve course');
+        });
+      return;
+    }
+
+    if (type === 'instructor application') {
+      void axios
+        .put(
+          `${API_BASE}/admin/instructor-applications/${id}`,
+          { status: 'approved' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchInstructorApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve application');
+        });
+      return;
+    }
+
+    if (type === 'expert application') {
+      void axios
+        .put(
+          `${API_BASE}/admin/expert-applications/${id}`,
+          { status: 'approved' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchExpertApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve application');
+        });
+      return;
+    }
+
+    if (type === 'article') {
+      void axios
+        .put(
+          `${API_BASE}/admin/articles/${id}`,
+          { status: 'published' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchPendingArticles();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to approve article');
+        });
+      return;
+    }
+  };
+
+  const handleReject = (type: string, id: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    if (type === 'course') {
+      void axios
+        .put(
+          `${API_BASE}/admin/courses/${id}`,
+          { status: 'draft' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchCourseApprovals();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject course');
+        });
+      return;
+    }
+
+    if (type === 'instructor application') {
+      void axios
+        .put(
+          `${API_BASE}/admin/instructor-applications/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchInstructorApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject application');
+        });
+      return;
+    }
+
+    if (type === 'expert application') {
+      void axios
+        .put(
+          `${API_BASE}/admin/expert-applications/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchExpertApplications();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject application');
+        });
+      return;
+    }
+
+    if (type === 'article') {
+      void axios
+        .put(
+          `${API_BASE}/admin/articles/${id}`,
+          { status: 'rejected' },
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          void fetchPendingArticles();
+        })
+        .catch((error) => {
+          alert(error?.response?.data?.message || 'Failed to reject article');
+        });
+      return;
+    }
+  };
+
+  const updateReportStatus = async (id: string, status: 'pending' | 'under_review' | 'resolved') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API_BASE}/admin/reports/${id}`,
+        { status },
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      await fetchReports();
+    } catch (error: any) {
+      alert(error?.response?.data?.message || 'Failed to update report status.');
     }
   };
 
@@ -670,459 +829,6 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
-  const fetchTutorials = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
-    setIsLoadingTutorials(true);
-    setTutorialsError(null);
-    try {
-      const response = await axios.get(`${API_BASE}/admin/tutorials`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setTutorials(response.data.tutorials || []);
-    } catch (err: any) {
-      setTutorialsError(err.response?.data?.message || 'Failed to fetch tutorials');
-    } finally {
-      setIsLoadingTutorials(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeSection === 'tutorials') {
-      void fetchTutorials();
-    }
-  }, [activeSection]);
-
-  const searchArticlesForTutorial = async (query: string) => {
-    const token = localStorage.getItem('auth_token');
-    if (!token || !query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearchingArticles(true);
-    try {
-      const response = await axios.get(`${API_BASE}/admin/tutorials/search-articles`, {
-        params: { query },
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setSearchResults(response.data.articles || []);
-    } catch (err) {
-      console.error('Failed to search articles', err);
-    } finally {
-      setIsSearchingArticles(false);
-    }
-  };
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      void searchArticlesForTutorial(articleSearchQuery);
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [articleSearchQuery]);
-
-  const handleEditTutorial = async (id: number) => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
-    try {
-      const response = await axios.get(`${API_BASE}/admin/tutorials/${id}`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const t = response.data.tutorial;
-      setEditingTutorial({
-        id: t.T_ID,
-        title: t.Title,
-        category: t.Category,
-        description: t.Description,
-        status: t.Status,
-        articles: t.articles.map((a: any) => ({
-          ...a,
-          Article_ID: a.Article_ID,
-        })) || []
-      });
-    } catch (err) {
-      console.error('Failed to fetch tutorial details', err);
-      alert('Failed to fetch tutorial details');
-    }
-  };
-
-  const handleSaveTutorial = async (status: 'draft' | 'published') => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
-
-    if (!editingTutorial.title || !editingTutorial.category || !editingTutorial.description || editingTutorial.articles.length === 0) {
-      alert('Please fill in all basic info and add at least one article.');
-      return;
-    }
-
-    try {
-      const payload = {
-        title: editingTutorial.title,
-        category: editingTutorial.category,
-        description: editingTutorial.description,
-        status: status,
-        articles: editingTutorial.articles.map((a: any, index: number) => ({
-          id: a.Article_ID || a.id,
-          order: index + 1
-        }))
-      };
-
-      await axios.post(`${API_BASE}/admin/tutorials`, payload, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      alert(`Tutorial ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
-      setEditingTutorial(null);
-      void fetchTutorials();
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to save tutorial');
-    }
-  };
-
-  const handleDeleteTutorial = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this tutorial? This action cannot be undone.')) {
-      return;
-    }
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      alert('Please sign in as admin.');
-      return;
-    }
-    try {
-      await axios.delete(`${API_BASE}/admin/tutorials/${id}`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      });
-      alert('Tutorial deleted successfully!');
-      void fetchTutorials();
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete tutorial');
-    }
-  };
-
-  const handleAddArticleToTutorial = (article: any) => {
-    const articleId = article.Article_ID || article.id;
-    if (editingTutorial.articles.find((a: any) => (a.Article_ID || a.id) === articleId)) {
-      return;
-    }
-    setEditingTutorial({
-      ...editingTutorial,
-      articles: [...editingTutorial.articles, article]
-    });
-  };
-
-  const articleReports = adminReports;
-
-  const updateReportStatus = async (id: string, status: 'pending' | 'under_review' | 'resolved') => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      alert('Please sign in as admin.');
-      return;
-    }
-
-    try {
-      await axios.put(
-        `${API_BASE}/admin/reports/${id}`,
-        { status },
-        {
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      await fetchReports();
-    } catch (error: any) {
-      alert(error?.response?.data?.message || 'Failed to update report status.');
-    }
-  };
-
-  const handleApprove = (type: string, id: string) => {
-    if (type === 'course') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/courses/${id}`,
-          { status: 'published' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Approved ${type} #${id}`);
-          void fetchCourseApprovals();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to approve course');
-        });
-      return;
-    }
-
-    if (type === 'instructor application') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/instructor-applications/${id}`,
-          { status: 'approved' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Approved ${type} #${id}`);
-          void fetchInstructorApplications();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to approve application');
-        });
-      return;
-    }
-
-    if (type === 'expert application') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/expert-applications/${id}`,
-          { status: 'approved' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Approved ${type} #${id}`);
-          void fetchExpertApplications();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to approve application');
-        });
-      return;
-    }
-
-    if (type === 'article') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/articles/${id}`,
-          { status: 'published' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Approved ${type} #${id}`);
-          void fetchPendingArticles();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to approve article');
-        });
-      return;
-    }
-
-    alert(`Approved ${type} #${id}`);
-  };
-
-  const handleReject = (type: string, id: string) => {
-    if (type === 'course') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/courses/${id}`,
-          { status: 'draft' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Rejected ${type} #${id}`);
-          void fetchCourseApprovals();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to reject course');
-        });
-      return;
-    }
-
-    if (type === 'instructor application') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/instructor-applications/${id}`,
-          { status: 'rejected' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Rejected ${type} #${id}`);
-          void fetchInstructorApplications();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to reject application');
-        });
-      return;
-    }
-
-    if (type === 'expert application') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/expert-applications/${id}`,
-          { status: 'rejected' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Rejected ${type} #${id}`);
-          void fetchExpertApplications();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to reject application');
-        });
-      return;
-    }
-
-    if (type === 'article') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      void axios
-        .put(
-          `${API_BASE}/admin/articles/${id}`,
-          { status: 'rejected' },
-          {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then(() => {
-          alert(`Rejected ${type} #${id}`);
-          void fetchPendingArticles();
-        })
-        .catch((error) => {
-          alert(error?.response?.data?.message || 'Failed to reject article');
-        });
-      return;
-    }
-
-    alert(`Rejected ${type} #${id}`);
-  };
-
-  const handleDelete = async (type: string, id: string) => {
-    if (!confirm(`Are you sure you want to delete this ${type}?`)) {
-      return;
-    }
-
-    if (type === 'user') {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('Please sign in as admin.');
-        return;
-      }
-
-      try {
-        setDeletingUserId(id);
-        await axios.delete(`${API_BASE}/admin/users/${id}`, {
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        setAdminUsers((prev) => prev.filter((user) => user.id !== id));
-        if (selectedUser?.id === id) {
-          setSelectedUser(null);
-        }
-        alert('User deleted successfully.');
-      } catch (error: any) {
-        alert(error?.response?.data?.message || 'Failed to delete user.');
-      } finally {
-        setDeletingUserId(null);
-      }
-      return;
-    }
-
-    alert(`Deleted ${type} #${id}`);
-  };
-
-  const handleViewDetails = (view: DetailView) => {
-    setDetailView(view);
-  };
-
   const handleReviewReportedArticle = async (articleId: string) => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -1135,7 +841,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       const existingArticle = pendingArticles.find((article) => article.id === articleId);
       if (existingArticle) {
         setReviewArticle(existingArticle);
-        handleViewDetails({ type: 'article', id: articleId });
+        setDetailView({ type: 'article', id: articleId });
         return;
       }
 
@@ -1160,7 +866,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       } else {
         setReviewArticle(null);
       }
-      handleViewDetails({ type: 'article', id: articleId });
+      setDetailView({ type: 'article', id: articleId });
     } catch (error: any) {
       alert(error?.response?.data?.message || 'Failed to load article for review.');
     } finally {
@@ -1168,1767 +874,1176 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     }
   };
 
-  const handleBackToList = () => {
+  const handleEditTutorial = async (id: number) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API_BASE}/admin/tutorials/${id}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const tutorial = response.data.tutorial;
+      setEditingTutorial({
+        id: tutorial.T_ID,
+        title: tutorial.Title,
+        category: tutorial.Category,
+        description: tutorial.Description,
+        status: tutorial.Status,
+        articles:
+          tutorial.articles?.map((item: any) => ({
+            ...item,
+            Article_ID: item.Article_ID,
+          })) ?? [],
+      });
+    } catch {
+      alert('Failed to fetch tutorial details.');
+    }
+  };
+
+  const handleSaveTutorial = async (status: 'draft' | 'published') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      return;
+    }
+
+    if (!editingTutorial.title || !editingTutorial.category || !editingTutorial.description || editingTutorial.articles.length === 0) {
+      alert('Please fill in all basic info and add at least one article.');
+      return;
+    }
+
+    try {
+      const payload = {
+        title: editingTutorial.title,
+        category: editingTutorial.category,
+        description: editingTutorial.description,
+        status,
+        articles: editingTutorial.articles.map((article: any, index: number) => ({
+          id: article.Article_ID || article.id,
+          order: index + 1,
+        })),
+      };
+
+      await axios.post(`${API_BASE}/admin/tutorials`, payload, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setEditingTutorial(null);
+      await fetchTutorials();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to save tutorial');
+    }
+  };
+
+  const handleDeleteTutorial = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this tutorial? This action cannot be undone.')) {
+      return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_BASE}/admin/tutorials/${id}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      await fetchTutorials();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to delete tutorial');
+    }
+  };
+
+  const handleAddArticleToTutorial = (article: any) => {
+    const articleId = article.Article_ID || article.id;
+    if (editingTutorial.articles.find((item: any) => (item.Article_ID || item.id) === articleId)) {
+      return;
+    }
+    setEditingTutorial({
+      ...editingTutorial,
+      articles: [...editingTutorial.articles, article],
+    });
+  };
+
+  const filteredUsers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return adminUsers;
+    }
+
+    return adminUsers.filter((user) =>
+      [user.name, user.email, user.role].some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [adminUsers, searchQuery]);
+
+  const filteredInstructorApplications = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return instructorApplications;
+    }
+
+    return instructorApplications.filter((item) =>
+      [item.name, item.email, item.expertise].some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [instructorApplications, searchQuery]);
+
+  const filteredExpertApplications = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return expertApplications;
+    }
+
+    return expertApplications.filter((item) =>
+      [item.name, item.email, item.expertise].some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [expertApplications, searchQuery]);
+
+  const filteredArticles = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return pendingArticles;
+    }
+
+    return pendingArticles.filter((article) =>
+      [article.title, article.author, article.category].some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [pendingArticles, searchQuery]);
+
+  const filteredCourses = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return adminCourseApprovals;
+    }
+
+    return adminCourseApprovals.filter((course) =>
+      [course.title, course.instructor, course.category].some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [adminCourseApprovals, searchQuery]);
+
+  const summaryCards = [
+    {
+      label: 'Users',
+      value: adminUsers.length,
+      helper: 'Registered accounts',
+      icon: Users,
+    },
+    {
+      label: 'Pending Courses',
+      value: adminCourseApprovals.length,
+      helper: 'Need approval',
+      icon: BookOpen,
+    },
+    {
+      label: 'Pending Articles',
+      value: pendingArticles.length,
+      helper: 'Need moderation',
+      icon: FileText,
+    },
+    {
+      label: 'Open Reports',
+      value: adminReports.filter((item) => getStatusTone(item.status) === 'pending').length,
+      helper: 'Potential abuse',
+      icon: AlertTriangle,
+    },
+  ];
+
+  const recentActions = [
+    ...instructorApplications
+      .filter((item) => getStatusTone(item.status) === 'pending')
+      .slice(0, 3)
+      .map((item) => ({
+        id: `instructor-${item.id}`,
+        label: `${item.name} applied as instructor`,
+        date: item.appliedDate,
+        section: 'instructor-applications' as ActiveSection,
+      })),
+    ...expertApplications
+      .filter((item) => getStatusTone(item.status) === 'pending')
+      .slice(0, 3)
+      .map((item) => ({
+        id: `expert-${item.id}`,
+        label: `${item.name} applied as expert`,
+        date: item.appliedDate,
+        section: 'expert-applications' as ActiveSection,
+      })),
+    ...pendingArticles.slice(0, 3).map((item) => ({
+      id: `article-${item.id}`,
+      label: `Article ready for review: ${item.title}`,
+      date: item.submittedDate,
+      section: 'articles-approval' as ActiveSection,
+    })),
+  ].slice(0, 8);
+
+  const activeSectionTitle = MENU_ITEMS.find((item) => item.id === activeSection)?.label || 'Overview';
+
+  const refreshCurrentSection = () => {
+    if (activeSection === 'overview') {
+      void fetchUsers();
+      void fetchInstructorApplications();
+      void fetchExpertApplications();
+      void fetchCourseApprovals();
+      void fetchPendingArticles();
+      void fetchReports();
+      return;
+    }
+    if (activeSection === 'users') {
+      void fetchUsers();
+      return;
+    }
+    if (activeSection === 'instructor-applications') {
+      void fetchInstructorApplications();
+      return;
+    }
+    if (activeSection === 'expert-applications') {
+      void fetchExpertApplications();
+      return;
+    }
+    if (activeSection === 'articles-approval') {
+      void fetchPendingArticles();
+      return;
+    }
+    if (activeSection === 'courses-approval') {
+      void fetchCourseApprovals();
+      return;
+    }
+    if (activeSection === 'reports') {
+      void fetchReports();
+      return;
+    }
+    if (activeSection === 'feedback') {
+      void fetchFeedbacks();
+      return;
+    }
+    if (activeSection === 'tutorials') {
+      void fetchTutorials();
+    }
+  };
+
+  const closeDetail = () => {
     setDetailView({ type: 'none' });
     setReviewArticle(null);
   };
 
-  // Render detail views
-  if (detailView.type === 'article' && detailView.id) {
-    const article = pendingArticles.find((a) => a.id === detailView.id) || reviewArticle;
-    if (article) {
+  const renderDetailView = () => {
+    if (detailView.type === 'none') {
+      return null;
+    }
+
+    if (detailView.type === 'article') {
+      const article = pendingArticles.find((entry) => entry.id === detailView.id) || reviewArticle;
+      if (!article) {
+        return null;
+      }
+
       return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
-          {/* Grid Background - Same as Homepage */}
-          <div
-            className="fixed inset-0 pointer-events-none z-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(128, 128, 128, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(128, 128, 128, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '80px 80px',
-            }}
-          />
-
-          {/* Noise Texture */}
-          <div
-            className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' /%3E%3C/svg%3E")`,
-            }}
-          />
-
-          {/* Glowing Dots */}
-          <div className="fixed top-1/4 left-1/4 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-40 animate-pulse pointer-events-none z-0"></div>
-          <div className="fixed top-1/3 right-1/3 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-30 animate-pulse pointer-events-none z-0"></div>
-
-          {/* Header */}
-          <div className="border-b border-[#A5C89E]/20 bg-[#121212]/80 backdrop-blur-xl relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <button
-                onClick={handleBackToList}
-                className="text-[#A5C89E] hover:text-[#A5C89E]/80 text-sm mb-3 flex items-center gap-2 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back to Articles
+        <section className="admin-content-shell">
+          <button onClick={closeDetail} className="admin-link-btn">
+            <ChevronLeft className="h-4 w-4" />
+            Back to list
+          </button>
+          <div className="admin-surface admin-surface-padded">
+            {isLoadingReviewArticle ? (
+              <div className="admin-inline-alert">Loading article details...</div>
+            ) : null}
+            <h2 className="admin-detail-title">{article.title}</h2>
+            <div className="admin-detail-meta">
+              <span>Author: {article.author}</span>
+              <span>Category: {article.category}</span>
+              <span>Submitted: {article.submittedDate}</span>
+            </div>
+            <div className="admin-detail-content">
+              {article.content ? (
+                <div dangerouslySetInnerHTML={{ __html: article.content }} />
+              ) : (
+                <p>No content available for this article.</p>
+              )}
+            </div>
+            <div className="admin-detail-actions">
+              <button onClick={() => handleApprove('article', article.id)} className="admin-btn admin-btn-primary">
+                <Check className="h-4 w-4" />
+                Approve Article
               </button>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Article Review</h1>
+              <button onClick={() => handleReject('article', article.id)} className="admin-btn admin-btn-muted">
+                <XCircle className="h-4 w-4" />
+                Reject Article
+              </button>
             </div>
           </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-            <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
-              {isLoadingReviewArticle ? (
-                <div className="mb-6 rounded-xl border border-[#A5C89E]/20 bg-[#0b0b0b]/70 p-4 text-sm text-gray-300">
-                  Loading article details...
-                </div>
-              ) : null}
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold mb-4">{article.title}</h2>
-                <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                  <span>Author: {article.author}</span>
-                  <span>Category: {article.category}</span>
-                  <span>Submitted: {article.submittedDate}</span>
-                </div>
-              </div>
-
-              <div className="prose prose-invert max-w-none mb-8">
-                {article.content ? (
-                  <div
-                    className="text-gray-300 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: article.content }}
-                  />
-                ) : (
-                  <p className="text-gray-500">No content available for this article.</p>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => handleApprove('article', article.id)}
-                  className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Approve Article
-                </button>
-                <button
-                  onClick={() => handleReject('article', article.id)}
-                  className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reject Article
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
       );
     }
-  }
 
-  if (detailView.type === 'course' && detailView.id) {
-    const course = adminCourseApprovals.find((c) => c.id === detailView.id);
-    if (course) {
+    if (detailView.type === 'course') {
+      const course = adminCourseApprovals.find((entry) => entry.id === detailView.id);
+      if (!course) {
+        return null;
+      }
+
       return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
-          <BackgroundEffects />
-
-          <div className="border-b border-[#A5C89E]/20 bg-[#121212]/80 backdrop-blur-xl relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <button
-                onClick={handleBackToList}
-                className="text-[#A5C89E] hover:text-[#A5C89E]/80 text-sm mb-3 flex items-center gap-2 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back to Courses
+        <section className="admin-content-shell">
+          <button onClick={closeDetail} className="admin-link-btn">
+            <ChevronLeft className="h-4 w-4" />
+            Back to courses
+          </button>
+          <div className="admin-surface admin-surface-padded">
+            <h2 className="admin-detail-title">{course.title}</h2>
+            <div className="admin-detail-meta">
+              <span>Instructor: {course.instructor}</span>
+              <span>Category: {course.category}</span>
+              <span>Submitted: {course.submittedDate}</span>
+            </div>
+            <p className="admin-detail-content">{course.description}</p>
+            <div className="admin-detail-actions">
+              <button onClick={() => handleApprove('course', course.id)} className="admin-btn admin-btn-primary">
+                <Check className="h-4 w-4" />
+                Approve Course
               </button>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Course Review</h1>
+              <button onClick={() => handleReject('course', course.id)} className="admin-btn admin-btn-muted">
+                <XCircle className="h-4 w-4" />
+                Reject Course
+              </button>
             </div>
           </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-            <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold mb-4">{course.title}</h2>
-                <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                  <span>Instructor: {course.instructor}</span>
-                  <span>Category: {course.category}</span>
-                  <span>Submitted: {course.submittedDate}</span>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">Course Description</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  A comprehensive bootcamp covering frontend and backend development. Learn HTML,
-                  CSS, JavaScript, React, Node.js, Express, MongoDB, and deploy full-stack
-                  applications.
-                </p>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">Course Content</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li>• Introduction to Web Development</li>
-                  <li>• HTML & CSS Fundamentals</li>
-                  <li>• JavaScript Essentials</li>
-                  <li>• React.js Complete Guide</li>
-                  <li>• Backend with Node.js and Express</li>
-                  <li>• Database with MongoDB</li>
-                  <li>• Deployment and DevOps</li>
-                </ul>
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => handleApprove('course', course.id)}
-                  className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Approve Course
-                </button>
-                <button
-                  onClick={() => handleReject('course', course.id)}
-                  className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reject Course
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
       );
     }
-  }
 
-  if (detailView.type === 'instructor-app' && detailView.id) {
-    const application = instructorApplications.find((a) => a.id === detailView.id);
-    if (application) {
-      return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
-          <BackgroundEffects />
+    const source = detailView.type === 'instructor-app' ? instructorApplications : expertApplications;
+    const record = source.find((entry) => entry.id === detailView.id);
+    if (!record) {
+      return null;
+    }
 
-          <div className="border-b border-[#A5C89E]/20 bg-[#121212]/80 backdrop-blur-xl relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <button
-                onClick={handleBackToList}
-                className="text-[#A5C89E] hover:text-[#A5C89E]/80 text-sm mb-3 flex items-center gap-2 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back to Applications
-              </button>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Instructor Application</h1>
-            </div>
+    const appType = detailView.type === 'instructor-app' ? 'instructor application' : 'expert application';
+    return (
+      <section className="admin-content-shell">
+        <button onClick={closeDetail} className="admin-link-btn">
+          <ChevronLeft className="h-4 w-4" />
+          Back to applications
+        </button>
+        <div className="admin-surface admin-surface-padded">
+          <h2 className="admin-detail-title">{record.name}</h2>
+          <div className="admin-detail-meta">
+            <span>Email: {record.email}</span>
+            <span>Expertise: {record.expertise}</span>
+            <span>Applied: {record.appliedDate}</span>
           </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-            <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">{application.name}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Email:</span>
-                    <span className="ml-2 text-gray-300">{application.email}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Expertise:</span>
-                    <span className="ml-2 text-gray-300">{application.expertise}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Applied Date:</span>
-                    <span className="ml-2 text-gray-300">{application.appliedDate}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Status:</span>
-                    <span
-                      className={`ml-2 ${
-                        application.status === 'Approved'
-                          ? 'text-green-400'
-                          : application.status === 'Rejected'
-                          ? 'text-red-400'
-                          : 'text-yellow-400'
-                      }`}
-                    >
-                      {application.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">About</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Experienced full-stack developer with 8+ years in web development. Specialized in
-                  React, Node.js, and modern JavaScript frameworks. Passionate about teaching and
-                  helping others learn to code.
-                </p>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">Experience</h3>
-                <p className="text-gray-300">Senior Developer at Tech Corp (5 years)</p>
-                <p className="text-gray-300">Freelance Instructor (3 years)</p>
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                {application.status === 'Pending' ? (
-                  <>
-                    <button
-                      onClick={() => handleApprove('instructor application', application.id)}
-                      className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
-                    >
-                      <Check className="w-4 h-4" />
-                      Approve Application
-                    </button>
-                    <button
-                      onClick={() => handleReject('instructor application', application.id)}
-                      className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Reject Application
-                    </button>
-                  </>
-                ) : (
-                  <span
-                    className={`px-6 py-3 rounded-xl font-medium border ${
-                      application.status === 'Approved'
-                        ? 'bg-green-500/10 border-green-500/40 text-green-400'
-                        : 'bg-red-500/10 border-red-500/40 text-red-400'
-                    }`}
-                  >
-                    {application.status}
-                  </span>
-                )}
-              </div>
-            </div>
+          <div className="admin-detail-actions">
+            <button onClick={() => handleApprove(appType, record.id)} className="admin-btn admin-btn-primary">
+              <Check className="h-4 w-4" />
+              Approve
+            </button>
+            <button onClick={() => handleReject(appType, record.id)} className="admin-btn admin-btn-muted">
+              <XCircle className="h-4 w-4" />
+              Reject
+            </button>
           </div>
         </div>
-      );
-    }
+      </section>
+    );
+  };
+
+  if (detailView.type !== 'none') {
+    return (
+      <div className="admin-layout-root">
+        <div className="admin-grid-bg" />
+        <div className="admin-radial admin-radial-one" />
+        <div className="admin-radial admin-radial-two" />
+        <div className="admin-page-wrap">{renderDetailView()}</div>
+      </div>
+    );
   }
 
-  if (detailView.type === 'expert-app' && detailView.id) {
-    const application = expertApplications.find((a) => a.id === detailView.id);
-    if (application) {
-      return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
-          <BackgroundEffects />
-
-          <div className="border-b border-[#A5C89E]/20 bg-[#121212]/80 backdrop-blur-xl relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <button
-                onClick={handleBackToList}
-                className="text-[#A5C89E] hover:text-[#A5C89E]/80 text-sm mb-3 flex items-center gap-2 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back to Applications
-              </button>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Expert Application</h1>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-            <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">{application.name}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Email:</span>
-                    <span className="ml-2 text-gray-300">{application.email}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Expertise:</span>
-                    <span className="ml-2 text-gray-300">{application.expertise}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Applied Date:</span>
-                    <span className="ml-2 text-gray-300">{application.appliedDate}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Status:</span>
-                    <span className="ml-2 text-yellow-400">{application.status}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">About</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Ph.D. in Machine Learning from Stanford University. Published over 50 research
-                  papers in top-tier conferences. Experienced in teaching ML and AI at university
-                  level.
-                </p>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-[#A5C89E]">Credentials</h3>
-                <p className="text-gray-300">Ph.D. Machine Learning - Stanford University</p>
-                <p className="text-gray-300">Associate Professor at MIT</p>
-                <p className="text-gray-300">50+ Research Publications</p>
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                {application.status === 'Pending' ? (
-                  <>
-                    <button
-                      onClick={() => handleApprove('expert application', application.id)}
-                      className="px-6 py-3 bg-[#A5C89E]/20 border border-[#A5C89E]/50 text-[#A5C89E] rounded-xl hover:bg-[#A5C89E]/30 transition-all font-medium flex items-center gap-2"
-                    >
-                      <Check className="w-4 h-4" />
-                      Approve Application
-                    </button>
-                    <button
-                      onClick={() => handleReject('expert application', application.id)}
-                      className="px-6 py-3 bg-[#121212]/80 border border-gray-600/50 text-gray-300 rounded-xl hover:bg-[#121212] transition-all font-medium flex items-center gap-2"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Reject Application
-                    </button>
-                  </>
-                ) : (
-                  <span
-                    className={`px-6 py-3 rounded-xl font-medium border ${
-                      application.status === 'Approved'
-                        ? 'bg-green-500/10 border-green-500/40 text-green-400'
-                        : 'bg-red-500/10 border-red-500/40 text-red-400'
-                    }`}
-                  >
-                    {application.status}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
-
-
-
-  // Main Dashboard Layout
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <BackgroundEffects />
+    <div className="admin-layout-root">
+      <div className="admin-grid-bg" />
+      <div className="admin-radial admin-radial-one" />
+      <div className="admin-radial admin-radial-two" />
 
-      {/* Top Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 sm:h-20 bg-white/90 backdrop-blur-xl border-b border-gray-200 z-40 shadow-sm">
-        <div className="h-full px-4 sm:px-6 flex items-center justify-between max-w-full">
-          <div className="flex items-center gap-3 sm:gap-4">
+      <header className="admin-topbar">
+        <div className="admin-topbar-inner">
+          <div className="admin-topbar-left">
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden text-blue-600 hover:text-blue-700 transition-colors"
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              className="admin-icon-btn lg:hidden"
+              aria-label="Toggle navigation"
             >
-              {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-xs text-gray-500 hidden sm:block">Learnova Management</p>
+              <h1 className="admin-heading">Learnova Admin</h1>
             </div>
           </div>
 
-          <button
-            onClick={onBack}
-            className="px-3 sm:px-5 py-2 sm:py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:border-gray-400 hover:text-gray-900 hover:shadow-sm transition-all text-xs sm:text-sm font-medium"
-          >
-            <span className="hidden sm:inline">Exit Admin Panel</span>
-            <span className="sm:hidden">Exit</span>
-          </button>
+          <div className="admin-topbar-right">
+            <button onClick={refreshCurrentSection} className="admin-btn admin-btn-muted">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+            <button onClick={onBack} className="admin-btn admin-btn-danger">
+              Exit
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-16 sm:top-20 left-0 bottom-0 w-64 sm:w-72 bg-white border-r border-gray-200 transition-transform duration-300 z-30 overflow-y-auto shadow-lg ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          }`}
-      >
-        <div className="p-4 sm:p-6">
-          <h2 className="text-xs sm:text-sm text-gray-500 mb-4 tracking-wider uppercase font-semibold">Navigation</h2>
-          <nav className="space-y-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveSection(item.id);
-                    setIsSidebarOpen(false);
-                    setDetailView({ type: 'none' });
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl text-sm font-medium transition-all ${isActive
-                    ? 'bg-blue-50 border border-blue-200 text-blue-700'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 border border-transparent'
-                    }`}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="flex-1 text-left text-xs sm:text-sm truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+      <aside className={`admin-sidebar ${isSidebarOpen ? 'admin-sidebar-open' : ''}`}>
+        <div className="admin-sidebar-header">
+          <ShieldCheck className="h-5 w-5 text-[var(--admin-accent)]" />
         </div>
+        <nav className="admin-sidebar-nav">
+          {MENU_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveSection(item.id);
+                  setIsSidebarOpen(false);
+                }}
+                className={`admin-sidebar-item ${isActive ? 'admin-sidebar-item-active' : ''}`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </aside>
 
-      {/* Overlay for mobile */}
-      {isSidebarOpen && (
-        <div
-          onClick={() => setIsSidebarOpen(false)}
-          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-20 top-16 sm:top-20"
-        />
-      )}
+      {isSidebarOpen ? <button className="admin-overlay lg:hidden" onClick={() => setIsSidebarOpen(false)} /> : null}
 
-      {/* Main Content */}
-      <main className="pt-16 sm:pt-20 lg:pl-72 relative z-10">
-        <div className="p-4 sm:p-6 lg:p-8 relative">
-          {/* Dashboard Overview */}
-          {activeSection === 'overview' && (
+      <main className="admin-main">
+        <section className="admin-page-wrap">
+          <div className="admin-section-header">
             <div>
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Platform Overview</h2>
-                <p className="text-gray-600 text-sm">Monitor key metrics and platform statistics</p>
+              <h2 className="admin-section-title">{activeSectionTitle}</h2>
+              <p className="admin-section-subtitle">Responsive moderation workspace with reusable dark components.</p>
+            </div>
+            {activeSection !== 'overview' && activeSection !== 'reports' && activeSection !== 'feedback' && activeSection !== 'tutorials' ? (
+              <div className="min-w-[220px]">
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search"
+                  className="admin-input"
+                />
               </div>
+            ) : null}
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
-                {stats.map((stat, index) => {
-                  const Icon = stat.icon;
+          {activeSection === 'overview' ? (
+            <>
+              <div className="admin-cards-grid">
+                {summaryCards.map((card) => {
+                  const Icon = card.icon;
                   return (
-                    <div
-                      key={index}
-                      className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 hover:border-blue-300 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-center justify-between mb-3 sm:mb-4">
-                        <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-                        <span className="text-green-600 text-xs sm:text-sm font-medium">{stat.trend}</span>
+                    <article className="admin-metric-card" key={card.label}>
+                      <div className="admin-metric-head">
+                        <span>{card.label}</span>
+                        <Icon className="h-4 w-4" />
                       </div>
-                      <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                      <p className="text-gray-600 text-xs sm:text-sm">{stat.label}</p>
-                    </div>
+                      <p className="admin-metric-value">{card.value.toLocaleString()}</p>
+                      <p className="admin-metric-helper">{card.helper}</p>
+                    </article>
                   );
                 })}
               </div>
 
-              {/* Recent Activity */}
-              <div className="mt-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4 pb-4 border-b border-gray-100">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">New user registered: Alex Johnson</p>
-                        <p className="text-gray-500 text-sm mt-1">2 hours ago</p>
+              <div className="admin-surface admin-surface-padded">
+                <h3 className="admin-subheading">Recent Actions</h3>
+                {recentActions.length === 0 ? (
+                  <p className="admin-muted">No pending actions right now.</p>
+                ) : (
+                  <div className="admin-list-stack">
+                    {recentActions.map((item) => (
+                      <div key={item.id} className="admin-list-row">
+                        <div>
+                          <p className="admin-list-title">{item.label}</p>
+                          <p className="admin-list-caption">{item.date}</p>
+                        </div>
+                        <button onClick={() => setActiveSection(item.section)} className="admin-btn admin-btn-muted">
+                          Open
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-start gap-4 pb-4 border-b border-gray-100">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">Course approved: React Masterclass</p>
-                        <p className="text-gray-500 text-sm mt-1">5 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 pb-4 border-b border-gray-100">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">
-                          New instructor application: David Martinez
-                        </p>
-                        <p className="text-gray-500 text-sm mt-1">1 day ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-gray-800">Article published: Understanding AI</p>
-                        <p className="text-gray-500 text-sm mt-1">2 days ago</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                </div>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {activeSection === 'users' ? (
+            <div className="admin-surface admin-surface-padded">
+              <div className="admin-toolbar">
+                <p className="admin-muted">{filteredUsers.length} users found</p>
+                <button
+                  className="admin-btn admin-btn-primary"
+                  onClick={() => {
+                    setNewUserForm(EMPTY_NEW_USER_FORM);
+                    setIsAddUserModalOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add User
+                </button>
+              </div>
+
+              <div className="admin-table-wrap">
+                <table className="admin-table min-w-[720px]">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Joined</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingUsers ? (
+                      <tr>
+                        <td colSpan={5} className="admin-muted-cell">
+                          Loading users...
+                        </td>
+                      </tr>
+                    ) : usersError ? (
+                      <tr>
+                        <td colSpan={5} className="admin-danger-cell">
+                          {usersError}
+                        </td>
+                      </tr>
+                    ) : filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="admin-muted-cell">
+                          No users found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <tr key={user.id}>
+                          <td>{user.name}</td>
+                          <td>{user.email}</td>
+                          <td>
+                            <span className="admin-chip">{user.role}</span>
+                          </td>
+                          <td>{user.joinDate}</td>
+                          <td>
+                            <div className="admin-inline-actions">
+                              <button className="admin-btn admin-btn-muted">View</button>
+                              <button
+                                className="admin-icon-btn"
+                                onClick={() => {
+                                  void handleDelete('user', user.id);
+                                }}
+                                disabled={deletingUserId === user.id}
+                                aria-label="Delete user"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {/* Users Management */}
-          {activeSection === 'users' && (
-            <div>
-              {(() => {
-                const filteredUsers = adminUsers.filter((user) => {
-                  const q = searchQuery.trim().toLowerCase();
-                  if (!q) {
-                    return true;
-                  }
-
-                  return (
-                    user.name.toLowerCase().includes(q)
-                    || user.email.toLowerCase().includes(q)
-                    || user.role.toLowerCase().includes(q)
-                  );
-                });
-
-                return (
-                  <>
-              <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h2>
-                  <p className="text-gray-600 text-sm">
-                    Total users: {adminUsers.length.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search users..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
-                  </div>
-                  <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                    <Filter className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setNewUserForm(EMPTY_NEW_USER_FORM);
-                      setIsAddUserModalOpen(true);
-                    }}
-                    className="px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-xl text-white hover:bg-blue-700 transition-all text-sm font-medium inline-flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add User
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[640px]">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700">
-                          Name
-                        </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">
-                          Email
-                        </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700">
-                          Role
-                        </th>
-                        <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-700">
-                          Actions
-                        </th>
+          {activeSection === 'instructor-applications' ? (
+            <div className="admin-surface admin-surface-padded">
+              <div className="admin-table-wrap">
+                <table className="admin-table min-w-[760px]">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Expertise</th>
+                      <th>Applied</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingInstructorApplications ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          Loading applications...
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {isLoadingUsers ? (
-                        <tr>
-                          <td className="px-6 py-6 text-sm text-gray-500" colSpan={4}>
-                            Loading users...
+                    ) : filteredInstructorApplications.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          No applications found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredInstructorApplications.map((app) => (
+                        <tr key={app.id}>
+                          <td>{app.name}</td>
+                          <td>{app.email}</td>
+                          <td>{app.expertise}</td>
+                          <td>{app.appliedDate}</td>
+                          <td>
+                            <span className={STATUS_CLASS[getStatusTone(app.status)]}>{String(app.status)}</span>
+                          </td>
+                          <td>
+                            <div className="admin-inline-actions">
+                              <button className="admin-btn admin-btn-muted" onClick={() => setDetailView({ type: 'instructor-app', id: app.id })}>
+                                View
+                              </button>
+                              <button className="admin-btn admin-btn-primary" onClick={() => handleApprove('instructor application', app.id)}>
+                                Approve
+                              </button>
+                              <button className="admin-btn admin-btn-muted" onClick={() => handleReject('instructor application', app.id)}>
+                                Reject
+                              </button>
+                            </div>
                           </td>
                         </tr>
-                      ) : usersError ? (
-                        <tr>
-                          <td className="px-6 py-6 text-sm text-red-500" colSpan={4}>
-                            {usersError}
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+
+          {activeSection === 'expert-applications' ? (
+            <div className="admin-surface admin-surface-padded">
+              <div className="admin-table-wrap">
+                <table className="admin-table min-w-[760px]">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Expertise</th>
+                      <th>Applied</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingExpertApplications ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          Loading applications...
+                        </td>
+                      </tr>
+                    ) : filteredExpertApplications.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          No applications found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredExpertApplications.map((app) => (
+                        <tr key={app.id}>
+                          <td>{app.name}</td>
+                          <td>{app.email}</td>
+                          <td>{app.expertise}</td>
+                          <td>{app.appliedDate}</td>
+                          <td>
+                            <span className={STATUS_CLASS[getStatusTone(app.status)]}>{String(app.status)}</span>
+                          </td>
+                          <td>
+                            <div className="admin-inline-actions">
+                              <button className="admin-btn admin-btn-muted" onClick={() => setDetailView({ type: 'expert-app', id: app.id })}>
+                                View
+                              </button>
+                              <button className="admin-btn admin-btn-primary" onClick={() => handleApprove('expert application', app.id)}>
+                                Approve
+                              </button>
+                              <button className="admin-btn admin-btn-muted" onClick={() => handleReject('expert application', app.id)}>
+                                Reject
+                              </button>
+                            </div>
                           </td>
                         </tr>
-                      ) : filteredUsers.length === 0 ? (
-                        <tr>
-                          <td className="px-6 py-6 text-sm text-gray-500" colSpan={4}>
-                            No users found.
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+
+          {activeSection === 'articles-approval' ? (
+            <div className="admin-surface admin-surface-padded">
+              <div className="admin-table-wrap">
+                <table className="admin-table min-w-[760px]">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Author</th>
+                      <th>Category</th>
+                      <th>Submitted</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingPendingArticles ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          Loading pending articles...
+                        </td>
+                      </tr>
+                    ) : pendingArticlesError ? (
+                      <tr>
+                        <td colSpan={6} className="admin-danger-cell">
+                          {pendingArticlesError}
+                        </td>
+                      </tr>
+                    ) : filteredArticles.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          No articles found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredArticles.map((article) => (
+                        <tr key={article.id}>
+                          <td>{article.title}</td>
+                          <td>{article.author}</td>
+                          <td>{article.category}</td>
+                          <td>{article.submittedDate}</td>
+                          <td>
+                            <span className={STATUS_CLASS[getStatusTone(article.status)]}>{String(article.status)}</span>
+                          </td>
+                          <td>
+                            <div className="admin-inline-actions">
+                              <button className="admin-btn admin-btn-muted" onClick={() => setDetailView({ type: 'article', id: article.id })}>
+                                View
+                              </button>
+                              <button className="admin-btn admin-btn-primary" onClick={() => handleApprove('article', article.id)}>
+                                Approve
+                              </button>
+                              <button className="admin-btn admin-btn-muted" onClick={() => handleReject('article', article.id)}>
+                                Reject
+                              </button>
+                            </div>
                           </td>
                         </tr>
-                      ) : filteredUsers.map((user) => (
-                          <tr
-                            key={user.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 font-medium">{user.name}</td>
-                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{user.email}</td>
-                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
-                              <span className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
-                                {user.role}
-                              </span>
-                            </td>
-
-                            <td className="px-4 sm:px-6 py-3 sm:py-4">
-                              <div className="flex gap-1 sm:gap-2">
-                                <button
-                                  onClick={() => setSelectedUser(user)}
-                                  className="px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-all text-xs font-medium flex items-center gap-1"
-                                >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    void handleDelete('user', user.id);
-                                  }}
-                                  className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-                                  title="Delete"
-                                  disabled={deletingUserId === user.id}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex items-center justify-between mt-4 px-2">
-                <p className="text-sm text-gray-500">
-                  Showing {filteredUsers.length} of {adminUsers.length} users
-                </p>
-                <div className="flex gap-2">
-                  <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50" disabled>
-                    Previous
-                  </button>
-                  <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50">
-                    Next
-                  </button>
-                </div>
-              </div>
-                  </>
-                );
-              })()}
-            </div >
-          )
-          }
+            </div>
+          ) : null}
 
-          {/* Instructor Applications */}
-          {
-            activeSection === 'instructor-applications' && (
-              <div>
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Instructor Applications</h2>
-                    <p className="text-gray-600 text-sm">
-                      Pending applications: {instructorApplications.length}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search applications..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Name
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Email
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Expertise
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Applied Date
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Actions
-                          </th>
+          {activeSection === 'courses-approval' ? (
+            <div className="admin-surface admin-surface-padded">
+              <div className="admin-table-wrap">
+                <table className="admin-table min-w-[760px]">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Instructor</th>
+                      <th>Category</th>
+                      <th>Submitted</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingCourseApprovals ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          Loading pending courses...
+                        </td>
+                      </tr>
+                    ) : courseApprovalsError ? (
+                      <tr>
+                        <td colSpan={6} className="admin-danger-cell">
+                          {courseApprovalsError}
+                        </td>
+                      </tr>
+                    ) : filteredCourses.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="admin-muted-cell">
+                          No courses found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCourses.map((course) => (
+                        <tr key={course.id}>
+                          <td>{course.title}</td>
+                          <td>{course.instructor}</td>
+                          <td>{course.category}</td>
+                          <td>{course.submittedDate}</td>
+                          <td>
+                            <span className={STATUS_CLASS[getStatusTone(course.status)]}>{String(course.status)}</span>
+                          </td>
+                          <td>
+                            <div className="admin-inline-actions">
+                              <button className="admin-btn admin-btn-muted" onClick={() => setDetailView({ type: 'course', id: course.id })}>
+                                View
+                              </button>
+                              <button className="admin-btn admin-btn-primary" onClick={() => handleApprove('course', course.id)}>
+                                Approve
+                              </button>
+                              <button className="admin-btn admin-btn-muted" onClick={() => handleReject('course', course.id)}>
+                                Reject
+                              </button>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {isLoadingInstructorApplications ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              Loading instructor applications...
-                            </td>
-                          </tr>
-                        ) : instructorApplications.length === 0 ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              No instructor applications found.
-                            </td>
-                          </tr>
-                        ) : instructorApplications.map((app) => (
-                          <tr
-                            key={app.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleViewDetails({ type: 'instructor-app', id: app.id })
-                                  }
-                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                                >
-                                  View
-                                </button>
-                                {app.status === 'Pending' ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleApprove('instructor application', app.id)}
-                                      className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={() => handleReject('instructor application', app.id)}
-                                      className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                    >
-                                      Reject
-                                    </button>
-                                  </>
-                                ) : (
-                                  <span
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                                      app.status === 'Approved'
-                                        ? 'bg-green-50 border-green-200 text-green-700'
-                                        : 'bg-red-50 border-red-200 text-red-700'
-                                    }`}
-                                  >
-                                    {app.status}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )
-          }
+            </div>
+          ) : null}
 
-          {/* Expert Applications */}
-          {
-            activeSection === 'expert-applications' && (
-              <div>
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Expert Applications</h2>
-                    <p className="text-gray-600 text-sm">
-                      Pending applications: {expertApplications.length}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search applications..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Name
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Email
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Expertise
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Applied Date
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {isLoadingExpertApplications ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              Loading expert applications...
-                            </td>
-                          </tr>
-                        ) : expertApplications.length === 0 ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              No expert applications found.
-                            </td>
-                          </tr>
-                        ) : expertApplications.map((app) => (
-                          <tr
-                            key={app.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{app.name}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{app.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{app.expertise}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{app.appliedDate}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleViewDetails({ type: 'expert-app', id: app.id })
-                                  }
-                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                                >
-                                  View
-                                </button>
-                                {app.status === 'Pending' ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleApprove('expert application', app.id)}
-                                      className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={() => handleReject('expert application', app.id)}
-                                      className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                    >
-                                      Reject
-                                    </button>
-                                  </>
-                                ) : (
-                                  <span
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                                      app.status === 'Approved'
-                                        ? 'bg-green-50 border-green-200 text-green-700'
-                                        : 'bg-red-50 border-red-200 text-red-700'
-                                    }`}
-                                  >
-                                    {app.status}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          {/* Articles Approval */}
-          {
-            activeSection === 'articles-approval' && (
-              <div>
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Articles Approval</h2>
-                    <p className="text-gray-600 text-sm">
-                      Pending articles: {pendingArticles.length}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search articles..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Title
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Author
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Category
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Submitted
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {isLoadingPendingArticles ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              Loading pending articles...
-                            </td>
-                          </tr>
-                        ) : pendingArticlesError ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-red-500" colSpan={5}>
-                              {pendingArticlesError}
-                            </td>
-                          </tr>
-                        ) : pendingArticles.length === 0 ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              No pending articles found.
-                            </td>
-                          </tr>
-                        ) : (
-                          pendingArticles.map((article) => (
-                            <tr
-                              key={article.id}
-                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                            >
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                                {article.title}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-600">{article.author}</td>
-                              <td className="px-6 py-4 text-sm text-gray-700">{article.category}</td>
-                              <td className="px-6 py-4 text-sm text-gray-600">
-                                {article.submittedDate}
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() =>
-                                      handleViewDetails({ type: 'article', id: article.id })
-                                    }
-                                    className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                                  >
-                                    View
-                                  </button>
-                                  <button
-                                    onClick={() => handleApprove('article', article.id)}
-                                    className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    onClick={() => handleReject('article', article.id)}
-                                    className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                  >
-                                    Reject
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          {/* Courses Approval */}
-          {
-            activeSection === 'courses-approval' && (
-              <div>
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Courses Approval</h2>
-                    <p className="text-gray-600 text-sm">
-                      Pending courses: {adminCourseApprovals.length}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search courses..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                    <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all">
-                      <Filter className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Title
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Instructor
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Category
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Submitted
-                          </th>
-                          <th className="text-left px-6 py-4 text-sm font-medium text-gray-700">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {isLoadingCourseApprovals ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              Loading pending courses...
-                            </td>
-                          </tr>
-                        ) : courseApprovalsError ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-red-500" colSpan={5}>
-                              {courseApprovalsError}
-                            </td>
-                          </tr>
-                        ) : adminCourseApprovals.length === 0 ? (
-                          <tr>
-                            <td className="px-6 py-6 text-sm text-gray-500" colSpan={5}>
-                              No pending courses found.
-                            </td>
-                          </tr>
-                        ) : adminCourseApprovals.map((course) => (
-                          <tr
-                            key={course.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {course.title}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{course.instructor}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{course.category}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {course.submittedDate}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleViewDetails({ type: 'course', id: course.id })
-                                  }
-                                  className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                                >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => handleApprove('course', course.id)}
-                                  className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject('course', course.id)}
-                                  className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-xs font-medium"
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-
-          {/* Article Reports */}
-          {
-            activeSection === 'reports' && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Article Reports</h2>
-                  <p className="text-gray-600 text-sm">
-                    Total reports: {articleReports.length}
-                  </p>
-                </div>
-
-                  {isLoadingReports ? (
-                    <div className="bg-white border border-gray-200 rounded-2xl p-6 text-sm text-gray-500">
-                      Loading article reports...
-                    </div>
-                  ) : reportsError ? (
-                    <div className="bg-white border border-red-200 rounded-2xl p-6 text-sm text-red-600">
-                      {reportsError}
-                    </div>
-                  ) : articleReports.length === 0 ? (
-                    <div className="bg-white border border-gray-200 rounded-2xl p-6 text-sm text-gray-500">
-                      No article reports found.
-                    </div>
-                  ) : null}
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {articleReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all"
-                    >
-                      {/* Report Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                            <AlertTriangle className="w-5 h-5 text-red-600" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">
-                              {report.reportType}
-                            </h3>
-                            <p className="text-xs text-gray-500">
-                              Reported by {report.reportedBy} • {report.reportedAt}
-                            </p>
-                          </div>
-                        </div>
-                        <span
-                          className={`px-3 py-1 rounded-lg text-xs font-medium border ${report.status === 'Pending'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : report.status === 'Under Review'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-green-50 text-green-700 border-green-200'
-                            }`}
-                        >
-                          {report.status}
-                        </span>
+          {activeSection === 'reports' ? (
+            <div className="admin-cards-grid">
+              {isLoadingReports ? <div className="admin-surface admin-surface-padded">Loading reports...</div> : null}
+              {reportsError ? <div className="admin-surface admin-surface-padded admin-danger-cell">{reportsError}</div> : null}
+              {!isLoadingReports && !reportsError
+                ? adminReports.map((report) => (
+                    <article key={report.id} className="admin-surface admin-surface-padded">
+                      <div className="admin-report-head">
+                        <p className="admin-list-title">{report.reportType}</p>
+                        <span className={STATUS_CLASS[getStatusTone(report.status)]}>{String(report.status)}</span>
                       </div>
-
-                      {/* Article Info */}
-                      <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold text-gray-500">Article ID:</span>
-                          <span className="text-xs font-mono font-bold text-blue-700">
-                            {report.articleId}
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {report.articleTitle}
-                        </p>
-                      </div>
-
-                      {/* Report Description */}
-                      <div className="mb-4">
-                        <p className="text-xs font-semibold text-gray-500 mb-2">Description:</p>
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {report.description}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          onClick={() => {
-                            void handleReviewReportedArticle(report.articleId);
-                          }}
-                          className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-xs font-medium"
-                        >
+                      <p className="admin-list-caption">By {report.reportedBy} • {report.reportedAt}</p>
+                      <p className="admin-report-title">{report.articleTitle}</p>
+                      <p className="admin-muted">{report.description}</p>
+                      <div className="admin-inline-actions mt-4">
+                        <button className="admin-btn admin-btn-muted" onClick={() => void handleReviewReportedArticle(report.articleId)}>
                           Review Article
                         </button>
-                        <button
-                          onClick={() => updateReportStatus(report.id, 'resolved')}
-                          className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-xs font-medium"
-                        >
+                        <button className="admin-btn admin-btn-primary" onClick={() => updateReportStatus(report.id, 'resolved')}>
                           Resolve
                         </button>
-                        <button
-                          onClick={() => updateReportStatus(report.id, 'under_review')}
-                          className="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all text-xs font-medium"
-                        >
+                        <button className="admin-btn admin-btn-muted" onClick={() => updateReportStatus(report.id, 'under_review')}>
                           Take Action
                         </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          }
-
-          {/* Feedback */}
-          {activeSection === 'feedback' && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Feedback</h2>
-                <p className="text-gray-600 text-sm">
-                  Total feedback: {feedbackEntries.length}
-                </p>
-              </div>
-
-              {isLoadingFeedback ? (
-                <div className="text-center py-12 text-gray-500">Loading feedback...</div>
-              ) : feedbackError ? (
-                <div className="text-center py-12 text-red-500">{feedbackError}</div>
-              ) : feedbackEntries.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">No feedback yet.</div>
-              ) : (
-                <div className="space-y-4">
-                  {feedbackEntries.map((feedback) => (
-                    <div
-                      key={feedback.id}
-                      className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-1">{feedback.subject}</h3>
-                          <p className="text-sm text-gray-600">
-                            From: {feedback.user}{feedback.email ? ` (${feedback.email})` : ''} • {feedback.date}
-                          </p>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                            {feedback.type}
-                          </span>
-                        </div>
-                        <span
-                          className={`px-3 py-1 rounded-lg text-xs font-medium border ${
-                            feedback.status === 'pending'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : feedback.status === 'in_progress'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-green-50 text-green-700 border-green-200'
-                          }`}
-                        >
-                          {feedback.status === 'pending' ? 'Pending' : feedback.status === 'in_progress' ? 'In Progress' : 'Resolved'}
-                        </span>
-                      </div>
-                      <p className="text-gray-700 mb-4">{feedback.message}</p>
-                      <div className="flex gap-3">
-                        {feedback.status !== 'in_progress' && (
-                          <button
-                            onClick={() => updateFeedbackStatus(feedback.id, 'in_progress')}
-                            className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-sm font-medium"
-                          >
-                            Mark as In Progress
-                          </button>
-                        )}
-                        {feedback.status !== 'resolved' && (
-                          <button
-                            onClick={() => updateFeedbackStatus(feedback.id, 'resolved')}
-                            className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-sm font-medium"
-                          >
-                            Mark as Resolved
-                          </button>
-                        )}
-                        {feedback.status !== 'pending' && (
-                          <button
-                            onClick={() => updateFeedbackStatus(feedback.id, 'pending')}
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium"
-                          >
-                            Reset to Pending
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    </article>
+                  ))
+                : null}
             </div>
-          )}
+          ) : null}
 
-          {/* Tutorials Management */}
-          {activeSection === 'tutorials' && (
-            <div className="space-y-6">
+          {activeSection === 'feedback' ? (
+            <div className="admin-list-stack">
+              {isLoadingFeedback ? <div className="admin-surface admin-surface-padded">Loading feedback...</div> : null}
+              {feedbackError ? <div className="admin-surface admin-surface-padded admin-danger-cell">{feedbackError}</div> : null}
+              {!isLoadingFeedback && !feedbackError
+                ? feedbackEntries.map((feedback) => (
+                    <article key={feedback.id} className="admin-surface admin-surface-padded">
+                      <div className="admin-report-head">
+                        <div>
+                          <p className="admin-list-title">{feedback.subject}</p>
+                          <p className="admin-list-caption">From {feedback.user} {feedback.email ? `(${feedback.email})` : ''} • {feedback.date}</p>
+                        </div>
+                        <span className={STATUS_CLASS[getStatusTone(feedback.status)]}>{String(feedback.status)}</span>
+                      </div>
+                      <p className="admin-muted mt-3">{feedback.message}</p>
+                      <div className="admin-inline-actions mt-4">
+                        {feedback.status !== 'in_progress' ? (
+                          <button className="admin-btn admin-btn-muted" onClick={() => updateFeedbackStatus(feedback.id, 'in_progress')}>
+                            In Progress
+                          </button>
+                        ) : null}
+                        {feedback.status !== 'resolved' ? (
+                          <button className="admin-btn admin-btn-primary" onClick={() => updateFeedbackStatus(feedback.id, 'resolved')}>
+                            Resolve
+                          </button>
+                        ) : null}
+                        {feedback.status !== 'pending' ? (
+                          <button className="admin-btn admin-btn-muted" onClick={() => updateFeedbackStatus(feedback.id, 'pending')}>
+                            Reset
+                          </button>
+                        ) : null}
+                      </div>
+                    </article>
+                  ))
+                : null}
+            </div>
+          ) : null}
+
+          {activeSection === 'tutorials' ? (
+            <>
               {!editingTutorial ? (
-                // Tutorials List View
-                <>
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-1">Tutorials</h2>
-                      <p className="text-gray-600 text-sm">Manage course collections and learning paths</p>
-                    </div>
+                <div className="admin-list-stack">
+                  <div className="admin-toolbar">
+                    <p className="admin-muted">Manage and publish learning paths</p>
                     <button
-                      onClick={() => setEditingTutorial({
-                        title: '',
-                        category: '',
-                        description: '',
-                        status: 'draft',
-                        articles: []
-                      })}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                      className="admin-btn admin-btn-primary"
+                      onClick={() =>
+                        setEditingTutorial({
+                          title: '',
+                          category: '',
+                          description: '',
+                          status: 'draft',
+                          articles: [],
+                        })
+                      }
                     >
-                      <Plus className="w-4 h-4" />
-                      Create New Tutorial
+                      <Plus className="h-4 w-4" />
+                      Create Tutorial
                     </button>
                   </div>
 
-                  {isLoadingTutorials ? (
-                    <div className="flex items-center justify-center py-20 text-gray-400 animate-pulse">Loading tutorials...</div>
-                  ) : tutorialsError ? (
-                    <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-center">{tutorialsError}</div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {isLoadingTutorials ? <div className="admin-surface admin-surface-padded">Loading tutorials...</div> : null}
+                  {tutorialsError ? <div className="admin-surface admin-surface-padded admin-danger-cell">{tutorialsError}</div> : null}
+
+                  {!isLoadingTutorials && !tutorialsError ? (
+                    <div className="admin-cards-grid">
                       {tutorials.map((tutorial: any) => (
-                        <div
-                          key={tutorial.T_ID}
-                          onClick={() => void handleEditTutorial(tutorial.T_ID)}
-                          className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-                            <BookOpen className="w-24 h-24 text-blue-600 transform rotate-12 translate-x-8 -translate-y-8" />
+                        <article key={tutorial.T_ID} className="admin-surface admin-surface-padded">
+                          <div className="admin-report-head">
+                            <p className="admin-list-title">{tutorial.Title}</p>
+                            <span className={STATUS_CLASS[getStatusTone(tutorial.Status)]}>{String(tutorial.Status)}</span>
                           </div>
-
-                          <div className="flex justify-between items-start mb-6">
-                            <span
-                              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${ tutorial.Status === 'published'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                                }`}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${ tutorial.Status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                              {tutorial.Status}
-                            </span>
+                          <p className="admin-list-caption">{tutorial.Category}</p>
+                          <p className="admin-muted mt-2">{tutorial.Description}</p>
+                          <div className="admin-inline-actions mt-4">
+                            <button className="admin-btn admin-btn-muted" onClick={() => void handleEditTutorial(tutorial.T_ID)}>
+                              Edit
+                            </button>
+                            <button className="admin-btn admin-btn-danger" onClick={() => void handleDeleteTutorial(tutorial.T_ID)}>
+                              Delete
+                            </button>
                           </div>
-
-                          <div className="relative z-10">
-                            <span className="inline-block px-2 py-0.5 mb-3 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold tracking-wide uppercase">
-                              {tutorial.Category}
-                            </span>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors line-clamp-1">
-                              {tutorial.Title}
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-6 line-clamp-2 h-10">
-                              {tutorial.Description}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
-                            <div className="flex items-center text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
-                              <FileText className="w-3 h-3 mr-1.5 text-blue-500" />
-                              {tutorial.articles_count ?? 0} Articles
-                            </div>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); void handleEditTutorial(tutorial.T_ID); }}
-                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); void handleDeleteTutorial(tutorial.T_ID); }}
-                                className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        </article>
                       ))}
                     </div>
-                  )}
-                </>
+                  ) : null}
+                </div>
               ) : (
-                // Create / Edit View
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/20">
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                      <button
-                        onClick={() => setEditingTutorial(null)}
-                        className="p-2 hover:bg-white bg-white/50 border border-gray-200 rounded-xl transition-colors shadow-sm"
-                      >
-                        <ChevronLeft className="w-5 h-5 text-gray-600" />
-                      </button>
-                      <div className="min-w-0">
-                        <h2 className="text-2xl font-bold text-gray-900 truncate">
-                          {editingTutorial.id ? 'Edit Tutorial' : 'Create Tutorial'}
-                        </h2>
-                        <p className="text-sm text-gray-500">Configure details and manage articles</p>
+                <div className="admin-tutorial-editor">
+                  <div className="admin-surface admin-surface-padded">
+                    <div className="admin-toolbar">
+                      <h3 className="admin-subheading">{editingTutorial.id ? 'Edit Tutorial' : 'Create Tutorial'}</h3>
+                      <div className="admin-inline-actions">
+                        <button className="admin-btn admin-btn-muted" onClick={() => setEditingTutorial(null)}>
+                          Cancel
+                        </button>
+                        <button className="admin-btn admin-btn-muted" onClick={() => void handleSaveTutorial('draft')}>
+                          <Save className="h-4 w-4" />
+                          Save Draft
+                        </button>
+                        <button className="admin-btn admin-btn-primary" onClick={() => void handleSaveTutorial('published')}>
+                          Publish
+                        </button>
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                      <button onClick={() => setEditingTutorial(null)} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold text-sm transition-all shadow-sm">Cancel</button>
-                      <button onClick={() => void handleSaveTutorial('draft')} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"><Save className="w-4 h-4" />Save Draft</button>
-                      <button onClick={() => void handleSaveTutorial('published')} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20"><BookOpen className="w-4 h-4" />Publish Tutorial</button>
+
+                    <div className="admin-form-grid">
+                      <label className="admin-label-wrap">
+                        <span>Title</span>
+                        <input
+                          className="admin-input"
+                          value={editingTutorial.title}
+                          onChange={(event) => setEditingTutorial({ ...editingTutorial, title: event.target.value })}
+                          placeholder="e.g. React Fundamentals"
+                        />
+                      </label>
+                      <label className="admin-label-wrap">
+                        <span>Category</span>
+                        <input
+                          className="admin-input"
+                          value={editingTutorial.category}
+                          onChange={(event) => setEditingTutorial({ ...editingTutorial, category: event.target.value })}
+                          placeholder="e.g. Frontend"
+                        />
+                      </label>
+                      <label className="admin-label-wrap admin-label-wrap-full">
+                        <span>Description</span>
+                        <textarea
+                          className="admin-input admin-textarea"
+                          value={editingTutorial.description}
+                          onChange={(event) => setEditingTutorial({ ...editingTutorial, description: event.target.value })}
+                          placeholder="Describe this tutorial"
+                        />
+                      </label>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left: Info & Search */}
-                    <div className="lg:col-span-1 space-y-6">
-                      <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6">Basic Information</h3>
-                        <div className="space-y-5">
-                          <div>
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Title</label>
-                            <input
-                              type="text"
-                              value={editingTutorial.title}
-                              onChange={e => setEditingTutorial({ ...editingTutorial, title: e.target.value })}
-                              className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
-                              placeholder="e.g. Master React Basics"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Category</label>
-                            <input
-                              type="text"
-                              value={editingTutorial.category}
-                              onChange={e => setEditingTutorial({ ...editingTutorial, category: e.target.value })}
-                              className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
-                              placeholder="e.g. C, Python, Web Dev"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Description</label>
-                            <textarea
-                              value={editingTutorial.description}
-                              onChange={e => setEditingTutorial({ ...editingTutorial, description: e.target.value })}
-                              className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-32 resize-none placeholder:text-gray-400"
-                              placeholder="Brief description of this tutorial..."
-                            />
-                          </div>
-                        </div>
+                  <div className="admin-editor-columns">
+                    <div className="admin-surface admin-surface-padded">
+                      <h4 className="admin-subheading">Article Search</h4>
+                      <div className="mt-3">
+                        <input
+                          className="admin-input"
+                          value={articleSearchQuery}
+                          onChange={(event) => setArticleSearchQuery(event.target.value)}
+                          placeholder="Search published articles"
+                        />
                       </div>
-
-                      <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm flex flex-col h-[500px]">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6">Add Articles</h3>
-                        <div className="relative mb-6">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            type="text"
-                            placeholder="Search published articles..."
-                            value={articleSearchQuery}
-                            onChange={(e) => setArticleSearchQuery(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-all placeholder:text-gray-400"
-                          />
-                        </div>
-                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                          {isSearchingArticles ? (
-                            <div className="h-full flex items-center justify-center"><div className="w-6 h-6 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div></div>
-                          ) : searchResults.length > 0 ? (
-                            searchResults
-                              .filter((a: any) => !editingTutorial.articles.find((selected: any) => (selected.Article_ID || selected.id) === (a.Article_ID || a.id)))
+                      <div className="admin-list-stack mt-4 max-h-[22rem] overflow-y-auto pr-1">
+                        {isSearchingArticles ? <p className="admin-muted">Searching...</p> : null}
+                        {!isSearchingArticles
+                          ? searchResults
+                              .filter(
+                                (result: any) =>
+                                  !editingTutorial.articles.find(
+                                    (selected: any) => (selected.Article_ID || selected.id) === (result.Article_ID || result.id)
+                                  )
+                              )
                               .map((article: any) => (
-                                <div key={article.Article_ID || article.id} className="flex items-center justify-between p-4 border border-gray-50 rounded-2xl hover:bg-blue-50/30 hover:border-blue-100 transition-all group">
-                                  <div className="min-w-0 pr-4">
-                                    <p className="text-sm font-bold text-gray-800 truncate">{article.Title || article.title}</p>
-                                    <p className="text-[11px] text-gray-500 mt-0.5">{(article.Category || article.category)} • {article.user?.name || 'Author'}</p>
+                                <div key={article.Article_ID || article.id} className="admin-list-row">
+                                  <div>
+                                    <p className="admin-list-title">{article.Title || article.title}</p>
+                                    <p className="admin-list-caption">{article.Category || article.category}</p>
                                   </div>
-                                  <button onClick={() => handleAddArticleToTutorial(article)} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Plus className="w-4 h-4" /></button>
+                                  <button className="admin-btn admin-btn-muted" onClick={() => handleAddArticleToTutorial(article)}>
+                                    <Plus className="h-4 w-4" />
+                                    Add
+                                  </button>
                                 </div>
                               ))
-                          ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm gap-2 opacity-60">
-                              <p>Search above to find articles</p>
-                            </div>
-                          )}
-                        </div>
+                          : null}
                       </div>
                     </div>
 
-                    {/* Right: Selected Articles */}
-                    <div className="lg:col-span-2">
-                      <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm min-h-[600px] flex flex-col">
-                        <div className="flex items-center justify-between mb-8">
-                          <h3 className="text-xl font-bold text-gray-900">
-                            Selected Articles <span className="text-blue-500 font-medium text-sm ml-2 px-2 py-0.5 bg-blue-50 rounded-lg">{editingTutorial.articles.length}</span>
-                          </h3>
-                        </div>
-                        {editingTutorial.articles.length > 0 ? (
-                          <div className="space-y-4">
-                            {editingTutorial.articles.map((article: any, index: number) => (
-                              <div key={article.Article_ID || article.id} className="flex items-center gap-5 p-5 bg-gray-50/50 border border-transparent rounded-[1.5rem] group hover:bg-white hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                                <div className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 text-blue-600 rounded-2xl font-mono font-black text-lg shadow-sm">
-                                  {String(index + 1).padStart(2, '0')}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-base font-bold text-gray-900 mb-0.5 truncate">{article.Title || article.title}</h4>
-                                  <p className="text-xs text-gray-500">{(article.Category || article.category)} • by {article.user?.name || 'Author'}</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="flex flex-col gap-1">
-                                    <button
-                                      disabled={index === 0}
-                                      onClick={() => {
-                                        const newArticles = [...editingTutorial.articles];
-                                        [newArticles[index - 1], newArticles[index]] = [newArticles[index], newArticles[index - 1]];
-                                        setEditingTutorial({ ...editingTutorial, articles: newArticles });
-                                      }}
-                                      className="p-1.5 hover:bg-white shadow-sm text-gray-400 hover:text-blue-600 rounded-lg disabled:opacity-30 transition-all"
-                                    >
-                                      <ArrowUp className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      disabled={index === editingTutorial.articles.length - 1}
-                                      onClick={() => {
-                                        const newArticles = [...editingTutorial.articles];
-                                        [newArticles[index + 1], newArticles[index]] = [newArticles[index], newArticles[index + 1]];
-                                        setEditingTutorial({ ...editingTutorial, articles: newArticles });
-                                      }}
-                                      className="p-1.5 hover:bg-white shadow-sm text-gray-400 hover:text-blue-600 rounded-lg disabled:opacity-30 transition-all"
-                                    >
-                                      <ArrowDown className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      const newArticles = editingTutorial.articles.filter((_: any, i: number) => i !== index);
-                                      setEditingTutorial({ ...editingTutorial, articles: newArticles });
-                                    }}
-                                    className="p-3 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-2xl shadow-sm hover:shadow-md transition-all"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                    <div className="admin-surface admin-surface-padded">
+                      <h4 className="admin-subheading">Selected Articles ({editingTutorial.articles.length})</h4>
+                      <div className="admin-list-stack mt-4">
+                        {editingTutorial.articles.map((article: any, index: number) => (
+                          <div key={article.Article_ID || article.id} className="admin-list-row">
+                            <div>
+                              <p className="admin-list-title">{article.Title || article.title}</p>
+                              <p className="admin-list-caption">Order {index + 1}</p>
+                            </div>
+                            <div className="admin-inline-actions">
+                              <button
+                                className="admin-icon-btn"
+                                disabled={index === 0}
+                                onClick={() => {
+                                  const next = [...editingTutorial.articles];
+                                  [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                                  setEditingTutorial({ ...editingTutorial, articles: next });
+                                }}
+                                aria-label="Move up"
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="admin-icon-btn"
+                                disabled={index === editingTutorial.articles.length - 1}
+                                onClick={() => {
+                                  const next = [...editingTutorial.articles];
+                                  [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                                  setEditingTutorial({ ...editingTutorial, articles: next });
+                                }}
+                                aria-label="Move down"
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="admin-icon-btn"
+                                onClick={() => {
+                                  const next = editingTutorial.articles.filter((_: any, i: number) => i !== index);
+                                  setEditingTutorial({ ...editingTutorial, articles: next });
+                                }}
+                                aria-label="Remove article"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
-                        ) : (
-                          <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-gray-50/50 p-12 text-center text-gray-400">
-                            <BookOpen className="w-12 h-12 mb-4 opacity-20" />
-                            <p>No articles added yet</p>
-                          </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
-            </div>
-          )}
-        </div>
+            </>
+          ) : null}
+        </section>
       </main>
 
-      {/* Add User Modal */}
-      {isAddUserModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
-            <div className="px-5 py-4 border-b border-gray-200 flex items-start justify-between">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">Add New User</h3>
-                <p className="text-xs text-gray-500 mt-1">Create a new account for the platform</p>
-              </div>
-              <button
-                onClick={() => {
-                  setNewUserForm(EMPTY_NEW_USER_FORM);
-                  setIsAddUserModalOpen(false);
-                }}
-                className="p-2 hover:bg-gray-100 text-gray-500 rounded-full transition-colors -mt-1"
-              >
-                <X className="w-5 h-5" />
+      {isAddUserModalOpen ? (
+        <div className="admin-modal-overlay" role="dialog" aria-modal="true" aria-label="Add user">
+          <div className="admin-modal">
+            <div className="admin-toolbar">
+              <h3 className="admin-subheading">Create New User</h3>
+              <button className="admin-icon-btn" onClick={() => setIsAddUserModalOpen(false)} aria-label="Close modal">
+                <X className="h-4 w-4" />
               </button>
             </div>
-
-            <div className="px-5 py-4 space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Full Name</label>
+            <div className="admin-form-grid mt-4">
+              <label className="admin-label-wrap">
+                <span>Full Name</span>
                 <input
-                  type="text"
+                  className="admin-input"
                   value={newUserForm.name}
-                  onChange={(e) => {
-                    setNewUserForm((prev) => ({ ...prev, name: e.target.value }));
-                  }}
-                  placeholder="Enter full name"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
+                  onChange={(event) => setNewUserForm((prev) => ({ ...prev, name: event.target.value }))}
+                  placeholder="e.g. Alex Johnson"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Email</label>
+              </label>
+              <label className="admin-label-wrap">
+                <span>Email</span>
                 <input
+                  className="admin-input"
                   type="email"
                   value={newUserForm.email}
-                  onChange={(e) => {
-                    setNewUserForm((prev) => ({ ...prev, email: e.target.value }));
-                  }}
-                  placeholder="user@example.com"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
+                  onChange={(event) => setNewUserForm((prev) => ({ ...prev, email: event.target.value }))}
+                  placeholder="e.g. alex@learnova.io"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Password</label>
+              </label>
+              <label className="admin-label-wrap">
+                <span>Password</span>
                 <input
+                  className="admin-input"
                   type="password"
                   value={newUserForm.password}
-                  onChange={(e) => {
-                    setNewUserForm((prev) => ({ ...prev, password: e.target.value }));
-                  }}
-                  placeholder="Create a password"
-                  autoComplete="new-password"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
+                  onChange={(event) => setNewUserForm((prev) => ({ ...prev, password: event.target.value }))}
+                  placeholder="Create temporary password"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5">Role</label>
+              </label>
+              <label className="admin-label-wrap">
+                <span>Role</span>
                 <select
+                  className="admin-input"
                   value={newUserForm.role}
-                  onChange={(e) => {
-                    setNewUserForm((prev) => ({ ...prev, role: e.target.value }));
-                  }}
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white"
+                  onChange={(event) => setNewUserForm((prev) => ({ ...prev, role: event.target.value }))}
                 >
-                  <option value="" disabled>Select a role</option>
+                  <option value="">Select role</option>
                   <option value="student">Student</option>
-                  <option value="expert">Expert</option>
                   <option value="instructor">Instructor</option>
+                  <option value="expert">Expert</option>
                   <option value="admin">Admin</option>
                 </select>
-                <p className="mt-1.5 text-xs text-gray-500">Assign the minimum required role for access control.</p>
-              </div>
+              </label>
             </div>
-
-            <div className="px-5 py-3.5 border-t border-gray-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 bg-gray-50/70">
-              <button
-                onClick={() => {
-                  setNewUserForm(EMPTY_NEW_USER_FORM);
-                  setIsAddUserModalOpen(false);
-                }}
-                className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium w-full sm:w-auto"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  void handleCreateUser();
-                }}
-                className="px-4 py-2.5 bg-blue-600 border border-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50 w-full sm:w-auto"
-                disabled={isCreatingUser}
-              >
-                {isCreatingUser ? 'Adding...' : 'Add User'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* User Details Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="relative h-24 bg-blue-600">
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 pb-6 mt-[-3rem]">
-              <div className="flex flex-col items-center">
-                <div className="w-24 h-24 bg-white rounded-full p-1 shadow-lg mb-4">
-                  <div className="w-full h-full bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-3xl font-bold">
-                    {selectedUser.name.charAt(0)}
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 text-center">{selectedUser.name}</h3>
-                <p className="text-gray-500 text-sm mb-4">{selectedUser.email}</p>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${selectedUser.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                  }`}>
-                  {selectedUser.status}
-                </span>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Role</span>
-                  <span className="text-sm font-medium text-gray-900">{selectedUser.role}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">User ID</span>
-                  <span className="text-sm font-mono text-gray-700">{selectedUser.id}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Joined Date</span>
-                  <span className="text-sm font-medium text-gray-900">{selectedUser.joinDate}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Last Login</span>
-                  <span className="text-sm font-medium text-gray-900">{selectedUser.lastLogin}</span>
-                </div>
-              </div>
-
-              <div className="mt-8 flex gap-3">
-                <button className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm transition-colors">
-                  Edit Profile
+            <div className="admin-toolbar mt-6">
+              <div />
+              <div className="admin-inline-actions">
+                <button className="admin-btn admin-btn-muted" onClick={() => setIsAddUserModalOpen(false)}>
+                  Cancel
                 </button>
-                <button className="flex-1 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-sm transition-colors">
-                  Reset Password
+                <button className="admin-btn admin-btn-primary" onClick={() => void handleCreateUser()} disabled={isCreatingUser}>
+                  {isCreatingUser ? 'Creating...' : 'Create User'}
                 </button>
               </div>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

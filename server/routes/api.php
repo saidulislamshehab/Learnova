@@ -8,6 +8,7 @@ use App\Http\Controllers\ExpertApplicationController;
 use App\Http\Controllers\InstructorApplicationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\PublicStatsController;
@@ -27,6 +28,8 @@ Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('i
 Route::get('/articles/{id}/comments', [ArticleController::class, 'comments'])->whereNumber('id');
 Route::get('/tutorials', [TutorialController::class, 'indexPublic']);
 Route::get('/tutorials/{id}', [TutorialController::class, 'showPublic'])->whereNumber('id');
+Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
+Route::get('/search', [SearchController::class, 'search']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -36,6 +39,10 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/profile/picture', [AuthController::class, 'updateProfilePicture']);
     Route::put('/change-password', [AuthController::class, 'changePassword']);
     Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
+
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::put('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
 
     Route::post('/expert-applications', [ExpertApplicationController::class, 'store']);
     Route::get('/expert-applications/my-status', [ExpertApplicationController::class, 'myStatus']);

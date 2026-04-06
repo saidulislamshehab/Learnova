@@ -8,6 +8,8 @@ use App\Models\Report;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Notification;
+use App\Models\User;
 
 class ArticleController extends Controller
 {
@@ -27,6 +29,7 @@ class ArticleController extends Controller
     public function myArticles(Request $request): JsonResponse
     {
         $articles = Article::query()
+            ->with(['reports'])
             ->where('UserID', $request->user()->id)
             ->orderByDesc('created_at')
             ->get();
@@ -73,6 +76,18 @@ class ArticleController extends Controller
             'Content' => $validated['content'],
         ]);
 
+        // Notify article author
+        $article = Article::find($id);
+        if ($article && $article->UserID !== $request->user()->id) {
+            Notification::create([
+                'user_id' => $article->UserID,
+                'type' => 'comment_posted',
+                'message' => "commented on your article: \"{$article->Title}\"",
+                'author_name' => $request->user()->name,
+                'resource_id' => $article->Article_ID,
+            ]);
+        }
+
         $comment->load('user:id,name,picture');
 
         return response()->json([
@@ -97,6 +112,17 @@ class ArticleController extends Controller
             'Description' => $validated['description'] ?? null,
             'Status' => 'pending',
         ]);
+
+        // Notify article author
+        if ($article->UserID !== $request->user()->id) {
+            Notification::create([
+                'user_id' => $article->UserID,
+                'type' => 'report_filed',
+                'message' => "reported your article: \"{$article->Title}\"",
+                'author_name' => "Someone", // Keep report anonymous? Or show 'Someone'?
+                'resource_id' => $article->Article_ID,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Article reported successfully.',
@@ -186,6 +212,20 @@ class ArticleController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+
+        // Notify all users about new article if it's published
+        if ($article->Status === 'published') {
+            $users = User::where('id', '!=', $request->user()->id)->get();
+            foreach ($users as $recipient) {
+                Notification::create([
+                    'user_id' => $recipient->id,
+                    'type' => 'article_posted',
+                    'message' => "posted a new article: \"{$article->Title}\"",
+                    'author_name' => $request->user()->name,
+                    'resource_id' => $article->id,
+                ]);
+            }
         }
 
         return response()->json([
