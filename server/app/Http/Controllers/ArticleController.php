@@ -40,8 +40,8 @@ class ArticleController extends Controller
     {
         $article = Article::with('user:id,name,picture')->findOrFail($id);
         
-        // Increment views
-        $article->increment('Views');
+        // Increment views without touching updated_at
+        Article::withoutTimestamps(fn () => $article->increment('Views'));
 
         return response()->json([
             'article' => $article,
@@ -243,6 +243,22 @@ class ArticleController extends Controller
         return response()->json([
             'message' => 'Article updated successfully.',
             'article' => $article,
+        ]);
+    }
+
+    /**
+     * Toggle reaction (like) on an article. Increments Reaction count.
+     */
+    public function toggleReaction(Request $request, int $id): JsonResponse
+    {
+        $article = Article::findOrFail($id);
+
+        // Increment without touching updated_at
+        Article::withoutTimestamps(fn () => $article->increment('Reaction'));
+
+        return response()->json([
+            'message'   => 'Reaction added.',
+            'reactions'  => $article->fresh()->Reaction,
         ]);
     }
 }

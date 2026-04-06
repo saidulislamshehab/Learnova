@@ -8,6 +8,8 @@ use App\Http\Controllers\ExpertApplicationController;
 use App\Http\Controllers\InstructorApplicationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\PublicStatsController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +37,9 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/instructor-applications', [InstructorApplicationController::class, 'store']);
     Route::get('/instructor-applications/my-status', [InstructorApplicationController::class, 'myStatus']);
 
+    // Feedback
+    Route::post('/feedbacks', [FeedbackController::class, 'store']);
+
     // Enrollment & Purchases
     Route::post('/courses/enroll', [\App\Http\Controllers\CourseEnrollmentController::class, 'store']);
     Route::get('/courses/enrolled', [\App\Http\Controllers\CourseEnrollmentController::class, 'myEnrolledCourses']);
@@ -49,6 +54,12 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
     Route::post('/articles/{id}/comments', [ArticleController::class, 'storeComment'])->whereNumber('id');
     Route::post('/articles/{id}/report', [ArticleController::class, 'storeReport'])->whereNumber('id');
+    Route::post('/articles/{id}/react', [ArticleController::class, 'toggleReaction'])->whereNumber('id');
+
+    // Bookmarks
+    Route::get('/bookmarks', [BookmarkController::class, 'index']);
+    Route::post('/bookmarks/{articleId}', [BookmarkController::class, 'toggle'])->whereNumber('articleId');
+    Route::get('/bookmarks/{articleId}/status', [BookmarkController::class, 'status'])->whereNumber('articleId');
     
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/courses/pending', [CourseController::class, 'indexPending']);
@@ -69,6 +80,10 @@ Route::middleware('auth:api')->group(function () {
         // Article Reports
         Route::get('/admin/reports', [ReportController::class, 'index']);
         Route::put('/admin/reports/{id}', [ReportController::class, 'update']);
+
+        // Feedback Management
+        Route::get('/admin/feedbacks', [FeedbackController::class, 'index']);
+        Route::put('/admin/feedbacks/{id}', [FeedbackController::class, 'updateStatus']);
     });
 });
 

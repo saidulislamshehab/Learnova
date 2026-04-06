@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { MessageSquare, Send, CheckCircle } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+import { getAuthToken } from '../../../utils/authStorage';
+
+const API_BASE = `http://${window.location.hostname}:8000/api`;
 
 interface FeedbackProps {
   onBack: () => void;
@@ -11,22 +15,44 @@ export function Feedback({ onBack }: FeedbackProps) {
   const [message, setMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError(null);
+
     if (!subject.trim() || !feedbackType || !message.trim()) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      setError('You must be signed in to submit feedback. Please sign in and try again.');
       return;
     }
 
     setIsSubmitting(true);
-    
-    // Simulate submission
-    setTimeout(() => {
+
+    try {
+      await axios.post(
+        `${API_BASE}/feedbacks`,
+        {
+          subject: subject.trim(),
+          type: feedbackType,
+          description: message.trim(),
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsSubmitting(false);
       setIsSubmitted(true);
-      
+
       // Reset form after showing success
       setTimeout(() => {
         setSubject('');
@@ -34,7 +60,21 @@ export function Feedback({ onBack }: FeedbackProps) {
         setMessage('');
         setIsSubmitted(false);
       }, 3000);
-    }, 1000);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      if (err?.response?.status === 401) {
+        setError('Your session has expired. Please sign in again to submit feedback.');
+      } else {
+        const apiMsg = err?.response?.data?.message;
+        const validationErrors = err?.response?.data?.errors;
+        if (validationErrors) {
+          const firstError = Object.values(validationErrors)[0];
+          setError(Array.isArray(firstError) ? (firstError as string[])[0] : 'Validation failed. Please check your inputs.');
+        } else {
+          setError(apiMsg || 'Something went wrong. Please try again later.');
+        }
+      }
+    }
   };
 
   return (
@@ -57,6 +97,14 @@ export function Feedback({ onBack }: FeedbackProps) {
         <div className="bg-[#121212]/80 backdrop-blur-xl border border-[#A5C89E]/30 rounded-2xl p-8">
           {!isSubmitted ? (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Banner */}
+              {error && (
+                <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
+
               {/* Subject Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">

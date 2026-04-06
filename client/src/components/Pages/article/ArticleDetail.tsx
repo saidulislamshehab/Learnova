@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, ChevronRight, BookOpen, ArrowRight, Send, X, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, ChevronRight, BookOpen, ArrowRight, Send, X, CheckCircle, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
 import axios from 'axios';
 
 interface ArticleDetailProps {
@@ -252,6 +252,10 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
   const [aiIsTyping, setAiIsTyping] = useState(false);
   const aiChatRef = useRef<HTMLDivElement>(null);
 
+  // Bookmark state
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
+
   const exampleQuestions = [
     'What are the key takeaways from this article?',
     'Can you explain the code examples?',
@@ -350,6 +354,21 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
     void fetchArticle();
     void fetchRelated();
     void fetchComments();
+
+    // Fetch bookmark status if signed in
+    const fetchBookmarkStatus = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      try {
+        const response = await axios.get(`${API_BASE}/bookmarks/${articleId}/status`, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        });
+        setIsBookmarked(response.data?.bookmarked ?? false);
+      } catch {
+        // silently fail
+      }
+    };
+    void fetchBookmarkStatus();
   }, [API_BASE, articleId]);
 
   const article = useMemo(() => {
@@ -360,7 +379,11 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
     const title = String(dbArticle.Title ?? dbArticle.title ?? 'Untitled Article');
     const category = String(dbArticle.Category ?? dbArticle.category ?? 'General');
     const readTime = String(dbArticle.Read_Time ?? dbArticle.read_time ?? '0 min read');
-    const updatedAt = dbArticle.updated_at ? timeAgo(dbArticle.updated_at) : '';
+    const createdMs = dbArticle.created_at ? new Date(dbArticle.created_at).getTime() : 0;
+    const updatedMs = dbArticle.updated_at ? new Date(dbArticle.updated_at).getTime() : 0;
+    // Only show "Updated" if the article was genuinely edited (not just views/reactions)
+    const wasEdited = createdMs > 0 && updatedMs > 0 && Math.abs(updatedMs - createdMs) > 60_000;
+    const updatedAt = wasEdited ? timeAgo(dbArticle.updated_at) : '';
     const author = String(dbArticle.user?.name ?? 'Unknown');
     const authorRole = String(dbArticle.user?.role ?? 'Contributor');
     const authorPicture = String(dbArticle.user?.picture ?? '');
@@ -374,7 +397,7 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
       title,
       category,
       readTime,
-      lastUpdated: updatedAt || 'Recently',
+      lastUpdated: updatedAt,
       author,
       authorRole,
       authorPicture,
@@ -391,13 +414,50 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
     setIsLiked(false);
   }, [article.likes, articleId]);
 
-  const handleLike = () => {
-    if (isLiked) {
-      setLikes(likes - 1);
+  const handleLike = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in to react.');
+      return;
+    }
+
+    // Optimistic UI update
+    setLikes(likes + 1);
+    setIsLiked(true);
+
+    try {
+      const response = await axios.post(
+        `${API_BASE}/articles/${articleId}/react`,
+        {},
+        { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } }
+      );
+      setLikes(response.data?.reactions ?? likes + 1);
+    } catch {
+      // revert on failure
+      setLikes(likes);
       setIsLiked(false);
-    } else {
-      setLikes(likes + 1);
-      setIsLiked(true);
+    }
+  };
+
+  const handleBookmark = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in to bookmark articles.');
+      return;
+    }
+
+    setIsBookmarkLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE}/bookmarks/${articleId}`,
+        {},
+        { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } }
+      );
+      setIsBookmarked(response.data?.bookmarked ?? !isBookmarked);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to update bookmark.');
+    } finally {
+      setIsBookmarkLoading(false);
     }
   };
 
@@ -671,6 +731,23 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
                 className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-[#121212]/80 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 transition-all"
               >
                 <Share2 className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={handleBookmark}
+                disabled={isBookmarkLoading}
+                className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
+                  isBookmarked
+                    ? 'bg-[#A5C89E]/20 text-[#A5C89E]'
+                    : 'bg-[#121212]/80 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10'
+                } disabled:opacity-50`}
+                title={isBookmarked ? 'Remove bookmark' : 'Bookmark this article'}
+              >
+                {isBookmarked ? (
+                  <BookmarkCheck className="w-4 h-4 fill-current" />
+                ) : (
+                  <Bookmark className="w-4 h-4" />
+                )}
               </button>
 
               <button

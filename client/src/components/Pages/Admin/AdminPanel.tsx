@@ -104,6 +104,11 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [newUserForm, setNewUserForm] = useState(EMPTY_NEW_USER_FORM);
 
+  // Feedback state
+  const [feedbackEntries, setFeedbackEntries] = useState<any[]>([]);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
   // Tutorial Management State
   const [tutorials, setTutorials] = useState([
     { id: '1', title: 'C Programming Basics', category: 'C', status: 'Active', articleCount: 15, description: 'Complete guide to C', articles: [] as any[] },
@@ -575,6 +580,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     if (activeSection === 'reports') {
       void fetchReports();
     }
+
+    if (activeSection === 'feedback') {
+      void fetchFeedbacks();
+    }
   }, [activeSection]);
 
   useEffect(() => {
@@ -604,32 +613,72 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
 
 
 
-  const feedbackEntries = [
-    {
-      id: '1',
-      user: 'Alex Johnson',
-      subject: 'Great platform!',
-      message: 'I love the courses and the UI is amazing. Keep up the good work!',
-      date: '2026-01-21',
-      status: 'New',
-    },
-    {
-      id: '2',
-      user: 'Emma Davis',
-      subject: 'Bug report',
-      message: 'I found a bug in the payment section. The checkout page freezes sometimes.',
-      date: '2026-01-20',
-      status: 'In Progress',
-    },
-    {
-      id: '3',
-      user: 'Mike Chen',
-      subject: 'Feature request',
-      message: 'It would be great to have dark mode toggle in the settings.',
-      date: '2026-01-19',
-      status: 'Resolved',
-    },
-  ];
+  const fetchFeedbacks = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setFeedbackEntries([]);
+      setFeedbackError('Please sign in as admin to view feedback.');
+      return;
+    }
+
+    try {
+      setIsLoadingFeedback(true);
+      setFeedbackError(null);
+      const response = await axios.get(`${API_BASE}/admin/feedbacks`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rawFeedbacks = response.data?.feedbacks ?? [];
+      const list = (Array.isArray(rawFeedbacks) ? rawFeedbacks : []).map((item: any) => ({
+        id: String(item.F_ID ?? item.id),
+        user: item.user?.name ?? 'Unknown',
+        email: item.user?.email ?? '',
+        subject: item.Subject ?? item.subject ?? '',
+        type: item.Type ?? item.type ?? '',
+        message: item.Description ?? item.description ?? '',
+        date: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A',
+        status: item.Status ?? item.status ?? 'pending',
+      }));
+
+      setFeedbackEntries(list);
+    } catch (error: any) {
+      setFeedbackEntries([]);
+      if (error?.response?.status === 403) {
+        setFeedbackError('You do not have permission to view feedback.');
+      } else {
+        setFeedbackError(error?.response?.data?.message || 'Failed to load feedback.');
+      }
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
+
+  const updateFeedbackStatus = async (id: string, status: 'pending' | 'in_progress' | 'resolved') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Please sign in as admin.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API_BASE}/admin/feedbacks/${id}`,
+        { status },
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      await fetchFeedbacks();
+    } catch (error: any) {
+      alert(error?.response?.data?.message || 'Failed to update feedback status.');
+    }
+  };
 
   const articleReports = adminReports;
 
@@ -2242,42 +2291,72 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                 </p>
               </div>
 
-              <div className="space-y-4">
-                {feedbackEntries.map((feedback) => (
-                  <div
-                    key={feedback.id}
-                    className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">{feedback.subject}</h3>
-                        <p className="text-sm text-gray-600">
-                          From: {feedback.user} • {feedback.date}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-lg text-xs font-medium border ${feedback.status === 'New'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200'
-                          : feedback.status === 'In Progress'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-gray-50 text-gray-600 border-gray-200'
+              {isLoadingFeedback ? (
+                <div className="text-center py-12 text-gray-500">Loading feedback...</div>
+              ) : feedbackError ? (
+                <div className="text-center py-12 text-red-500">{feedbackError}</div>
+              ) : feedbackEntries.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">No feedback yet.</div>
+              ) : (
+                <div className="space-y-4">
+                  {feedbackEntries.map((feedback) => (
+                    <div
+                      key={feedback.id}
+                      className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">{feedback.subject}</h3>
+                          <p className="text-sm text-gray-600">
+                            From: {feedback.user}{feedback.email ? ` (${feedback.email})` : ''} • {feedback.date}
+                          </p>
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                            {feedback.type}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-lg text-xs font-medium border ${
+                            feedback.status === 'pending'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : feedback.status === 'in_progress'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-green-50 text-green-700 border-green-200'
                           }`}
-                      >
-                        {feedback.status}
-                      </span>
+                        >
+                          {feedback.status === 'pending' ? 'Pending' : feedback.status === 'in_progress' ? 'In Progress' : 'Resolved'}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mb-4">{feedback.message}</p>
+                      <div className="flex gap-3">
+                        {feedback.status !== 'in_progress' && (
+                          <button
+                            onClick={() => updateFeedbackStatus(feedback.id, 'in_progress')}
+                            className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-sm font-medium"
+                          >
+                            Mark as In Progress
+                          </button>
+                        )}
+                        {feedback.status !== 'resolved' && (
+                          <button
+                            onClick={() => updateFeedbackStatus(feedback.id, 'resolved')}
+                            className="px-4 py-2 bg-green-50 border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-all text-sm font-medium"
+                          >
+                            Mark as Resolved
+                          </button>
+                        )}
+                        {feedback.status !== 'pending' && (
+                          <button
+                            onClick={() => updateFeedbackStatus(feedback.id, 'pending')}
+                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium"
+                          >
+                            Reset to Pending
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-gray-700 mb-4">{feedback.message}</p>
-                    <div className="flex gap-3">
-                      <button className="px-4 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-all text-sm font-medium">
-                        Mark as In Progress
-                      </button>
-                      <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium">
-                        Mark as Resolved
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
