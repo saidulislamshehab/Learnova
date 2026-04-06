@@ -31,6 +31,7 @@ interface NavbarProps {
   onMyCourses?: () => void;
   onBookmarks?: () => void;
   onWriteArticle?: () => void;
+  onMyArticles?: () => void;
   onJoinInstructor?: () => void;
   onJoinExpert?: () => void;
   onPublishCourse?: () => void;
@@ -59,6 +60,7 @@ export function Navbar({
   onMyCourses,
   onBookmarks,
   onWriteArticle,
+  onMyArticles,
   onJoinInstructor,
   onJoinExpert,
   onPublishCourse,
@@ -610,6 +612,19 @@ export function Navbar({
                               Write Article
                             </a>
                           )}
+                          {canSeeWriteArticle && (
+                            <a
+                              href="#my-articles"
+                              className="navbar-dropdown-item"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onMyArticles?.();
+                                setIsProfileOpen(false);
+                              }}
+                            >
+                              My Articles
+                            </a>
+                          )}
                           {canSeePublishCourse && (
                             <a
                               href="#publish-course"
@@ -621,6 +636,19 @@ export function Navbar({
                               }}
                             >
                               Publish Course
+                            </a>
+                          )}
+                          {canSeePublishCourse && (
+                            <a
+                              href="#my-courses"
+                              className="navbar-dropdown-item"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onInstructorMyCourses?.();
+                                setIsProfileOpen(false);
+                              }}
+                            >
+                              My Courses
                             </a>
                           )}
                         </div>
@@ -945,6 +973,17 @@ export function Navbar({
                       WRITE ARTICLE
                     </Link>
                   )}
+                  {canSeeWriteArticle && (
+                    <Link
+                      to="/myarticles"
+                      className="navbar-mobile-link"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      MY ARTICLES
+                    </Link>
+                  )}
                   {canSeePublishCourse && (
                     <Link
                       to="/publishcourse"
@@ -954,6 +993,17 @@ export function Navbar({
                       }}
                     >
                       PUBLISH COURSE
+                    </Link>
+                  )}
+                  {canSeePublishCourse && (
+                    <Link
+                      to="/instructormycourses"
+                      className="navbar-mobile-link"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      MY COURSES
                     </Link>
                   )}
 

@@ -161,6 +161,7 @@ export default function App() {
             onMyCourses={() => navigate('/mycourses')}
             onBookmarks={() => navigate('/bookmarks')}
             onWriteArticle={() => navigate('/writearticle')}
+            onMyArticles={() => navigate('/myarticles')}
             onJoinInstructor={() => navigate('/joininstructor')}
             onJoinExpert={() => navigate('/joinexpert')}
             onPublishCourse={() => {
@@ -332,6 +333,16 @@ export default function App() {
                 <>
                     <WriteArticle
                         onBack={() => navigate('/articles')}
+                    />
+                    <Footer />
+                </>
+            } />
+
+            <Route path="/myarticles" element={
+                <>
+                    <WriteArticle
+                        onBack={() => navigate('/articles')}
+                        initialView="list"
                     />
                     <Footer />
                 </>

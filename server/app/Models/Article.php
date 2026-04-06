@@ -43,6 +43,11 @@ class Article extends Model
         return $this->hasMany(ArticleApproval::class, 'article_id', 'Article_ID');
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'Article_ID', 'Article_ID');
+    }
+
     public function toArray()
     {
         $array = parent::toArray();

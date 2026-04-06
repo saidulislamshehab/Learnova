@@ -6,10 +6,11 @@ import { MyArticles, Article } from './MyArticles';
 interface WriteArticleProps {
   onBack: () => void;
   onMyArticles?: () => void;
+  initialView?: 'editor' | 'list';
 }
 
-export function WriteArticle({ onBack, onMyArticles }: WriteArticleProps) {
-  const [view, setView] = useState<'editor' | 'list'>('editor');
+export function WriteArticle({ onBack, onMyArticles, initialView = 'editor' }: WriteArticleProps) {
+  const [view, setView] = useState<'editor' | 'list'>(initialView);
   const [selectedArticle, setSelectedArticle] = useState<Article | undefined>(undefined);
 
   const handleMyArticles = () => {

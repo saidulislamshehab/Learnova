@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Comment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,11 +47,46 @@ class ArticleController extends Controller
         ]);
     }
 
+    public function comments(int $id): JsonResponse
+    {
+        $comments = Comment::query()
+            ->with('user:id,name,picture')
+            ->where('Article_ID', $id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return response()->json([
+            'comments' => $comments,
+        ]);
+    }
+
+    public function storeComment(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $comment = Comment::create([
+            'UserID' => $request->user()->id,
+            'Article_ID' => $id,
+            'Content' => $validated['content'],
+        ]);
+
+        $comment->load('user:id,name,picture');
+
+        return response()->json([
+            'message' => 'Comment created successfully.',
+            'comment' => $comment,
+        ], 201);
+    }
+
     public function indexPending(Request $request): JsonResponse
     {
         $articles = Article::query()
             ->with(['user:id,name,picture', 'approvals'])
-            ->where('Status', 'pending')
+            ->whereHas('approvals', function ($q) {
+                $q->where('status', 'pending');
+            })
             ->orderByDesc('created_at')
             ->get();
 
