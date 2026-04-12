@@ -43,3 +43,5 @@ Thumbs.db
 # pnpm-lock.yaml
 
 project.json
+.vercel
+.env*.local

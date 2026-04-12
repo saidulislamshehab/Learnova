@@ -62,3 +62,5 @@ server/database/*.sqlite
 
 # Testing / tooling
 .phpunit.result.cache
+.vercel
+.env*.local
