@@ -44,7 +44,7 @@ export function SignIn({
 
     try {
       // Use window.location.hostname to allow access from network (e.g. 192.168.x.x)
-      const response = await fetch(`http://${window.location.hostname}:8000/api/login`, {
+      const response = await fetch(`/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

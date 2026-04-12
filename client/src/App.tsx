@@ -33,6 +33,8 @@ import { Tutorials } from './components/Pages/course/Tutorials';
 import { AdminExpertApplications } from './components/Pages/Admin/AdminExpertApplications';
 import { clearAuthSession, getAuthToken } from './utils/authStorage';
 
+import { API_BASE_URL } from './utils/constants';
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,7 +63,7 @@ export default function App() {
     if (!token) return 'user';
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+      const response = await fetch(`${API_BASE_URL}/me`, {
         headers: {
           Accept: 'application/json',
           Authorization: `Bearer ${token}`,

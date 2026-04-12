@@ -58,6 +58,7 @@ COPY --from=asset-builder /app/public/build ./public/build
 
 # Final permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN php artisan storage:link
 
 # Expose port
 EXPOSE 80
