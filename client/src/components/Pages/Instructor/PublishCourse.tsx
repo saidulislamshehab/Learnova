@@ -4,7 +4,6 @@ import {
   BookOpen,
   Upload,
   Plus,
-  Tag,
   Trash2,
   ChevronDown,
   ChevronUp,
@@ -12,7 +11,6 @@ import {
   Send,
   GripVertical,
 } from 'lucide-react';
-import Loading from '../../ui/Loading';
 
 interface PublishCourseProps {
   onBack: () => void;
@@ -118,9 +116,7 @@ async function getValidAuthToken(): Promise<string | null> {
 
 export function PublishCourse({ onBack, onMyCourses, editMode = false, editCourseId }: PublishCourseProps) {
   const [courseTitle, setCourseTitle] = useState('');
-  const [categoryValue, setCategoryValue] = useState('');
-  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
-  const [categoryFeedback, setCategoryFeedback] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [totalHours, setTotalHours] = useState('');
   const [price, setPrice] = useState('');
@@ -157,20 +153,10 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
         const course = response.data.course;
         const resolvedCourseId = String(course.CourseID ?? '');
-        const detectedCategoryName = (course.category_name ?? course.Category ?? '').trim();
-        const matchedCategoryById = course.category_id
-          ? courseCategories.find((item) => item.id === course.category_id)
-          : null;
-        const matchedCategoryByName = detectedCategoryName
-          ? courseCategories.find(
-              (item) => item.label.toLowerCase() === detectedCategoryName.toLowerCase()
-            )
-          : null;
-        const resolvedCategory = matchedCategoryById ?? matchedCategoryByName;
 
         setCourseTitle(course.Title ?? '');
         setCourseStatus(course.Status ?? 'draft');
-        setCategoryValue(resolvedCategory?.label ?? detectedCategoryName ?? '');
+        setCategoryId(course.category_id ? String(course.category_id) : '');
         setShortDescription(course.Description ?? '');
         setOverview(course.Overview ?? '');
         setTotalHours(course.Total_Hours !== null && course.Total_Hours !== undefined ? String(course.Total_Hours) : '');
@@ -229,7 +215,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   };
 
   const buildCoursePayload = (status: 'draft' | 'pending', uploadedThumbnailUrl?: string | null) => {
-    const categoryName = categoryValue.trim();
+    const categoryName = courseCategories.find((item) => String(item.id) === categoryId)?.label ?? '';
     const cleanedContentItems = contentItems
       .map((item) => ({
         title: item.title.trim(),
@@ -239,37 +225,17 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
       .filter((item) => item.title || item.description || item.youtube_url);
 
     const hasInvalidContent = cleanedContentItems.some((item) => !item.title);
-    
-    // Check if user is admin for specific validation
-    const storedUser = localStorage.getItem('auth_user');
-    const isAdmin = storedUser ? JSON.parse(storedUser).role?.toLowerCase() === 'admin' : false;
 
     if (!courseTitle.trim()) {
       throw new Error('Please enter a course title.');
     }
 
-    if (!categoryName) {
-      throw new Error('Please enter a category.');
+    if (!categoryId) {
+      throw new Error('Please select a category.');
     }
 
     if (!price.trim()) {
       throw new Error('Please enter a price.');
-    }
-
-    if (isAdmin) {
-      if (cleanedContentItems.length === 0) {
-        throw new Error('Admins must add at least one title to the article.');
-      }
-
-      const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-      for (const item of cleanedContentItems) {
-        if (!item.youtube_url) {
-          throw new Error('Every title must have a valid YouTube link.');
-        }
-        if (!youtubeRegex.test(item.youtube_url)) {
-          throw new Error(`The YouTube link for "${item.title}" is invalid.`);
-        }
-      }
     }
 
     if (hasInvalidContent) {
@@ -278,6 +244,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
     const formData = new FormData();
     formData.append('title', courseTitle.trim());
+    formData.append('category_id', categoryId);
     formData.append('category_name', categoryName);
     formData.append('short_description', shortDescription.trim());
     formData.append('overview', overview.trim());
@@ -377,10 +344,6 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen">
       <div className="relative max-w-6xl mx-auto">
-        {isLoadingCourse ? (
-          <Loading message="Loading course details..." size="lg" />
-        ) : (
-        <>
         {/* Top Action Bar */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-4">
@@ -411,7 +374,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
           <h2 className="text-xl font-bold text-white mb-6">Basic Information</h2>
 
           {/* Course Title */}
-          <div className="mb-6 relative z-50">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Course Title <span className="text-[#A5C89E]">*</span>
             </label>
@@ -429,69 +392,20 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             <label className="block text-sm font-medium text-gray-400 mb-2">
               Category <span className="text-[#A5C89E]">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={categoryValue}
-                onChange={(e) => setCategoryValue(e.target.value)}
-                onFocus={() => setShowCategorySuggestions(true)}
-                onBlur={() => window.setTimeout(() => setShowCategorySuggestions(false), 200)}
-                placeholder="Type a category"
-                className="w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#A5C89E]/60 transition-all"
-              />
-
-              {showCategorySuggestions && (
-                <div className="absolute z-[999] mt-2 w-full bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
-                  <div className="p-2">
-                    <p className="text-xs font-mono text-gray-500 px-2 py-1.5 tracking-wider">SUGGESTIONS</p>
-                    {courseCategories
-                      .map((cat) => cat.label)
-                      .filter((label) =>
-                        label.toLowerCase().includes(categoryValue.toLowerCase())
-                      )
-                      .slice(0, 12)
-                      .map((label) => (
-                        <button
-                          key={label}
-                          type="button"
-                          className="w-full text-left px-3 py-2 text-gray-400 hover:text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            setCategoryValue(label);
-                            setShowCategorySuggestions(false);
-                          }}
-                        >
-                          <Tag className="w-4 h-4 mr-2 opacity-60 shrink-0" />
-                          {label}
-                        </button>
-                      ))}
-                    {categoryValue.trim() &&
-                      !courseCategories.some(
-                        (cat) => cat.label.toLowerCase() === categoryValue.trim().toLowerCase()
-                      ) && (
-                        <button
-                          type="button"
-                          className="w-full text-left px-3 py-2 text-[#A5C89E] hover:bg-[#A5C89E]/10 rounded transition-all text-sm font-medium flex items-center border-t border-[#A5C89E]/20 mt-1 pt-2"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            const normalized = categoryValue.trim();
-                            setCategoryValue(normalized);
-                            setCategoryFeedback(`Category "${normalized}" added`);
-                            window.setTimeout(() => setCategoryFeedback(''), 2500);
-                            setShowCategorySuggestions(false);
-                          }}
-                        >
-                          <Plus className="w-4 h-4 mr-2 shrink-0" />
-                          Use &quot;{categoryValue.trim()}&quot;
-                        </button>
-                      )}
-                  </div>
-                </div>
-              )}
-            </div>
-            {categoryFeedback ? (
-              <p className="text-xs text-[#A5C89E] mt-2">{categoryFeedback}</p>
-            ) : null}
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full px-4 py-3 bg-[#0d0d0d]/80 border border-[#A5C89E]/30 rounded-lg text-white focus:outline-none focus:border-[#A5C89E]/60 transition-all"
+            >
+              <option value="" disabled>
+                Select a category
+              </option>
+              {courseCategories.map((cat) => (
+                <option key={cat.id} value={String(cat.id)}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Short Description */}
@@ -776,8 +690,6 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
             learn best when content is structured and easy to follow.
           </p>
         </div>
-        </>
-        )}
       </div>
     </section>
   );
