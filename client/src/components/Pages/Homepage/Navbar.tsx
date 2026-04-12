@@ -17,7 +17,10 @@ import {
   FileCode,
   BookOpen,
   Bell,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 import NavLogo from '../../Sources/logo.png';
 import Loading from '../../ui/Loading';
 
@@ -75,6 +78,7 @@ export function Navbar({
   onTutorials,
 }: NavbarProps) {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string>('Learner');
   const [profileEmail, setProfileEmail] = useState<string>('');
@@ -822,6 +826,22 @@ export function Navbar({
               ) : null}
             </div>
 
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-[#A5C89E]/10 border border-[#A5C89E]/20 text-[#A5C89E] hover:bg-[#A5C89E]/20 hover:border-[#A5C89E]/40 transition-all duration-300 group overflow-hidden"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              <div className="relative w-5 h-5 transition-transform duration-500 group-hover:rotate-12">
+                {theme === 'light' ? (
+                  <Moon className="w-5 h-5 transition-all duration-500 scale-100 opacity-100" />
+                ) : (
+                  <Sun className="w-5 h-5 transition-all duration-500 scale-100 opacity-100" />
+                )}
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#A5C89E]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+
             {/* Notification Button */}
             {isAuthenticated && (
               <div className="relative" ref={notificationRefDesktop}>
@@ -1136,6 +1156,14 @@ export function Navbar({
           </div>
 
           <div className="flex items-center gap-3 md:hidden">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#A5C89E]/10 border border-[#A5C89E]/20 text-[#A5C89E] active:scale-90 transition-all"
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
+
             {/* Mobile Notification Button */}
             {isAuthenticated && (
               <div className="relative" ref={notificationRefMobile}>

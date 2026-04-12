@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Clock, Users, Star, ChevronDown, ChevronUp, PlayCircle, FileText, Award, BookOpen } from 'lucide-react';
+import { Skeleton, SkeletonText, SkeletonAvatar } from '@/components/Common/Skeleton';
 
 interface CourseDetailProps {
   onBack: () => void;
@@ -96,9 +97,66 @@ export function CourseDetail({ onBack, onEnroll }: CourseDetailProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen">
+        <div className="relative max-w-7xl mx-auto">
+          {/* Back Button Skeleton */}
+          <Skeleton width="120px" height="1.5rem" className="mb-8" />
+
+          {/* Course Header Skeleton */}
+          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+            <div className="lg:col-span-2">
+              <Skeleton width="100px" height="1rem" className="mb-4" />
+              <Skeleton width="80%" height="3rem" className="mb-4" />
+              <SkeletonText lines={3} className="mb-6" />
+              <div className="flex gap-6 mb-6">
+                <Skeleton width="150px" height="1.5rem" />
+                <Skeleton width="120px" height="1.5rem" />
+              </div>
+              <Skeleton width="100px" height="2.5rem" className="mb-6" />
+              <Skeleton width="140px" height="3.5rem" borderRadius="0.5rem" />
+            </div>
+            <div className="lg:col-span-1">
+              <Skeleton width="100%" height="300px" borderRadius="1rem" />
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-12">
+              <div>
+                <Skeleton width="200px" height="2rem" className="mb-6" />
+                <div className="bg-[#121212]/20 border border-[#A5C89E]/10 rounded-xl p-6">
+                  <SkeletonText lines={6} />
+                </div>
+              </div>
+              <div>
+                <Skeleton width="200px" height="2rem" className="mb-6" />
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="bg-[#121212]/20 border border-[#A5C89E]/10 rounded-xl p-6">
+                      <div className="flex items-center gap-4">
+                        <SkeletonAvatar size="2rem" borderRadius="0.5rem" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton width="40%" height="1rem" />
+                          <Skeleton width="80%" height="0.75rem" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-1">
+              <Skeleton width="150px" height="2rem" className="mb-6" />
+              <div className="bg-[#121212]/20 border border-[#A5C89E]/10 rounded-xl p-6">
+                <SkeletonAvatar size="6rem" className="mb-4" />
+                <Skeleton width="60%" height="1.5rem" className="mb-2" />
+                <Skeleton width="40%" height="1rem" className="mb-4" />
+                <SkeletonText lines={3} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     );
   }
 

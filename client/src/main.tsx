@@ -7,9 +7,13 @@ import "./index.css";
 import "./styles/components.css";
 import "./styles/admin-theme.css";
 
+import { ThemeProvider } from "./context/ThemeContext.tsx";
+
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    <App />
-    <Toaster richColors position="top-right" />
+    <ThemeProvider>
+      <App />
+      <Toaster richColors position="top-right" />
+    </ThemeProvider>
   </BrowserRouter>
 );

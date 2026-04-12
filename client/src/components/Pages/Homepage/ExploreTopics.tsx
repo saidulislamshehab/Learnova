@@ -2,6 +2,7 @@ import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database, Cpu, Globe, Network, Brain, Code } from 'lucide-react';
+import { TopicSkeleton } from '@/components/Common/Skeleton';
 
 interface ExploreTopicsProps {
   onViewAllTutorials?: () => void;
@@ -12,6 +13,7 @@ const DEFAULT_TUTORIAL_DESCRIPTION = 'Explore this curated tutorial path.';
 export function ExploreTopics({ onViewAllTutorials }: ExploreTopicsProps) {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const iconForTopic = useMemo(
     () => (category: string, title: string) => {
@@ -29,6 +31,7 @@ export function ExploreTopics({ onViewAllTutorials }: ExploreTopicsProps) {
   useEffect(() => {
     const fetchHomepageTutorials = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch(`${API_URL}/tutorials/homepage`, {
           headers: { Accept: 'application/json' },
         });
@@ -43,6 +46,8 @@ export function ExploreTopics({ onViewAllTutorials }: ExploreTopicsProps) {
         setTopics(tutorials.slice(0, 6));
       } catch {
         setTopics([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -77,52 +82,55 @@ export function ExploreTopics({ onViewAllTutorials }: ExploreTopicsProps) {
 
         {/* Topics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {topics.map((topic, index) => {
-            const Icon = iconForTopic(topic.Category || '', topic.Title || '');
-            return (
-              <div
-                key={topic.T_ID ?? index}
-                className="group relative bg-[#121212]/60 backdrop-blur-sm border border-[#A5C89E]/20 rounded-xl p-6 hover:border-[#A5C89E] transition-all duration-300 hover:-translate-y-1 overflow-hidden"
-              >
-                {/* Index Number */}
-                <div className="absolute top-4 right-4 text-3xl font-bold text-[#A5C89E]/10 group-hover:text-[#A5C89E]/20 transition-colors">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
-
-                {/* Icon */}
-                <div className="w-12 h-12 bg-[#A5C89E]/10 border border-[#A5C89E]/30 rounded-lg flex items-center justify-center mb-4 group-hover:bg-[#A5C89E]/20 transition-colors">
-                  <Icon className="w-6 h-6 text-[#A5C89E]/90" />
-                </div>
-
-                {/* Content */}
-                <h3 className="text-xl font-bold text-white mb-3 tracking-wide">{topic.Title}</h3>
-                <p className="text-gray-400 text-sm mb-4 leading-relaxed">{topic.Description || DEFAULT_TUTORIAL_DESCRIPTION}</p>
-
-                {/* Button */}
-                <div className="flex items-center justify-between">
-                  <button
-                    className="text-[#A5C89E]/90 text-sm font-mono hover:underline flex items-center space-x-2"
-                    onClick={() => navigate(`/tutorials/${topic.T_ID}`)}
-                  >
-                    <span>VIEW_MODULE</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                    <span className="text-[10px] text-gray-500 font-mono">ACTIVE</span>
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => <TopicSkeleton key={i} />)
+          ) : topics.length > 0 ? (
+            topics.map((topic, index) => {
+              const Icon = iconForTopic(topic.Category || '', topic.Title || '');
+              return (
+                <div
+                  key={topic.T_ID ?? index}
+                  className="group relative bg-[#121212]/60 backdrop-blur-sm border border-[#A5C89E]/20 rounded-xl p-6 hover:border-[#A5C89E] transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                >
+                  {/* Index Number */}
+                  <div className="absolute top-4 right-4 text-3xl font-bold text-[#A5C89E]/10 group-hover:text-[#A5C89E]/20 transition-colors">
+                    {String(index + 1).padStart(2, '0')}
                   </div>
-                </div>
 
-                {/* Hover Line - Edge to Edge */}
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A5C89E]/80 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-              </div>
-            );
-          })}
-          {topics.length === 0 ? (
+                  {/* Icon */}
+                  <div className="w-12 h-12 bg-[#A5C89E]/10 border border-[#A5C89E]/30 rounded-lg flex items-center justify-center mb-4 group-hover:bg-[#A5C89E]/20 transition-colors">
+                    <Icon className="w-6 h-6 text-[#A5C89E]/90" />
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="text-xl font-bold text-white mb-3 tracking-wide">{topic.Title}</h3>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed line-clamp-2">{topic.Description || DEFAULT_TUTORIAL_DESCRIPTION}</p>
+
+                  {/* Button */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      className="text-[#A5C89E]/90 text-sm font-mono hover:underline flex items-center space-x-2"
+                      onClick={() => navigate(`/tutorials/${topic.T_ID}`)}
+                    >
+                      <span>VIEW_MODULE</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                      <span className="text-[10px] text-gray-500 font-mono text-nowrap">ACTIVE</span>
+                    </div>
+                  </div>
+
+                  {/* Hover Line - Edge to Edge */}
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A5C89E]/80 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                </div>
+              );
+            })
+          ) : (
             <div className="col-span-full rounded-xl border border-[#A5C89E]/20 bg-[#121212]/50 p-8 text-center text-sm text-gray-400">
               No featured tutorials configured yet.
             </div>
-          ) : null}
+          )}
         </div>
       </div>
     </section>

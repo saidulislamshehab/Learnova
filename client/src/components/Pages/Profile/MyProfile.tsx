@@ -14,7 +14,7 @@ import {
   Github,
   Linkedin,
 } from 'lucide-react';
-import Loading from '../../ui/Loading';
+import { Skeleton, SkeletonText, SkeletonAvatar } from '@/components/Common/Skeleton';
 
 interface MyProfileProps {
   onBack: () => void;
@@ -142,7 +142,57 @@ export function MyProfile({ onBack, onEditProfile }: MyProfileProps) {
         </button>
 
         {isLoading && (
-          <Loading message="Loading profile..." size="lg" />
+          <div className="space-y-6">
+            {/* Header Skeleton */}
+            <div className="bg-[#0f0f0f]/40 backdrop-blur-xl border border-[#A5C89E]/10 rounded-2xl p-8 md:p-10 text-center space-y-4">
+              <div className="mx-auto w-24 h-24 md:w-28 md:h-28">
+                <SkeletonAvatar size="100%" />
+              </div>
+              <Skeleton width="200px" height="2rem" className="mx-auto" />
+              <Skeleton width="150px" height="1rem" className="mx-auto" />
+              <div className="flex justify-center gap-3">
+                <Skeleton width="100px" height="2rem" borderRadius="1rem" />
+              </div>
+              <div className="flex justify-center gap-4 max-w-2xl mx-auto pt-4">
+                <Skeleton width="48%" height="3rem" borderRadius="0.75rem" />
+                <Skeleton width="48%" height="3rem" borderRadius="0.75rem" />
+              </div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="bg-[#0f0f0f]/40 border border-[#A5C89E]/10 rounded-2xl p-8 space-y-8">
+              <div className="flex justify-between items-center">
+                <Skeleton width="250px" height="2rem" />
+                <Skeleton width="100px" height="2.5rem" />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <Skeleton width="150px" height="1.25rem" />
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex gap-4">
+                      <SkeletonAvatar size="1.5rem" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton width="30%" height="0.75rem" />
+                        <Skeleton width="60%" height="1rem" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  <Skeleton width="150px" height="1.25rem" />
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex gap-4">
+                      <SkeletonAvatar size="1.5rem" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton width="30%" height="0.75rem" />
+                        <Skeleton width="60%" height="1rem" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {!isLoading && (

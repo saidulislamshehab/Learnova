@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Search, Clock, Users, ChevronDown } from 'lucide-react';
 import { Pagination } from '../Common/Pagination';
+import { SkeletonCard, SkeletonGrid } from '@/components/Common/Skeleton';
 
 interface Course {
   CourseID: number;
@@ -198,10 +199,9 @@ export function AllCourses({ category = 'All Categories', onCourseClick }: AllCo
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="w-12 h-12 border-4 border-[#A5C89E]/20 border-t-[#A5C89E] rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-400 font-mono text-sm tracking-widest">LOADING_COURSES...</p>
-          </div>
+          <SkeletonGrid count={9}>
+            <SkeletonCard />
+          </SkeletonGrid>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-24">
             <p className="text-red-400 font-mono text-sm mb-4">{error}</p>
