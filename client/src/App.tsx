@@ -28,6 +28,7 @@ import { Feedback } from './components/Pages/Profile/Feedback';
 import { InstructorMyCourses } from './components/Pages/Instructor/InstructorMyCourses';
 import { Settings } from './components/Pages/Profile/Settings';
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import { AdminPanel } from './components/Pages/Admin/AdminPanel';
 import { Tutorials } from './components/Pages/course/Tutorials';
 import { AdminExpertApplications } from './components/Pages/Admin/AdminExpertApplications';
@@ -464,6 +465,7 @@ export default function App() {
         </Routes>
       </div>
       <Analytics />
+      <SpeedInsights />
     </div>
   );
 }
