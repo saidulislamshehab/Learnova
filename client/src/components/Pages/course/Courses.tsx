@@ -228,7 +228,7 @@ export function Courses({ onCourseClick }: CoursesProps) {
                     <div className="mb-4">
                       <span className="text-2xl font-bold text-[#A5C89E]">
                         {course.Price !== null && course.Price !== undefined && course.Price !== ''
-                          ? `$${course.Price}`
+                          ? `$ {course.Price}`
                           : 'Free'}
                       </span>
                     </div>
