@@ -2,12 +2,17 @@
   "name": "learnova-root",
   "private": true,
   "scripts": {
+    "install:all": "npm run install:frontend && npm run install:backend",
+    "install:frontend": "npm install --prefix client",
+    "install:backend": "npm install --prefix server && composer install --working-dir=server",
     "start:frontend": "npm --prefix client run dev",
     "start:backend": "cd server && php artisan serve --host=0.0.0.0",
-    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start": "npm run install:all && concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "build:frontend": "npm --prefix client run build",
     "copy:frontend": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force -Path 'server/public/build' | Out-Null; Copy-Item -Path 'client/dist/*' -Destination 'server/public/build' -Recurse -Force\"",
-    "build:prod": "npm run build:frontend && npm run copy:frontend"
+    "build:prod": "npm run build:frontend && npm run copy:frontend",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
