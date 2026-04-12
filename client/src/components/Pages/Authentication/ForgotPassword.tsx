@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState } from "react";
 import { Mail } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
@@ -25,7 +26,7 @@ export function ForgotPassword({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/forgot-password`, {
+      const response = await fetch(`${API_URL}/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

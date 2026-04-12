@@ -8,6 +8,8 @@ import { useEffect, useMemo, useState } from "react";
 import { TypewriterText } from "../Common/TypewriterText";
 import { TerminalTypewriter } from "../Common/TerminalTypewriter";
 
+import { API_URL } from '@/utils/constants';
+
 // Interface for Hero component props defining navigation callbacks
 interface HeroProps {
   onExploreCourses: () => void;
@@ -35,7 +37,7 @@ export function Hero({
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/stats/homepage`, {
+        const response = await fetch(`${API_URL}/stats/homepage`, {
           headers: { Accept: "application/json" },
         });
 

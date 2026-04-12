@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useMemo, useState } from "react";
 import { Lock, Eye, EyeOff, Mail } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
@@ -58,7 +59,7 @@ export function ResetPassword({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/reset-password`, {
+      const response = await fetch(`${API_URL}/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Clock, Users, ArrowUpRight } from 'lucide-react';
@@ -83,7 +84,7 @@ export function Courses({ onCourseClick }: CoursesProps) {
         setIsLoading(true);
         setError(null);
 
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/top`, {
+        const response = await axios.get(`${API_URL}/courses/top`, {
           headers: { Accept: 'application/json' },
         });
 

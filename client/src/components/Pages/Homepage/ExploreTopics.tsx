@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database, Cpu, Globe, Network, Brain, Code } from 'lucide-react';
@@ -28,7 +29,7 @@ export function ExploreTopics({ onViewAllTutorials }: ExploreTopicsProps) {
   useEffect(() => {
     const fetchHomepageTutorials = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/tutorials/homepage`, {
+        const response = await fetch(`${API_URL}/tutorials/homepage`, {
           headers: { Accept: 'application/json' },
         });
 

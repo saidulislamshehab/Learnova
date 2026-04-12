@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -106,7 +107,7 @@ export function EditProfile({ onBack, onSave }: EditProfileProps) {
 
     const loadProfile = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+        const response = await fetch(`${API_URL}/me`, {
           method: 'GET',
           headers: {
             Accept: 'application/json',
@@ -178,7 +179,7 @@ export function EditProfile({ onBack, onSave }: EditProfileProps) {
       throw new Error('You are not logged in. Please sign in and try again.');
     }
 
-    const response = await fetch(`http://${window.location.hostname}:8000/api/profile`, {
+    const response = await fetch(`${API_URL}/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -323,7 +324,7 @@ export function EditProfile({ onBack, onSave }: EditProfileProps) {
 
     try {
       setIsSaving(true);
-      const response = await fetch(`http://${window.location.hostname}:8000/api/profile`, {
+      const response = await fetch(`${API_URL}/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

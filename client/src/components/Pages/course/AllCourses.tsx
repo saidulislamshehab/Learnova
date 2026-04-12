@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Search, Clock, Users, ChevronDown } from 'lucide-react';
@@ -77,7 +78,7 @@ export function AllCourses({ category = 'All Categories', onCourseClick }: AllCo
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses`);
+        const response = await axios.get(`${API_URL}/courses`);
         setCourses(response.data.courses || []);
       } catch (err) {
         setError('Failed to fetch courses. Please try again later.');

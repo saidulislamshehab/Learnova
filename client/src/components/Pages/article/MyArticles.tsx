@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useEffect } from 'react';
 import { FileText, Plus, Clock, CheckCircle2, Edit3, Eye, AlertTriangle, X, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -48,7 +49,7 @@ export function MyArticles({ onWriteNew, onEditArticle }: MyArticlesProps) {
     }
 
     try {
-      const response = await axios.get(`http://${window.location.hostname}:8000/api/articles/my`, {
+      const response = await axios.get(`${API_URL}/articles/my`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import axios, { AxiosError } from 'axios';
 import { CheckCircle2, Clock, GraduationCap } from 'lucide-react';
@@ -28,7 +29,7 @@ interface StatusResponse {
   is_blocked: boolean;
 }
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 export function ApplyInstructor({ onBack }: ApplyInstructorProps) {
   const [isLoading, setIsLoading] = useState(true);

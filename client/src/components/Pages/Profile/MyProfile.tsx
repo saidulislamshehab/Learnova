@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -68,7 +69,7 @@ export function MyProfile({ onBack, onEditProfile }: MyProfileProps) {
 
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+        const response = await fetch(`${API_URL}/me`, {
           headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,

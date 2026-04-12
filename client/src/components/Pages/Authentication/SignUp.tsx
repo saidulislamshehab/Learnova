@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
@@ -48,7 +49,7 @@ export function SignUp({
 
     try {
       // Use window.location.hostname to allow access from network (e.g. 192.168.x.x)
-      const response = await fetch(`http://${window.location.hostname}:8000/api/register`, {
+      const response = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

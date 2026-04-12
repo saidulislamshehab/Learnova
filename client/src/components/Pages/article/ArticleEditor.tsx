@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useRef, useEffect } from 'react';
 import {
   Bold,
@@ -186,11 +187,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       };
 
       if (existingArticle) {
-        await axios.put(`http://${window.location.hostname}:8000/api/articles/${existingArticle.id}`, payload, {
+        await axios.put(`${API_URL}/articles/${existingArticle.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post(`http://${window.location.hostname}:8000/api/articles`, payload, {
+        await axios.post(`${API_URL}/articles`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -235,11 +236,11 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
       };
 
       if (existingArticle) {
-        await axios.put(`http://${window.location.hostname}:8000/api/articles/${existingArticle.id}`, payload, {
+        await axios.put(`${API_URL}/articles/${existingArticle.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post(`http://${window.location.hostname}:8000/api/articles`, payload, {
+        await axios.post(`${API_URL}/articles`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -274,7 +275,7 @@ export function ArticleEditor({ onMyArticles, existingArticle }: ArticleEditorPr
         read_time: readTime,
       };
 
-      await axios.put(`http://${window.location.hostname}:8000/api/articles/${existingArticle!.id}`, payload, {
+      await axios.put(`${API_URL}/articles/${existingArticle!.id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

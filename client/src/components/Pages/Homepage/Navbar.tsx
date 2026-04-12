@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -130,7 +131,7 @@ export function Navbar({
 
     try {
       const response = await fetch(
-        `http://${window.location.hostname}:8000/api/search/suggestions?query=${encodeURIComponent(trimmed)}`,
+        `${API_URL}/search/suggestions?query=${encodeURIComponent(trimmed)}`,
         {
           headers: {
             Accept: 'application/json',
@@ -170,7 +171,7 @@ export function Navbar({
     try {
       setIsSearchLoading(true);
       const response = await fetch(
-        `http://${window.location.hostname}:8000/api/search?query=${encodeURIComponent(trimmed)}&type=${tab}&page=${page}&per_page=6`,
+        `${API_URL}/search?query=${encodeURIComponent(trimmed)}&type=${tab}&page=${page}&per_page=6`,
         {
           headers: {
             Accept: 'application/json',
@@ -317,7 +318,7 @@ export function Navbar({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications`, {
+      const response = await fetch(`${API_URL}/notifications`, {
         headers: {
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -338,7 +339,7 @@ export function Navbar({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications/${id}/read`, {
+      const response = await fetch(`${API_URL}/notifications/${id}/read`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -359,7 +360,7 @@ export function Navbar({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications/read-all`, {
+      const response = await fetch(`${API_URL}/notifications/read-all`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -450,7 +451,7 @@ export function Navbar({
 
     const syncProfilePicture = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+        const response = await fetch(`${API_URL}/me`, {
           headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,

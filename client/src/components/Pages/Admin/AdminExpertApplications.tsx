@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import axios, { AxiosError } from 'axios';
 import { CheckCircle2, RefreshCw, Search, XCircle } from 'lucide-react';
@@ -23,7 +24,7 @@ interface ExpertApplication {
   user: ApplicationUser;
 }
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 const statusClass = (status: ExpertApplication['status']) => {
   if (status === 'approved') {

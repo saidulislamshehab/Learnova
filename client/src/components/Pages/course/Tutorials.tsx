@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -14,7 +15,7 @@ const categories = [
     'DSA',
 ];
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 export function Tutorials() {
     const navigate = useNavigate();

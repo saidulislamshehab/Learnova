@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronDown, BookOpen, Clock, ArrowRight } from 'lucide-react';
 import { Pagination } from '../Common/Pagination';
@@ -21,7 +22,7 @@ const categories = [
  * Displays a paginated list of articles with search and category filtering capabilities.
  */
 export function Articles({ onArticleClick }: ArticlesProps) {
-  const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const API_BASE = `${API_URL}`;
 
   const [allArticles, setAllArticles] = useState<
     Array<{ id: number; title: string; description: string; category: string; readTime: string }>

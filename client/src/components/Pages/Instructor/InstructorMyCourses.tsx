@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BookOpen, Plus, Edit, Calendar, Tag, MessageCircle, X, Send, User } from 'lucide-react';
@@ -44,7 +45,7 @@ interface ApiCourse {
   contents?: ApiCourseContent[];
 }
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 async function getValidAuthToken(): Promise<string | null> {
   const currentToken = localStorage.getItem('auth_token');

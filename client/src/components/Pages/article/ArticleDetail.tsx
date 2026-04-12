@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, ChevronRight, BookOpen, ArrowRight, Send, X, CheckCircle, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
@@ -214,7 +215,7 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
   const { id } = useParams<{ id: string }>();
   const articleId = parseInt(id || '1', 10);
 
-  const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const API_BASE = `${API_URL}`;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dbArticle, setDbArticle] = useState<any | null>(null);

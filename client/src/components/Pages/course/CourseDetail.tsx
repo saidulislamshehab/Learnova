@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -20,7 +21,7 @@ export function CourseDetail({ onBack, onEnroll }: CourseDetailProps) {
       if (!id) return;
       try {
         setLoading(true);
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/${id}`);
+        const response = await axios.get(`${API_URL}/courses/${id}`);
         const data = response.data.course;
         
         // Map backend data to frontend structure to keep UI the same
