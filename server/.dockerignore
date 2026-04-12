@@ -3,6 +3,7 @@
 /vendor
 /node_modules
 /public/build
+/bootstrap/cache/*.php
 /storage/*.key
 /storage/framework/cache/data/*
 /storage/framework/sessions/*

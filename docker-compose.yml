@@ -17,6 +17,7 @@ services:
       - ./server:/var/www/html
       - /var/www/html/vendor
       - /var/www/html/node_modules
+      - /var/www/html/bootstrap/cache
     networks:
       - learnova-network
 

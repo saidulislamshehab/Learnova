@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd zip bcmath pdo_mysql \
-    && pecl install sqlsrv pdo_sqlsrv \
+    && pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv
 
 # Configure Apache
@@ -51,6 +51,7 @@ COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts
+RUN php artisan package:discover --ansi
 
 # Copy built assets from Stage 1
 COPY --from=asset-builder /app/public/build ./public/build
