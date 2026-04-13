@@ -1,8 +1,9 @@
 import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, ChevronRight, BookOpen, ArrowRight, Send, X, CheckCircle, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, BookOpen, ArrowRight, X, CheckCircle, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
 import axios from 'axios';
+import { ArticleAskAIChat } from './ArticleAskAIChat';
 
 interface ArticleDetailProps {
   onBack: () => void;
@@ -246,22 +247,11 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
     'Factually Incorrect',
   ];
 
-  // AI Chat modal state
   const [showAIChat, setShowAIChat] = useState(false);
-  const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'ai'; text: string; timestamp: string }[]>([]);
-  const [aiInput, setAiInput] = useState('');
-  const [aiIsTyping, setAiIsTyping] = useState(false);
-  const aiChatRef = useRef<HTMLDivElement>(null);
 
   // Bookmark state
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
-
-  const exampleQuestions = [
-    'What are the key takeaways from this article?',
-    'Can you explain the code examples?',
-    'How can I apply this in practice?',
-  ];
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -601,42 +591,6 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
 
   const handleCloseAIChat = () => {
     setShowAIChat(false);
-  };
-
-  const handleSendAIMessage = () => {
-    if (!aiInput.trim() || aiIsTyping) return;
-
-    const userMessage = {
-      role: 'user' as const,
-      text: aiInput,
-      timestamp: 'Just now',
-    };
-
-    setAiMessages([...aiMessages, userMessage]);
-    setAiInput('');
-    setAiIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
-        role: 'ai' as const,
-        text: `Great question! Based on the article "${article.title}", here's what I can help you with. This article covers important concepts that are fundamental to understanding the topic. Feel free to ask more specific questions about any section.`,
-        timestamp: 'Just now',
-      };
-      setAiMessages((prev) => [...prev, aiResponse]);
-      setAiIsTyping(false);
-      
-      // Auto scroll to bottom
-      setTimeout(() => {
-        if (aiChatRef.current) {
-          aiChatRef.current.scrollTop = aiChatRef.current.scrollHeight;
-        }
-      }, 100);
-    }, 1500);
-  };
-
-  const handleExampleQuestion = (question: string) => {
-    setAiInput(question);
   };
 
   return (
@@ -1096,156 +1050,12 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
         </div>
       )}
 
-      {/* AI Chat Modal */}
-      {showAIChat && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={handleCloseAIChat}
-        >
-          <div
-            className="bg-[#121212]/95 backdrop-blur-xl border border-[#A5C89E]/30 rounded-xl shadow-2xl w-full max-w-2xl h-[600px] flex flex-col"
-            style={{
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 pb-4 border-b border-[#A5C89E]/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-[#A5C89E]" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Ask AI about this article</h3>
-                  <p className="text-xs text-gray-400">Ask questions based on this article</p>
-                </div>
-              </div>
-              <button
-                onClick={handleCloseAIChat}
-                className="text-gray-500 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Chat Area */}
-            <div
-              ref={aiChatRef}
-              className="flex-1 overflow-y-auto p-6 space-y-4"
-            >
-              {aiMessages.length === 0 ? (
-                /* Empty State */
-                <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                  <div className="w-16 h-16 bg-[#A5C89E]/10 rounded-full flex items-center justify-center mb-4">
-                    <Sparkles className="w-8 h-8 text-[#A5C89E]/70" />
-                  </div>
-                  <h4 className="text-lg font-semibold text-white mb-2">Ask anything about this article</h4>
-                  <p className="text-sm text-gray-400 mb-6 max-w-sm">
-                    Get instant answers and deeper insights from the AI assistant
-                  </p>
-                  <div className="space-y-2">
-                    <p className="text-xs text-gray-500 mb-3">Try asking:</p>
-                    {exampleQuestions.map((question, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleExampleQuestion(question)}
-                        className="block w-full px-4 py-2.5 bg-[#0b0b0b]/60 border border-[#A5C89E]/20 rounded-lg text-sm text-gray-300 hover:text-[#A5C89E] hover:border-[#A5C89E]/40 hover:bg-[#0b0b0b]/80 transition-all text-left"
-                      >
-                        {question}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                /* Messages */
-                <>
-                  {aiMessages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex gap-3 ${
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      {message.role === 'ai' && (
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 text-[#A5C89E]" />
-                          </div>
-                        </div>
-                      )}
-                      <div
-                        className={`max-w-[80%] px-4 py-3 rounded-lg ${
-                          message.role === 'user'
-                            ? 'bg-[#A5C89E]/10 border border-[#A5C89E]/30 text-white'
-                            : 'bg-[#0b0b0b]/60 border border-[#A5C89E]/20 text-gray-300'
-                        }`}
-                      >
-                        <p className="text-sm leading-relaxed">{message.text}</p>
-                        <p className="text-xs text-gray-500 mt-1">{message.timestamp}</p>
-                      </div>
-                      {message.role === 'user' && (
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-[#A5C89E]" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {/* Typing Indicator */}
-                  {aiIsTyping && (
-                    <div className="flex gap-3 justify-start">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                          <Sparkles className="w-4 h-4 text-[#A5C89E]" />
-                        </div>
-                      </div>
-                      <div className="max-w-[80%] px-4 py-3 rounded-lg bg-[#0b0b0b]/60 border border-[#A5C89E]/20">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-[#A5C89E]/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-2 h-2 bg-[#A5C89E]/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-2 h-2 bg-[#A5C89E]/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Input Area */}
-            <div className="p-6 pt-4 border-t border-[#A5C89E]/20">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="Ask a question about this article…"
-                  disabled={aiIsTyping}
-                  className="flex-1 px-4 py-3 bg-[#0b0b0b]/60 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#A5C89E]/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !aiIsTyping) {
-                      handleSendAIMessage();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleSendAIMessage}
-                  disabled={!aiInput.trim() || aiIsTyping}
-                  className="px-5 py-3 bg-[#A5C89E]/80 text-black rounded-lg hover:bg-[#A5C89E] transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#A5C89E]/80 flex items-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  <span className="hidden sm:inline">Send</span>
-                </button>
-              </div>
-              <p className="text-xs text-gray-600 mt-2">
-                Press Enter to send • AI responses are generated based on article content
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <ArticleAskAIChat
+        articleId={articleId}
+        articleTitle={article.title}
+        isOpen={showAIChat}
+        onClose={handleCloseAIChat}
+      />
     </section>
   );
 }

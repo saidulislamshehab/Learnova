@@ -7,6 +7,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\ExpertApplicationController;
 use App\Http\Controllers\InstructorApplicationController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ArticleChatController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\FeedbackController;
@@ -26,6 +27,7 @@ Route::get('/articles', [ArticleController::class, 'index']);
 // Constrain {id} so it doesn't capture fixed routes like /articles/my
 Route::get('/articles/{id}', [ArticleController::class, 'show'])->whereNumber('id');
 Route::get('/articles/{id}/comments', [ArticleController::class, 'comments'])->whereNumber('id');
+Route::post('/articles/{id}/ask-ai', [ArticleChatController::class, 'ask'])->whereNumber('id');
 Route::get('/tutorials', [TutorialController::class, 'indexPublic']);
 Route::get('/tutorials/homepage', [TutorialController::class, 'homepageFeatured']);
 Route::get('/tutorials/{id}', [TutorialController::class, 'showPublic'])->whereNumber('id');
