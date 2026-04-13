@@ -13,12 +13,25 @@
   --admin-shadow: 0 16px 42px rgba(6, 10, 18, 0.45);
 }
 
+html.light {
+  --admin-bg: #eef2f7;
+  --admin-bg-elevated: #ffffff;
+  --admin-surface: rgba(255, 255, 255, 0.92);
+  --admin-border: rgba(148, 163, 184, 0.34);
+  --admin-text: #1f2937;
+  --admin-text-muted: #64748b;
+  --admin-accent: #3f7d6b;
+  --admin-accent-soft: rgba(63, 125, 107, 0.12);
+  --admin-danger: #dc2626;
+  --admin-shadow: 0 16px 34px rgba(15, 23, 42, 0.16);
+}
+
 .admin-theme {
   font-family: 'Manrope', 'Segoe UI', sans-serif;
 }
 
 .admin-layout-root {
-  background: linear-gradient(165deg, #0b1018 0%, #0f1520 38%, #0f1826 100%);
+  background: linear-gradient(165deg, var(--admin-bg) 0%, var(--admin-bg-elevated) 38%, var(--admin-bg) 100%);
   color: var(--admin-text);
   min-height: 100vh;
   position: relative;
@@ -65,7 +78,7 @@
   top: 0;
   z-index: 35;
   border-bottom: 1px solid var(--admin-border);
-  background: rgba(11, 16, 24, 0.82);
+  background: color-mix(in srgb, var(--admin-bg) 82%, transparent);
   backdrop-filter: blur(14px);
 }
 
@@ -115,7 +128,7 @@
   transform: translateX(-105%);
   transition: transform 220ms ease;
   border-right: 1px solid var(--admin-border);
-  background: rgba(12, 18, 29, 0.95);
+  background: color-mix(in srgb, var(--admin-bg) 94%, transparent);
   backdrop-filter: blur(14px);
   padding: 1rem 0.85rem;
   overflow-y: auto;
@@ -268,7 +281,7 @@
 .admin-list-row {
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 0.8rem;
-  background: rgba(15, 23, 37, 0.7);
+  background: color-mix(in srgb, var(--admin-bg-elevated) 88%, transparent);
   padding: 0.72rem;
   display: flex;
   align-items: center;
@@ -297,7 +310,7 @@
   gap: 0.42rem;
   font-size: 0.82rem;
   font-weight: 650;
-  background: rgba(15, 23, 37, 0.9);
+  background: color-mix(in srgb, var(--admin-bg-elevated) 90%, transparent);
   color: var(--admin-text);
   padding: 0.52rem 0.78rem;
 }
@@ -323,7 +336,7 @@
 }
 
 .admin-btn-muted {
-  background: rgba(15, 23, 37, 0.88);
+  background: color-mix(in srgb, var(--admin-bg-elevated) 86%, transparent);
 }
 
 .admin-btn-danger {
@@ -360,7 +373,7 @@
 
 .admin-input {
   width: 100%;
-  background: rgba(15, 23, 37, 0.84);
+  background: color-mix(in srgb, var(--admin-bg-elevated) 84%, transparent);
   color: var(--admin-text);
   font-size: 0.85rem;
   padding: 0.6rem 0.72rem;
@@ -561,7 +574,7 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(2, 6, 23, 0.7);
+  background: color-mix(in srgb, var(--admin-bg) 64%, transparent);
   backdrop-filter: blur(4px);
   padding: 1rem;
   display: grid;
@@ -572,7 +585,7 @@
   width: min(100%, 36rem);
   border: 1px solid var(--admin-border);
   border-radius: 1rem;
-  background: #0f1726;
+  background: var(--admin-bg-elevated);
   box-shadow: var(--admin-shadow);
   padding: 1rem;
 }

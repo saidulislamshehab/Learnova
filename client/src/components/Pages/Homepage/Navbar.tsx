@@ -642,8 +642,8 @@ export function Navbar({
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
           boxShadow: isScrolled
-            ? '0 8px 32px 0 rgba(165, 200, 158, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)'
-            : '0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)'
+            ? '0 8px 32px 0 color-mix(in srgb, var(--nav-accent) 24%, transparent), inset 0 1px 0 0 color-mix(in srgb, var(--nav-text) 12%, transparent)'
+            : '0 8px 32px 0 color-mix(in srgb, var(--theme-bg) 52%, transparent), inset 0 1px 0 0 color-mix(in srgb, var(--nav-text) 10%, transparent)'
         }}
       >
         <div className="flex items-center justify-between">
@@ -829,7 +829,7 @@ export function Navbar({
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-[#A5C89E]/10 border border-[#A5C89E]/20 text-[#A5C89E] hover:bg-[#A5C89E]/20 hover:border-[#A5C89E]/40 transition-all duration-300 group overflow-hidden"
+              className="navbar-theme-toggle relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 group overflow-hidden"
               title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
               <div className="relative w-5 h-5 transition-transform duration-500 group-hover:rotate-12">
@@ -1159,7 +1159,7 @@ export function Navbar({
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#A5C89E]/10 border border-[#A5C89E]/20 text-[#A5C89E] active:scale-90 transition-all"
+              className="navbar-theme-toggle w-10 h-10 flex items-center justify-center rounded-xl active:scale-90 transition-all"
             >
               {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </button>

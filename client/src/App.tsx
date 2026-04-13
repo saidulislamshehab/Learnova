@@ -116,15 +116,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0b0b] relative transition-colors duration-300">
+    <div className="min-h-screen app-theme-shell relative transition-colors duration-300">
       {/* Grid Background */}
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: `
-            linear-gradient(rgba(128, 128, 128, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(128, 128, 128, 0.1) 1px, transparent 1px)
-          `,
-        backgroundSize: '80px 80px'
-      }}></div>
+      <div className="fixed inset-0 pointer-events-none z-0 app-theme-grid"></div>
 
       {/* Noise Texture */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]" style={{
@@ -132,14 +126,14 @@ export default function App() {
       }}></div>
 
       {/* Glowing Dots */}
-      <div className="fixed top-1/4 left-1/4 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-40 animate-pulse pointer-events-none z-0"></div>
-      <div className="fixed top-1/3 right-1/3 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-30 animate-pulse pointer-events-none z-0"></div>
-      <div className="fixed top-2/3 left-1/2 w-2 h-2 bg-[#ABDADC] rounded-full blur-sm opacity-50 animate-pulse pointer-events-none z-0"></div>
+      <div className="fixed top-1/4 left-1/4 w-2 h-2 app-theme-dot rounded-full blur-sm opacity-40 animate-pulse pointer-events-none z-0"></div>
+      <div className="fixed top-1/3 right-1/3 w-2 h-2 app-theme-dot rounded-full blur-sm opacity-30 animate-pulse pointer-events-none z-0"></div>
+      <div className="fixed top-2/3 left-1/2 w-2 h-2 app-theme-dot rounded-full blur-sm opacity-50 animate-pulse pointer-events-none z-0"></div>
 
       {/* Notification Popup */}
       {notification && (
         <div className="fixed bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-[100] animate-fade-in-up w-auto max-w-[90vw]">
-          <div className="bg-[#1a1a1a]/95 backdrop-blur-xl border border-[#A5C89E]/20 text-white px-6 py-3 rounded-full shadow-2xl flex items-center justify-center space-x-3 whitespace-nowrap">
+          <div className="theme-card backdrop-blur-xl px-6 py-3 rounded-full flex items-center justify-center space-x-3 whitespace-nowrap">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${notification.type === 'success' ? 'bg-[#A5C89E]' : 'bg-red-500'}`}></div>
             <span className="text-sm font-mono tracking-wide truncate">{notification.message}</span>
           </div>

@@ -74,7 +74,7 @@ export const SkeletonAvatar: React.FC<SkeletonProps & { size?: number | string }
  */
 export const SkeletonCard: React.FC<SkeletonProps> = ({ className = '', ...props }) => {
   return (
-    <div className={`bg-transparent border border-[#A5C89E]/10 rounded-xl overflow-hidden p-6 space-y-4 ${className}`}>
+    <div className={`theme-card rounded-xl overflow-hidden p-6 space-y-4 ${className}`}>
       <Skeleton height="10rem" width="100%" borderRadius="0.75rem" />
       <div className="space-y-2">
         <Skeleton width="40%" height="0.75rem" borderRadius="0.25rem" />
@@ -113,7 +113,7 @@ export const SkeletonGrid: React.FC<{ count?: number; children: React.ReactNode;
  */
 export const CourseSkeleton: React.FC = () => {
   return (
-    <div className="bg-[#121212]/40 backdrop-blur-sm border border-[#A5C89E]/10 rounded-xl overflow-hidden p-6 h-full space-y-4">
+    <div className="theme-card backdrop-blur-sm rounded-xl overflow-hidden p-6 h-full space-y-4">
       <Skeleton height="12rem" width="100%" borderRadius="0.75rem" />
       <div className="flex justify-between items-center">
         <Skeleton width="4rem" height="1.25rem" borderRadius="0.25rem" />
@@ -137,7 +137,7 @@ export const CourseSkeleton: React.FC = () => {
  */
 export const TopicSkeleton: React.FC = () => {
   return (
-    <div className="bg-[#121212]/40 backdrop-blur-sm border border-[#A5C89E]/10 rounded-xl p-6 h-[200px] flex flex-col justify-between">
+    <div className="theme-card backdrop-blur-sm rounded-xl p-6 h-[200px] flex flex-col justify-between">
       <div>
         <div className="flex justify-between items-start mb-4">
           <Skeleton width="3rem" height="3rem" borderRadius="0.5rem" />
