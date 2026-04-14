@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -16,7 +17,10 @@ import {
   FileCode,
   BookOpen,
   Bell,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 import NavLogo from '../../Sources/logo.png';
 import Loading from '../../ui/Loading';
 
@@ -74,6 +78,7 @@ export function Navbar({
   onTutorials,
 }: NavbarProps) {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string>('Learner');
   const [profileEmail, setProfileEmail] = useState<string>('');
@@ -130,7 +135,7 @@ export function Navbar({
 
     try {
       const response = await fetch(
-        `http://${window.location.hostname}:8000/api/search/suggestions?query=${encodeURIComponent(trimmed)}`,
+        `${API_URL}/search/suggestions?query=${encodeURIComponent(trimmed)}`,
         {
           headers: {
             Accept: 'application/json',
@@ -170,7 +175,7 @@ export function Navbar({
     try {
       setIsSearchLoading(true);
       const response = await fetch(
-        `http://${window.location.hostname}:8000/api/search?query=${encodeURIComponent(trimmed)}&type=${tab}&page=${page}&per_page=6`,
+        `${API_URL}/search?query=${encodeURIComponent(trimmed)}&type=${tab}&page=${page}&per_page=6`,
         {
           headers: {
             Accept: 'application/json',
@@ -317,7 +322,7 @@ export function Navbar({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications`, {
+      const response = await fetch(`${API_URL}/notifications`, {
         headers: {
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -338,7 +343,7 @@ export function Navbar({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications/${id}/read`, {
+      const response = await fetch(`${API_URL}/notifications/${id}/read`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -359,7 +364,7 @@ export function Navbar({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/notifications/read-all`, {
+      const response = await fetch(`${API_URL}/notifications/read-all`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
@@ -450,7 +455,7 @@ export function Navbar({
 
     const syncProfilePicture = async () => {
       try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+        const response = await fetch(`${API_URL}/me`, {
           headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,
@@ -821,6 +826,22 @@ export function Navbar({
               ) : null}
             </div>
 
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-[#A5C89E]/10 border border-[#A5C89E]/20 text-[#A5C89E] hover:bg-[#A5C89E]/20 hover:border-[#A5C89E]/40 transition-all duration-300 group overflow-hidden"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              <div className="relative w-5 h-5 transition-transform duration-500 group-hover:rotate-12">
+                {theme === 'light' ? (
+                  <Moon className="w-5 h-5 transition-all duration-500 scale-100 opacity-100" />
+                ) : (
+                  <Sun className="w-5 h-5 transition-all duration-500 scale-100 opacity-100" />
+                )}
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#A5C89E]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+
             {/* Notification Button */}
             {isAuthenticated && (
               <div className="relative" ref={notificationRefDesktop}>
@@ -1135,6 +1156,14 @@ export function Navbar({
           </div>
 
           <div className="flex items-center gap-3 md:hidden">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#A5C89E]/10 border border-[#A5C89E]/20 text-[#A5C89E] active:scale-90 transition-all"
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
+
             {/* Mobile Notification Button */}
             {isAuthenticated && (
               <div className="relative" ref={notificationRefMobile}>

@@ -28,10 +28,13 @@ import { Feedback } from './components/Pages/Profile/Feedback';
 import { InstructorMyCourses } from './components/Pages/Instructor/InstructorMyCourses';
 import { Settings } from './components/Pages/Profile/Settings';
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import { AdminPanel } from './components/Pages/Admin/AdminPanel';
 import { Tutorials } from './components/Pages/course/Tutorials';
 import { AdminExpertApplications } from './components/Pages/Admin/AdminExpertApplications';
 import { clearAuthSession, getAuthToken } from './utils/authStorage';
+
+import { API_URL } from '@/utils/constants';
 
 export default function App() {
   const navigate = useNavigate();
@@ -61,7 +64,7 @@ export default function App() {
     if (!token) return 'user';
 
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/api/me`, {
+      const response = await fetch(`${API_URL}/me`, {
         headers: {
           Accept: 'application/json',
           Authorization: `Bearer ${token}`,
@@ -185,8 +188,8 @@ export default function App() {
                    onExploreCourses={() => navigate('/allcourses')}
                    onViewDocs={() => navigate('/articles')}
                  />
-                 <ExploreTopics onViewAllTutorials={() => navigate('/tutorials')} />
                  <Courses onCourseClick={(id) => navigate(`/course/${id}`)} />
+                 <ExploreTopics onViewAllTutorials={() => navigate('/tutorials')} />
                  <Footer />
                </>
             } />
@@ -462,6 +465,7 @@ export default function App() {
         </Routes>
       </div>
       <Analytics />
+      <SpeedInsights />
     </div>
   );
 }

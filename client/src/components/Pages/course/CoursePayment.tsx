@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -47,7 +48,7 @@ export function CoursePayment({ onBack, onSuccess }: CoursePaymentProps) {
       }
       try {
         setLoading(true);
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/${id}`);
+        const response = await axios.get(`${API_URL}/courses/${id}`);
         setCourse(response.data.course);
       } catch (err) {
         setError('Failed to fetch course details');
@@ -93,7 +94,7 @@ export function CoursePayment({ onBack, onSuccess }: CoursePaymentProps) {
       }
 
       setLoading(true);
-      const response = await axios.post(`http://${window.location.hostname}:8000/api/courses/enroll`, {
+      const response = await axios.post(`${API_URL}/courses/enroll`, {
         course_id: id,
         payment_method: paymentMethod,
         amount_paid: course.Price,

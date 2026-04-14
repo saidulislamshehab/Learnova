@@ -1,9 +1,10 @@
+import { API_URL } from '@/utils/constants';
 import { useState } from 'react';
 import { MessageSquare, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { getAuthToken } from '../../../utils/authStorage';
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 interface FeedbackProps {
   onBack: () => void;

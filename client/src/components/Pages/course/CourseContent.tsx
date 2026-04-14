@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
@@ -59,7 +60,7 @@ export function CourseContent({ onBack }: CourseContentProps) {
       if (!id) return;
       try {
         setLoading(true);
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/${id}`);
+        const response = await axios.get(`${API_URL}/courses/${id}`);
         const data = response.data.course;
         
         const mappedCourse = {

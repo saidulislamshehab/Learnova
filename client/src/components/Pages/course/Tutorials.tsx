@@ -1,7 +1,9 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Search, ChevronDown, BookOpen, ArrowRight, Clock, FileText } from 'lucide-react';
+import { SkeletonCard, SkeletonGrid, SkeletonText, Skeleton } from '@/components/Common/Skeleton';
 
 const categories = [
     'All Tutorials',
@@ -14,7 +16,7 @@ const categories = [
     'DSA',
 ];
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 export function Tutorials() {
     const navigate = useNavigate();
@@ -100,9 +102,19 @@ export function Tutorials() {
     if (selectedTutorialId) {
         if (isLoadingTutorial) {
             return (
-                <div className="min-h-screen pt-32 flex items-center justify-center text-gray-400">
-                    <div className="animate-pulse">Loading tutorial content...</div>
-                </div>
+                <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen">
+                    <div className="relative max-w-7xl mx-auto">
+                        <Skeleton width="150px" height="1.5rem" className="mb-8" />
+                        <div className="mb-12">
+                            <Skeleton width="100px" height="1.5rem" borderRadius="1rem" className="mb-4" />
+                            <Skeleton width="60%" height="3rem" className="mb-4" />
+                            <SkeletonText lines={2} className="max-w-3xl" />
+                        </div>
+                        <SkeletonGrid count={6}>
+                            <SkeletonCard />
+                        </SkeletonGrid>
+                    </div>
+                </section>
             );
         }
 
@@ -267,11 +279,9 @@ export function Tutorials() {
                 </div>
 
                 {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="bg-[#121212]/50 border border-gray-800 rounded-lg p-6 h-64 animate-pulse"></div>
-                        ))}
-                    </div>
+                    <SkeletonGrid count={6}>
+                        <SkeletonCard />
+                    </SkeletonGrid>
                 ) : error ? (
                     <div className="text-center py-20 text-red-400">
                         <p>{error}</p>

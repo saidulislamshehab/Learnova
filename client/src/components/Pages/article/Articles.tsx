@@ -1,6 +1,8 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronDown, BookOpen, Clock, ArrowRight } from 'lucide-react';
 import { Pagination } from '../Common/Pagination';
+import { SkeletonCard, SkeletonGrid } from '@/components/Common/Skeleton';
 import axios from 'axios';
 interface ArticlesProps {
   onArticleClick: (articleId: number) => void;
@@ -21,7 +23,7 @@ const categories = [
  * Displays a paginated list of articles with search and category filtering capabilities.
  */
 export function Articles({ onArticleClick }: ArticlesProps) {
-  const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const API_BASE = `${API_URL}`;
 
   const [allArticles, setAllArticles] = useState<
     Array<{ id: number; title: string; description: string; category: string; readTime: string }>
@@ -179,13 +181,9 @@ export function Articles({ onArticleClick }: ArticlesProps) {
 
         {/* Articles Grid */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 border-4 border-[#A5C89E]/20 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <p className="text-[#A5C89E] font-medium animate-pulse">Fetching published articles...</p>
-          </div>
+          <SkeletonGrid count={6}>
+            <SkeletonCard />
+          </SkeletonGrid>
         ) : error ? (
           <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
             <BookOpen className="w-12 h-12 text-red-500 mx-auto mb-4" />

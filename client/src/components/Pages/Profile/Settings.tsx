@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useState } from 'react';
 import axios from 'axios';
 import { getAuthToken, clearAuthSession } from '../../../utils/authStorage';
@@ -28,7 +29,7 @@ interface SettingsProps {
 type SettingsSection = 'profile' | 'password' | '2fa' | 'notifications' | 'delete';
 
 export function Settings({ onBack, onEditProfile }: SettingsProps) {
-  const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const API_BASE = `${API_URL}`;
   const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

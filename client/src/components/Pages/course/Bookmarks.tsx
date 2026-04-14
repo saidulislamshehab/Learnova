@@ -1,8 +1,9 @@
+import { API_URL } from '@/utils/constants';
 import { useState, useEffect } from 'react';
 import { Bookmark, BookmarkCheck, Clock, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
+const API_BASE = `${API_URL}`;
 
 interface Article {
   id: number;

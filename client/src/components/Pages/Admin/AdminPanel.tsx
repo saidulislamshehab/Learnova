@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
@@ -108,7 +109,7 @@ const isHomepageFeatured = (value: unknown): boolean => {
 };
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
-  const API_BASE = `http://${window.location.hostname}:8000/api`;
+  const API_BASE = `${API_URL}`;
 
   const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

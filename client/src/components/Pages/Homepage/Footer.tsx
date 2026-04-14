@@ -4,6 +4,7 @@ import {
   Linkedin,
   Mail,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import NavLogo from '../../Sources/logo.png';
 
 /**
@@ -75,36 +76,36 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               <li>
-                <a
-                  href="#courses"
+                <Link
+                  to="/allcourses"
                   className="text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-mono"
                 >
                   Courses
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#articles"
+                <Link
+                  to="/articles"
                   className="text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-mono"
                 >
                   Articles
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#tutorials"
+                <Link
+                  to="/tutorials"
                   className="text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-mono"
                 >
                   Tutorials
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#contact"
+                <Link
+                  to="/feedback"
                   className="text-gray-400 hover:text-[#A5C89E] transition-colors text-sm font-mono"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

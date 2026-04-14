@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { API_URL } from '@/utils/constants';
+import api from '@/utils/apiService';
 import {
   BookOpen,
   Upload,
@@ -50,7 +51,6 @@ interface ApiCourse {
   contents?: ApiCourseContent[];
 }
 
-const API_BASE = `http://${window.location.hostname}:8000/api`;
 const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/dp1li5tkd/image/upload';
 const CLOUDINARY_COURSE_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_COURSE;
 
@@ -76,7 +76,7 @@ async function getValidAuthToken(): Promise<string | null> {
   }
 
   try {
-    await axios.get(`${API_BASE}/me`, {
+    await api.get(`${API_URL}/me`, {
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${currentToken}`,
@@ -90,8 +90,8 @@ async function getValidAuthToken(): Promise<string | null> {
     }
 
     try {
-      const refreshResponse = await axios.post(
-        `${API_BASE}/refresh`,
+      const refreshResponse = await api.post(
+        `${API_URL}/refresh`,
         {},
         {
           headers: {
@@ -144,7 +144,7 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
 
       try {
         setIsLoadingCourse(true);
-        const response = await axios.get<{ course: ApiCourse }>(`${API_BASE}/courses/${editCourseId}`, {
+        const response = await api.get<{ course: ApiCourse }>(`${API_URL}/courses/${editCourseId}`, {
           headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,
@@ -318,9 +318,9 @@ export function PublishCourse({ onBack, onMyCourses, editMode = false, editCours
       const backendStatus = status === 'published' ? 'pending' : 'draft';
       const formData = buildCoursePayload(backendStatus, uploadedUrl);
       const method = editMode && editCourseId ? 'post' : 'post';
-      const endpoint = editMode && editCourseId ? `${API_BASE}/courses/${editCourseId}` : `${API_BASE}/courses`;
+      const endpoint = editMode && editCourseId ? `${API_URL}/courses/${editCourseId}` : `${API_URL}/courses`;
 
-      await axios.request({
+      await api.request({
         url: endpoint,
         method,
         data: formData,

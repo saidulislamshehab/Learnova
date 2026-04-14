@@ -1,3 +1,4 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BookOpen, Clock, TrendingUp, ChevronRight } from 'lucide-react';
@@ -35,7 +36,7 @@ export function MyCourses({ onBack, onCourseClick }: MyCoursesProps) {
 
       try {
         setLoading(true);
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/enrolled`, {
+        const response = await axios.get(`${API_URL}/courses/enrolled`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

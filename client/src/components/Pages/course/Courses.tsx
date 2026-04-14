@@ -1,6 +1,9 @@
+import { API_URL } from '@/utils/constants';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Clock, Users, ArrowUpRight } from 'lucide-react';
+import { CourseSkeleton } from '@/components/Common/Skeleton';
 
 interface Course {
   CourseID: number;
@@ -73,6 +76,7 @@ function formatTimeAgo(dateString: string) {
 }
 
 export function Courses({ onCourseClick }: CoursesProps) {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +87,7 @@ export function Courses({ onCourseClick }: CoursesProps) {
         setIsLoading(true);
         setError(null);
 
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/top`, {
+        const response = await axios.get(`${API_URL}/courses/top`, {
           headers: { Accept: 'application/json' },
         });
 
@@ -136,7 +140,10 @@ export function Courses({ onCourseClick }: CoursesProps) {
                 Top published courses ranked by enrollments
               </p>
             </div>
-            <button className="mt-4 md:mt-0 text-[#A5C89E]/90 text-sm font-mono hover:underline flex items-center space-x-2">
+            <button 
+              onClick={() => navigate('/allcourses')}
+              className="mt-4 md:mt-0 text-[#A5C89E]/90 text-sm font-mono hover:underline flex items-center space-x-2"
+            >
               <span>VIEW_ALL_COURSES</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -144,9 +151,8 @@ export function Courses({ onCourseClick }: CoursesProps) {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-[#A5C89E]/20 border-t-[#A5C89E] rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-400 font-mono text-sm tracking-widest">LOADING_FEATURED_COURSES...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => <CourseSkeleton key={i} />)}
           </div>
         ) : error ? (
           <div className="bg-[#121212]/60 backdrop-blur-sm border border-red-500/30 rounded-xl p-6 text-red-300 text-sm">
