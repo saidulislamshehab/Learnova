@@ -22,12 +22,12 @@ return new class extends Migration {
             $table->foreign('course_id')
                 ->references('CourseID')
                 ->on('courses')
-                ->onDelete('cascade');
+                ->onDelete('no action');
 
             $table->foreign('admin_id')
                 ->references('id')
                 ->on('users')
-                ->onDelete('set null');
+                ->onDelete('no action');
         });
     }
 

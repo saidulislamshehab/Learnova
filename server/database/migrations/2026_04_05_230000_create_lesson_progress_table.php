@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->foreign('UserID')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('Course_Content_ID')->references('id')->on('course_contents')->onDelete('cascade');
+            $table->foreign('Course_Content_ID')->references('id')->on('course_contents')->onDelete('no action');
             $table->unique(['UserID', 'Course_Content_ID']);
         });
     }

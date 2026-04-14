@@ -24,7 +24,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->foreign('tutorial_id')->references('T_ID')->on('tutorials')->onDelete('cascade');
-            $table->foreign('article_id')->references('Article_ID')->on('articles')->onDelete('cascade');
+            $table->foreign('article_id')->references('Article_ID')->on('articles')->onDelete('no action');
         });
     }
 

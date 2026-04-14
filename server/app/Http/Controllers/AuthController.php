@@ -59,9 +59,15 @@ class AuthController extends Controller
                 'password' => 'required',
             ]);
 
-            if (! $token = Auth::attempt($credentials)) {
+            // Manually authenticate using email instead of the default username lookup
+            $user = User::where('email', $credentials['email'])->first();
+            
+            if (!$user || !Hash::check($credentials['password'], $user->password)) {
                 return response()->json(['message' => 'Invalid credentials'], 401);
             }
+
+            // Generate JWT token for the authenticated user
+            $token = Auth::guard('api')->login($user);
 
             return $this->respondWithToken($token);
 

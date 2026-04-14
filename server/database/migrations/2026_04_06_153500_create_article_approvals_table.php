@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->text('comments')->nullable();
             $table->timestamps();
 
-            $table->foreign('article_id')->references('Article_ID')->on('articles')->onDelete('cascade');
+            $table->foreign('article_id')->references('Article_ID')->on('articles')->onDelete('no action');
             $table->foreign('admin_id')->references('id')->on('users')->onDelete('set null');
         });
     }
