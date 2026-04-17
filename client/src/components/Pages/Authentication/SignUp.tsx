@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import NavLogo from '../../Sources/logo.png';
 
+import { persistAuthSession } from '../../../utils/authStorage';
+
 // Interface for SignUp props
 interface SignUpProps {
   onSwitchToSignIn: () => void;
   onBackToHome: () => void;
+  onSignUpSuccess: () => void;
   onShowNotification?: (message: string, type: 'success' | 'error') => void;
 }
 
@@ -18,6 +21,7 @@ interface SignUpProps {
 export function SignUp({
   onSwitchToSignIn,
   onBackToHome,
+  onSignUpSuccess,
   onShowNotification,
 }: SignUpProps) {
   // State for form inputs
@@ -79,12 +83,23 @@ export function SignUp({
 
       console.log("Sign up successful:", data);
       
-      if (onShowNotification) {
-          onShowNotification("Account successfully created! Please sign in.", "success");
+      const token: string | undefined = data?.authorization?.token;
+      if (token) {
+        // Automatically log in the user after successful registration
+        persistAuthSession(token, data?.user ?? null, true);
+        
+        if (onShowNotification) {
+            onShowNotification("Account successfully created! Welcome to Learnova.", "success");
+        }
+        
+        onSignUpSuccess();
+      } else {
+        // Fallback if no token is returned (though backend should return one)
+        if (onShowNotification) {
+            onShowNotification("Account successfully created! Please sign in.", "success");
+        }
+        onSwitchToSignIn();
       }
-      
-      // Automatically switch to sign in or log in
-      onSwitchToSignIn();
 
     } catch (err: any) {
       console.error("Registration error:", err);

@@ -218,6 +218,7 @@ export default function App() {
                 <SignUp
                     onSwitchToSignIn={() => navigate('/signin')}
                     onBackToHome={() => navigate('/')}
+                    onSignUpSuccess={handleLogin}
                     onShowNotification={showNotification}
                 />
             } />
