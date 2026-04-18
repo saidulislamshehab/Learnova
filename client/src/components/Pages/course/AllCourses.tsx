@@ -29,17 +29,22 @@ interface Course {
 const categories = [
   'All Categories',
   'Web Development',
+  'Backend Development',
   'Mobile Development',
   'Data Science',
-  'Machine Learning',
   'Artificial Intelligence',
   'Cloud Computing',
   'Cybersecurity',
   'DevOps',
-  'Blockchain',
+  'Algorithms',
+  'Computer Science',
+  'Programming',
   'Game Development',
-  'UI/UX Design',
-  'Database Management',
+  'Design',
+  'Emerging Tech',
+  'Operating Systems',
+  'Software Quality',
+  'Information Technology',
 ];
 
 function formatTimeAgo(dateString: string) {
@@ -74,6 +79,12 @@ export function AllCourses({ category = 'All Categories', onCourseClick }: AllCo
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage] = useState(15);
+
+  // Sync selectedCategory if the prop changes (e.g. clicked from Navbar dropdown)
+  useEffect(() => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+  }, [category]);
 
   useEffect(() => {
     const fetchCourses = async () => {

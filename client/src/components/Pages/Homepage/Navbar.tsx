@@ -381,20 +381,15 @@ export function Navbar({
   };
 
   const courseCategories = [
-    { name: "DSA / Placements", icon: Code2, href: "#dsa" },
-    { name: "ML & Data Science", icon: Brain, href: "#ml" },
-    { name: "Development", icon: Globe, href: "#development" },
-    { name: "Cloud / DevOps", icon: Cloud, href: "#cloud" },
-    {
-      name: "Programming Languages",
-      icon: FileCode,
-      href: "#programming",
-    },
-    {
-      name: "All Courses",
-      icon: BookOpen,
-      href: "#all-courses",
-    },
+    { name: "Algorithms", filterName: "Algorithms", icon: Code2 },
+    { name: "Data Science", filterName: "Data Science", icon: Brain },
+    { name: "Web Development", filterName: "Web Development", icon: Globe },
+    { name: "Cloud Computing", filterName: "Cloud Computing", icon: Cloud },
+    { name: "Cybersecurity", filterName: "Cybersecurity", icon: FileCode },
+    { name: "Artificial Intelligence", filterName: "Artificial Intelligence", icon: Brain },
+    { name: "Mobile Development", filterName: "Mobile Development", icon: Terminal },
+    { name: "DevOps", filterName: "DevOps", icon: Cloud },
+    { name: "All Courses", filterName: undefined, icon: BookOpen },
   ];
 
   const tutorialTopics = [
@@ -402,11 +397,9 @@ export function Navbar({
     "C++",
     "Java",
     "Python",
-    "JavaScript",
-    "Data Structures",
+    "Javascript",
     "Algorithms",
-    "Web Development",
-    "AI / ML",
+    "Cyber Security",
     "All Tutorials",
   ];
 
@@ -701,17 +694,11 @@ export function Navbar({
                   <div className="space-y-0">
                     {courseCategories.map((category) => {
                       const Icon = category.icon;
-                      const isAllCourses =
-                        category.name === "All Courses";
                       return (
                         <button
                           key={category.name}
                           onClick={() => {
-                            onAllCourses(
-                              isAllCourses
-                                ? undefined
-                                : category.name,
-                            );
+                            onAllCourses(category.filterName);
                             setIsCoursesOpen(false);
                           }}
                           className="navbar-dropdown-item"
@@ -770,10 +757,12 @@ export function Navbar({
                         key={topic}
                         className="navbar-dropdown-item"
                         onClick={() => {
-                          if (topic === "All Tutorials") {
-                            onTutorials?.();
-                          }
                           setIsTutorialsOpen(false);
+                          if (topic === "All Tutorials") {
+                            navigate('/tutorials');
+                          } else {
+                            navigate(`/tutorials?category=${encodeURIComponent(topic)}`);
+                          }
                         }}
                       >
                         {topic}
@@ -1312,17 +1301,11 @@ export function Navbar({
                   </h3>
                   {courseCategories.map((category) => {
                     const Icon = category.icon;
-                    const isAllCourses =
-                      category.name === "All Courses";
                     return (
                       <button
                         key={category.name}
                         onClick={() => {
-                          onAllCourses(
-                            isAllCourses
-                              ? undefined
-                              : category.name,
-                          );
+                          onAllCourses(category.filterName);
                           setIsMobileCoursesOpen(false);
                           setIsMobileMenuOpen(false);
                         }}
@@ -1369,11 +1352,13 @@ export function Navbar({
                       key={topic}
                       className="navbar-mobile-sub-item"
                       onClick={() => {
-                        if (topic === "All Tutorials") {
-                          onTutorials?.();
-                        }
                         setIsMobileTutorialsOpen(false);
                         setIsMobileMenuOpen(false);
+                        if (topic === "All Tutorials") {
+                          navigate('/tutorials');
+                        } else {
+                          navigate(`/tutorials?category=${encodeURIComponent(topic)}`);
+                        }
                       }}
                     >
                       {topic}

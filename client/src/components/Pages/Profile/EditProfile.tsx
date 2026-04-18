@@ -63,7 +63,7 @@ interface CloudinaryUploadResponse {
   };
 }
 
-const DEFAULT_AVATAR = 'https://res.cloudinary.com/dp1li5tkd/image/upload/v1774902128/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-vector-illustration_561158-4195_txcng6.jpg';
+const DEFAULT_AVATAR = 'https://res.cloudinary.com/dp1li5tkd/image/upload/v1776439457/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-illustration-vector_xxnra2.jpg';
 const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/dp1li5tkd/image/upload';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
 const initialFormData: FormDataState = {

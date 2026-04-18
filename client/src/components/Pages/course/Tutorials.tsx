@@ -1,6 +1,6 @@
 import { API_URL } from '@/utils/constants';
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Search, ChevronDown, BookOpen, ArrowRight, Clock, FileText } from 'lucide-react';
 import { SkeletonCard, SkeletonGrid, SkeletonText, Skeleton } from '@/components/Common/Skeleton';
@@ -9,11 +9,18 @@ const categories = [
     'All Tutorials',
     'C',
     'C++',
-    'Machine Learning',
     'Java',
     'Python',
+    'Javascript',
     'Algorithms',
-    'DSA',
+    'Cyber Security',
+    'Artificial Intelligence',
+    'Web Development',
+    'Data Science',
+    'Cybersecurity',
+    'Cloud Computing',
+    'DevOps',
+    'Mobile Development',
 ];
 
 const API_BASE = `${API_URL}`;
@@ -21,8 +28,13 @@ const API_BASE = `${API_URL}`;
 export function Tutorials() {
     const navigate = useNavigate();
     const { id: routeTutorialId } = useParams();
+    const location = useLocation();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('All Tutorials');
+    // Read ?category= query param on mount to pre-select filter from navbar
+    const [selectedCategory, setSelectedCategory] = useState(() => {
+        const params = new URLSearchParams(location.search);
+        return params.get('category') || 'All Tutorials';
+    });
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [selectedTutorialId, setSelectedTutorialId] = useState<number | null>(null);
     const [allTutorials, setAllTutorials] = useState<any[]>([]);
@@ -39,6 +51,17 @@ export function Tutorials() {
         }
         setSelectedTutorialId(null);
     }, [routeTutorialId]);
+
+    // Sync category filter when URL ?category= param changes
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const catParam = params.get('category');
+        if (catParam) {
+            setSelectedCategory(catParam);
+        } else if (!routeTutorialId) {
+            setSelectedCategory('All Tutorials');
+        }
+    }, [location.search]);
 
     // Fetch all published tutorials on mount
     useEffect(() => {
