@@ -29,7 +29,7 @@ return new class extends Migration {
             
             // Pricing & Stats
             $table->decimal('Price', 10, 2)->default(0.00); // combined price
-            $table->decimal('Original_Price', 10, 2)->nullable();
+            $table->decimal('Old_Price', 10, 2)->nullable();
             $table->decimal('Rating', 3, 2)->default(0.00);
             $table->unsignedInteger('Total_Ratings')->default(0);
             $table->unsignedInteger('Students_Count')->default(0);

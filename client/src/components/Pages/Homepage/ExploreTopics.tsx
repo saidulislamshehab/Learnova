@@ -92,10 +92,7 @@ export function ExploreTopics({ onViewAllTutorials }: ExploreTopicsProps) {
                   key={topic.T_ID ?? index}
                   className="group relative bg-[#121212]/60 backdrop-blur-sm border border-[#A5C89E]/20 rounded-xl p-6 hover:border-[#A5C89E] transition-all duration-300 hover:-translate-y-1 overflow-hidden"
                 >
-                  {/* Index Number */}
-                  <div className="absolute top-4 right-4 text-3xl font-bold text-[#A5C89E]/10 group-hover:text-[#A5C89E]/20 transition-colors">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
+
 
                   {/* Icon */}
                   <div className="w-12 h-12 bg-[#A5C89E]/10 border border-[#A5C89E]/30 rounded-lg flex items-center justify-center mb-4 group-hover:bg-[#A5C89E]/20 transition-colors">

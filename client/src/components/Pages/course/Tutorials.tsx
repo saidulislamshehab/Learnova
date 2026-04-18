@@ -162,11 +162,7 @@ export function Tutorials() {
                                 onClick={() => navigate(`/article/${article.Article_ID || article.id}`)}
                                 className="group relative bg-[#121212]/80 backdrop-blur-sm border border-[#A5C89E]/30 rounded-lg p-6 hover:border-[#A5C89E]/60 hover:shadow-lg hover:shadow-[#A5C89E]/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer"
                             >
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <span className="text-6xl font-bold text-[#A5C89E] font-mono">
-                                        {String(index + 1).padStart(2, '0')}
-                                    </span>
-                                </div>
+
 
                                 <div className="relative z-10">
                                     <div className="flex items-center text-xs text-gray-500 mb-3 space-x-2">
@@ -304,9 +300,7 @@ export function Tutorials() {
                                     </span>
                                 </div>
 
-                                <div className="absolute top-10 right-6 text-6xl font-bold text-[#A5C89E]/5 font-mono pointer-events-none group-hover:text-[#A5C89E]/10 transition-colors">
-                                    {String(index + 1).padStart(2, '0')}
-                                </div>
+
 
                                 <h3 className="text-xl font-bold text-white mb-3 group-hover:text-[#A5C89E]/90 transition-colors relative z-10 text-left">
                                     {t.Title}

@@ -189,9 +189,7 @@ export function Courses({ onCourseClick }: CoursesProps) {
                           </span>
                         </div>
                       </div>
-                      <div className="text-2xl font-bold text-white/10 font-mono">
-                        {String(index + 1).padStart(2, '0')}
-                      </div>
+
                     </div>
                   </div>
 

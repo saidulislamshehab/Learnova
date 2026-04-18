@@ -125,7 +125,7 @@ class CourseController extends Controller
             }
         }
 
-        $course = DB::transaction(function () use ($request, $validated, $contents) {
+        $course = DB::transaction(function () use ($request, $validated, $contents, $categoryName) {
             $thumbnailUrl = $validated['thumbnail'] ?? null;
             if ($request->hasFile('thumbnail')) {
                 $thumbnailPath = $request->file('thumbnail')->store('course-thumbnails', 'public');
@@ -233,7 +233,7 @@ class CourseController extends Controller
             }
         }
 
-        $updatedCourse = DB::transaction(function () use ($request, $validated, $course, $contents) {
+        $updatedCourse = DB::transaction(function () use ($request, $validated, $course, $contents, $categoryName) {
             $thumbnailUrl = $course->Thumbnail;
             
             // If the thumbnail field exists and is a URL string

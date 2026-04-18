@@ -212,7 +212,79 @@ def _search_recursive(self, node, val):
   },
 };
 
+const ArticleSkeleton = ({ onBack }: { onBack: () => void }) => (
+  <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen">
+    <div className="relative max-w-5xl mx-auto">
+      {/* Back Button Skeleton */}
+      <button onClick={onBack} className="flex items-center text-gray-600 mb-8">
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        <div className="h-4 w-24 bg-gray-800/50 rounded animate-pulse" />
+      </button>
+
+      {/* Header Skeleton */}
+      <div className="mb-12">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="h-6 w-20 bg-[#A5C89E]/10 rounded-full animate-pulse" />
+          <div className="h-4 w-24 bg-gray-800/50 rounded-full animate-pulse" />
+        </div>
+        <div className="space-y-3 mb-6">
+          <div className="h-10 w-full sm:w-3/4 bg-gray-800/80 rounded-lg animate-pulse" />
+          <div className="h-10 w-2/3 bg-gray-800/80 rounded-lg animate-pulse" />
+        </div>
+        
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#A5C89E]/10">
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 rounded-full bg-gray-800 animate-pulse border border-[#A5C89E]/10" />
+            <div>
+              <div className="h-4 w-24 bg-gray-800 rounded animate-pulse mb-2" />
+              <div className="h-3 w-32 bg-gray-800/50 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="flex space-x-4">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-9 w-12 bg-[#121212]/80 border border-[#A5C89E]/10 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content Skeleton */}
+      <div className="space-y-6 mb-16">
+        <div className="space-y-3">
+          <div className="h-4 w-full bg-gray-800/40 rounded animate-pulse" />
+          <div className="h-4 w-full bg-gray-800/40 rounded animate-pulse" />
+          <div className="h-4 w-4/5 bg-gray-800/40 rounded animate-pulse" />
+        </div>
+        
+        <div className="py-8 space-y-4">
+           <div className="h-8 w-1/3 bg-gray-800/60 rounded animate-pulse mb-6" />
+           <div className="h-4 w-full bg-gray-800/40 rounded animate-pulse" />
+           <div className="h-4 w-full bg-gray-800/40 rounded animate-pulse" />
+           <div className="h-4 w-3/4 bg-gray-800/40 rounded animate-pulse" />
+        </div>
+
+        <div className="space-y-3">
+          <div className="h-4 w-full bg-gray-800/40 rounded animate-pulse" />
+          <div className="h-4 w-11/12 bg-gray-800/40 rounded animate-pulse" />
+          <div className="h-4 w-full bg-gray-800/40 rounded animate-pulse" />
+        </div>
+      </div>
+
+      {/* Tags Skeleton */}
+      <div className="mb-16 pb-16 border-b border-[#A5C89E]/10">
+          <div className="h-4 w-16 bg-gray-800/50 rounded animate-pulse mb-4" />
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-9 w-20 bg-gray-800/30 rounded-full animate-pulse" />
+            ))}
+          </div>
+      </div>
+    </div>
+  </section>
+);
+
 export function ArticleDetail({ onBack }: ArticleDetailProps) {
+
   const { id } = useParams<{ id: string }>();
   const articleId = parseInt(id || '1', 10);
 
@@ -363,8 +435,22 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
   }, [API_BASE, articleId]);
 
   const article = useMemo(() => {
-    if (!dbArticle) {
-      return articleData[articleId] || articleData[1];
+    if (isLoading || !dbArticle) {
+      // Return empty/placeholder data structure while loading to avoid "pre-value" glitches
+      return {
+        title: '',
+        category: '',
+        readTime: '',
+        lastUpdated: '',
+        author: '',
+        authorRole: '',
+        authorPicture: '',
+        likes: 0,
+        comments: 0,
+        tags: [],
+        contentHtml: '',
+        relatedArticles: [],
+      };
     }
 
     const title = String(dbArticle.Title ?? dbArticle.title ?? 'Untitled Article');
@@ -593,6 +679,10 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
     setShowAIChat(false);
   };
 
+  if (isLoading) {
+    return <ArticleSkeleton onBack={onBack} />;
+  }
+
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen">
       <div className="relative max-w-5xl mx-auto">
@@ -717,15 +807,8 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
 
         {/* Article Content */}
         <div className="prose prose-invert max-w-none mb-16">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-24 space-y-4">
-              <div className="relative w-16 h-16">
-                <div className="absolute inset-0 border-4 border-[#A5C89E]/20 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-[#A5C89E] border-t-transparent rounded-full animate-spin"></div>
-              </div>
-              <p className="text-[#A5C89E] font-medium animate-pulse">Fetching article...</p>
-            </div>
-          ) : error ? (
+          {error ? (
+
             <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
               <BookOpen className="w-12 h-12 text-red-500 mx-auto mb-4" />
               <p className="text-red-400 font-medium">{error}</p>

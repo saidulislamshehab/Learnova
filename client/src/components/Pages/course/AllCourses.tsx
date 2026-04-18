@@ -242,9 +242,7 @@ export function AllCourses({ category = 'All Categories', onCourseClick }: AllCo
                       <span className="text-[10px] text-gray-500 font-mono uppercase">{course.Status}</span>
                     </div>
                   </div>
-                  <div className="absolute bottom-4 right-6 text-2xl font-bold text-white/5 font-mono z-10">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
+
                 </div>
 
                 {/* Course Content */}
