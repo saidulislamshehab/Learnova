@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    private const DEFAULT_PROFILE_PICTURE = 'https://res.cloudinary.com/dp1li5tkd/image/upload/v1774902128/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-vector-illustration_561158-4195_txcng6.jpg';
+    private const DEFAULT_PROFILE_PICTURE = 'https://res.cloudinary.com/dp1li5tkd/image/upload/v1776439457/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-illustration-vector_xxnra2.jpg';
 
     public function register(Request $request)
     {
@@ -61,7 +61,7 @@ class AuthController extends Controller
 
             // Manually authenticate using email instead of the default username lookup
             $user = User::where('email', $credentials['email'])->first();
-            
+
             if (!$user || !Hash::check($credentials['password'], $user->password)) {
                 return response()->json(['message' => 'Invalid credentials'], 401);
             }
@@ -144,7 +144,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
         }
     }
-    
+
     public function me()
     {
         return response()->json(Auth::user());
@@ -288,7 +288,7 @@ class AuthController extends Controller
     protected function respondWithToken($token)
     {
         $user = Auth::user();
-        
+
         // If the user doesn't have a username yet, saving them will trigger 
         // the automatic generation logic I added to the User model
         if (!$user->username) {

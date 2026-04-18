@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('role', 20)->default('student');
             $table->string('password');
-            $table->string('picture')->nullable();
+            $table->string('picture')->default('https://res.cloudinary.com/dp1li5tkd/image/upload/v1776439457/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-illustration-vector_xxnra2.jpg');
             $table->text('bio')->nullable();
             $table->string('gender')->nullable();
             $table->string('country')->nullable();
