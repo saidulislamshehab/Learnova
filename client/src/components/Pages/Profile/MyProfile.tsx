@@ -1,4 +1,4 @@
-import { API_URL } from '@/utils/constants';
+import { API_URL, DEFAULT_PROFILE_PICTURE } from '@/utils/constants';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -40,8 +40,7 @@ interface UserProfile {
   linkedin_link?: string | null;
 }
 
-const DEFAULT_AVATAR =
-  'https://res.cloudinary.com/dp1li5tkd/image/upload/v1774902128/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-vector-illustration_561158-4195_txcng6.jpg';
+const DEFAULT_AVATAR = DEFAULT_PROFILE_PICTURE;
 
 const getTextValue = (value?: string | number | null, fallback = 'Not set') => {
   if (value === null || value === undefined) {

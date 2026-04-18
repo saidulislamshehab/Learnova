@@ -1,4 +1,4 @@
-import { API_URL } from '@/utils/constants';
+import { API_URL, DEFAULT_PROFILE_PICTURE } from '@/utils/constants';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -63,7 +63,7 @@ interface CloudinaryUploadResponse {
   };
 }
 
-const DEFAULT_AVATAR = 'https://res.cloudinary.com/dp1li5tkd/image/upload/v1776439457/silver-membership-icon-default-avatar-profile-icon-membership-icon-social-media-user-image-illustration-vector_xxnra2.jpg';
+const DEFAULT_AVATAR = DEFAULT_PROFILE_PICTURE;
 const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/dp1li5tkd/image/upload';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
 const initialFormData: FormDataState = {

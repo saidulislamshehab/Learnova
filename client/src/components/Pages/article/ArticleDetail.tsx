@@ -1,4 +1,4 @@
-import { API_URL } from '@/utils/constants';
+import { API_URL, DEFAULT_PROFILE_PICTURE } from '@/utils/constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Share2, Flag, Clock, User, BookOpen, ArrowRight, X, CheckCircle, Sparkles, Bookmark, BookmarkCheck } from 'lucide-react';
@@ -718,18 +718,18 @@ export function ArticleDetail({ onBack }: ArticleDetailProps) {
             <div className="flex items-center space-x-4">
               {/* Author */}
               <div className="flex items-center space-x-3">
-                {Boolean((article as any).authorPicture) ? (
-                  <img
-                    src={(article as any).authorPicture}
-                    alt={article.author}
-                    className="w-10 h-10 rounded-full object-cover border border-[#A5C89E]/30"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-[#A5C89E]/20 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-[#A5C89E]/90" />
-                  </div>
-                )}
+                <img
+                  src={(article as any).authorPicture || DEFAULT_PROFILE_PICTURE}
+                  alt={article.author}
+                  className="w-10 h-10 rounded-full object-cover border border-[#A5C89E]/30"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== DEFAULT_PROFILE_PICTURE) {
+                      target.src = DEFAULT_PROFILE_PICTURE;
+                    }
+                  }}
+                />
                 <div>
                   <div className="text-sm font-medium text-white">{article.author}</div>
                   <div className="text-xs text-gray-500">{article.authorRole}</div>

@@ -1,4 +1,4 @@
-import { API_URL } from '@/utils/constants';
+import { API_URL, DEFAULT_PROFILE_PICTURE } from '@/utils/constants';
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -920,11 +920,17 @@ export function Navbar({
                   }
                   className="navbar-profile-btn overflow-hidden rounded-full"
                 >
-                  {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="w-full h-full object-cover rounded-full" />
-                  ) : (
-                    <User className="w-5 h-5" />
-                  )}
+                  <img 
+                    src={profilePicture || DEFAULT_PROFILE_PICTURE} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover rounded-full" 
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src !== DEFAULT_PROFILE_PICTURE) {
+                        target.src = DEFAULT_PROFILE_PICTURE;
+                      }
+                    }}
+                  />
                 </button>
                 {isProfileOpen && (
                   <div
